@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Vitality Eye</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .offline-container {
+            text-align: center;
+            padding: 2rem;
+            max-width: 500px;
+        }
+        
+        .offline-icon {
+            font-size: 80px;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        
+        p {
+            color: #94a3b8;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+        
+        .retry-btn {
+            background: linear-gradient(135deg, #a855f7, #ec4899);
+            border: none;
+            padding: 12px 32px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .retry-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(168, 85, 247, 0.3);
+        }
+        
+        .features {
+            margin-top: 2rem;
+            text-align: left;
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 1rem;
+        }
+        
+        .features h3 {
+            color: #a855f7;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .features ul {
+            list-style: none;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+        
+        .features li {
+            padding: 0.25rem 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .features li::before {
+            content: "✓";
+            color: #10b981;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📡</div>
+        <h1>You're Offline</h1>
+        <p>You've lost connection to the internet. Don't worry! You can still access previously viewed data.</p>
+        <button class="retry-btn" onclick="location.reload()">Try Again</button>
+        
+        <div class="features">
+            <h3>Available Offline:</h3>
+            <ul>
+                <li>View cached patient data</li>
+                <li>View previously loaded dashboards</li>
+                <li>Access cached medical records</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        window.addEventListener('online', () => {
+            location.reload();
+        });
+    </script>
+</body>
+</html>

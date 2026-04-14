@@ -1,0 +1,193 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  /* ========== MODERN GLASS CARDS ========== */
+  
+  /* Premium Glass Card - Futuristic */
+  .glass-card-modern {
+    @apply relative overflow-hidden rounded-2xl;
+    background: rgba(15, 25, 35, 0.6);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+  
+  .glass-card-modern:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+  
+  /* Gradient Border Card */
+  .gradient-border-card {
+    @apply relative rounded-2xl p-[1px] overflow-hidden;
+    background: linear-gradient(135deg, #4F46E5, #7C3AED, #EC4899);
+  }
+  
+  .gradient-border-card > div {
+    @apply rounded-2xl h-full w-full;
+    background: rgba(15, 25, 35, 0.8);
+    backdrop-filter: blur(12px);
+  }
+  
+  /* Neon Glow Card */
+  .neon-card {
+    @apply relative rounded-2xl overflow-hidden;
+    background: rgba(10, 20, 30, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(79, 70, 229, 0.3);
+    transition: all 0.3s ease;
+  }
+  
+  .neon-card::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-500;
+    background: radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.15), transparent 70%);
+    pointer-events: none;
+  }
+  
+  .neon-card:hover::before {
+    @apply opacity-100;
+  }
+  
+  .neon-card:hover {
+    border-color: rgba(79, 70, 229, 0.6);
+    box-shadow: 0 0 30px rgba(79, 70, 229, 0.2);
+  }
+  
+  /* Stats Card - Modern Dashboard */
+  .stat-card {
+    @apply relative rounded-2xl p-6 overflow-hidden;
+    background: linear-gradient(135deg, rgba(30, 40, 50, 0.7) 0%, rgba(20, 30, 40, 0.5) 100%);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  }
+  
+  .stat-icon {
+    @apply rounded-xl flex items-center justify-center;
+    background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(124, 58, 237, 0.1));
+    border: 1px solid rgba(79, 70, 229, 0.2);
+  }
+  
+  /* ========== MODERN BUTTONS ========== */
+  
+  .btn-primary-modern {
+    @apply relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300;
+    background: linear-gradient(135deg, #4F46E5, #7C3AED);
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+  }
+  
+  .btn-primary-modern::before {
+    content: '';
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  }
+  
+  .btn-primary-modern:hover::before {
+    @apply opacity-100;
+  }
+  
+  .btn-primary-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(79, 70, 229, 0.4);
+  }
+  
+  .btn-primary-modern span {
+    @apply relative z-10;
+  }
+  
+  /* ========== MODERN INPUTS ========== */
+  
+  .input-modern {
+    @apply w-full px-5 py-3 rounded-xl transition-all duration-300;
+    background: rgba(20, 30, 40, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: white;
+  }
+  
+  .input-modern:focus {
+    @apply outline-none;
+    border-color: #4F46E5;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    background: rgba(30, 40, 50, 0.8);
+  }
+  
+  .input-modern::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+  
+  /* ========== GRADIENT TEXT ========== */
+  
+  .gradient-text-modern {
+    background: linear-gradient(135deg, #A78BFA, #EC4899, #F59E0B);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 3s linear infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  /* ========== ANIMATIONS ========== */
+  
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+  
+  @keyframes glow-pulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+  }
+  
+  .glow-pulse {
+    animation: glow-pulse 2s ease-in-out infinite;
+  }
+  
+  /* ========== SCROLLBAR ========== */
+  
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #4F46E5, #7C3AED);
+    border-radius: 10px;
+  }
+}
