@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon, UserIcon, PhoneIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon, UserIcon, PhoneIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
 const PatientLogin = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [isLogin, setIsLogin] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [verified, setVerified] = useState(false);
     
     // Login form state
     const [loginData, setLoginData] = useState({
@@ -25,6 +27,17 @@ const PatientLogin = () => {
         confirmPassword: '',
         consent: false
     });
+
+    // Check for verification success in URL
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        if (params.get('verified') === 'true') {
+            setVerified(true);
+            toast.success('Email verified successfully! You can now login.');
+            // Remove the query parameter from URL
+            navigate('/patient/login', { replace: true });
+        }
+    }, [location, navigate]);
 
     const handleLoginChange = (e) => {
         setLoginData({
@@ -108,7 +121,7 @@ const PatientLogin = () => {
                 consent: registerData.consent.toString()
             });
             
-            toast.success(response.data.message || 'Registration successful! Please login.');
+            toast.success(response.data.message || 'Registration successful! Please check your email to verify your account.');
             setIsLogin(true);
             setRegisterData({
                 nationalId: '',
@@ -131,6 +144,14 @@ const PatientLogin = () => {
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-md">
                 <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8">
+                    {/* Verification Success Banner */}
+                    {verified && (
+                        <div className="mb-4 p-3 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center space-x-2">
+                            <CheckCircleIcon className="h-5 w-5 text-green-400" />
+                            <span className="text-green-400 text-sm">Email verified! You can now login.</span>
+                        </div>
+                    )}
+
                     <div className="text-center mb-8">
                         <h1 className="text-3xl font-bold text-white mb-2">Patient Portal</h1>
                         <p className="text-gray-400">Access your medical records securely</p>
@@ -200,6 +221,14 @@ const PatientLogin = () => {
                                     </button>
                                 </div>
                             </div>
+                            
+                            {/* Forgot Password Link */}
+                            <div className="text-right">
+                                <Link to="/patient/forgot-password" className="text-sm text-purple-400 hover:underline">
+                                    Forgot Password?
+                                </Link>
+                            </div>
+                            
                             <button
                                 type="submit"
                                 disabled={loading}

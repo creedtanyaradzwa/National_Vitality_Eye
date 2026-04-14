@@ -23,6 +23,8 @@ import OfflineStatus from './components/ui/OfflineStatus';
 import VitalsTrendPage from './pages/VitalsTrendPage';
 import PatientLogin from './pages/PatientPortal/Login';
 import PatientDashboard from './pages/PatientPortal/Dashboard';
+import ForgotPassword from './pages/PatientPortal/ForgotPassword';
+import ResetPassword from './pages/PatientPortal/ResetPassword';
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated, loading } = useAuth();
@@ -68,6 +70,8 @@ function AppRoutes() {
             <Route path="/register" element={<Register />} />
             <Route path="/patient/login" element={<PatientLogin />} />
             <Route path="/patient/dashboard" element={<PatientDashboard />} />
+            <Route path="/patient/forgot-password" element={<ForgotPassword />} />
+            <Route path="/patient/reset-password/:token" element={<ResetPassword />} />
         </Routes>
     );
 }
