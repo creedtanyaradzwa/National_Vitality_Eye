@@ -233,15 +233,15 @@ const patientSchema = new mongoose.Schema({
         ref: "User"
     },
     
-    // ============ PATIENT PORTAL FIELDS ============
+    // ============ PATIENT PORTAL ACCOUNT ============
     portalAccount: {
         hasAccount: { type: Boolean, default: false },
-        email: { type: String, unique: true, sparse: true },
-        phoneNumber: { type: String },
-        createdAt: { type: Date, default: Date.now },
+        email: { type: String, lowercase: true, sparse: true },
+        phoneNumber: String,
+        password: String,
+        createdAt: Date,
         lastLogin: Date,
         loginAttempts: { type: Number, default: 0 },
-        lockedUntil: Date,
         consentGiven: { type: Boolean, default: false },
         consentDate: Date,
         consentVersion: { type: String, default: "1.0" },
@@ -249,22 +249,28 @@ const patientSchema = new mongoose.Schema({
         suspendedAt: Date,
         suspensionReason: String,
         suspensionDuration: Number,
-        reactivationDate: Date,
-        preferences: {
-            emailNotifications: { type: Boolean, default: true },
-            smsNotifications: { type: Boolean, default: false },
-            language: { type: String, default: "en" }
-        },
+        isVerified: { type: Boolean, default: false },
+        verificationToken: String,
+        verificationExpires: Date,
+
         auditLog: [{
             action: {
                 type: String,
-                enum: ["LOGIN", "LOGOUT", "VIEW_RECORD", "VIEW_RECORDS", "DOWNLOAD", "REQUEST_CORRECTION", "CONSENT_CHANGE", "SUSPEND", "REACTIVATE"]
+                enum: ["REGISTER", "LOGIN", "LOGIN_FAILED", "LOGOUT", "VIEW_RECORD", "VIEW_RECORDS", 
+                       "DOWNLOAD", "REQUEST_CORRECTION", "CONSENT_CHANGE", "SUSPEND", 
+                       "REACTIVATE", "PASSWORD_CHANGE", "PASSWORD_RESET_REQUEST", 
+                       "PASSWORD_RESET_COMPLETE", "ACCOUNT_LOCKED", "ACCOUNT_UNLOCKED"]
             },
             timestamp: { type: Date, default: Date.now },
             ipAddress: String,
             userAgent: String,
             details: mongoose.Schema.Types.Mixed
-        }]
+        }],
+        preferences: {
+            emailNotifications: { type: Boolean, default: true },
+            smsNotifications: { type: Boolean, default: false },
+            language: { type: String, default: "en" }
+        }
     },
     
     // ============ AUDIT FIELDS ============
@@ -280,12 +286,11 @@ const patientSchema = new mongoose.Schema({
     
 }, { timestamps: true });
 
-// Virtual for full name
+// ============ VIRTUALS ============
 patientSchema.virtual("fullName").get(function() {
     return `${this.firstName} ${this.lastName}`;
 });
 
-// Virtual for age
 patientSchema.virtual("age").get(function() {
     if (!this.dateOfBirth) return null;
     const ageDiff = Date.now() - this.dateOfBirth.getTime();
@@ -293,7 +298,7 @@ patientSchema.virtual("age").get(function() {
     return Math.abs(ageDate.getUTCFullYear() - 1970);
 });
 
-// Indexes for performance
+// ============ INDEXES ============
 patientSchema.index({ nationalId: 1 });
 patientSchema.index({ firstName: 1, lastName: 1 });
 patientSchema.index({ "portalAccount.email": 1 });

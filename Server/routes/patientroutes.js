@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Patient = require("../models/Patient");
+// const PatientUser = require("../models/PatientUser"); // REMOVED - model no longer exists
 const { protect } = require("../middleware/auth");
 const { hasPermission, isApproved } = require("../middleware/rbac");
 
@@ -307,7 +308,8 @@ router.post("/:id/antenatal-visit", hasPermission("edit:patients"), async (req, 
         res.status(500).json({ error: error.message });
     }
 });
-// ============ PATIENT PORTAL MANAGEMENT (ADMIN ONLY) ============
+
+// ============ ADMIN PATIENT MANAGEMENT ============
 
 // GET all patients with portal account status (admin only)
 router.get("/admin/all", hasPermission("admin"), async (req, res) => {
@@ -316,22 +318,15 @@ router.get("/admin/all", hasPermission("admin"), async (req, res) => {
             .select("-clinicalProfile") // Exclude large clinical data
             .lean();
         
-        // Get portal account status for each patient
-        const patientUsers = await PatientUser.find({}, "patientId isActive email lastLogin");
-        
-        const patientMap = new Map();
-        patientUsers.forEach(pu => {
-            patientMap.set(pu.patientId.toString(), {
-                hasPortalAccount: true,
-                portalActive: pu.isActive,
-                portalEmail: pu.email,
-                portalLastLogin: pu.lastLogin
-            });
-        });
-        
+        // Get portal account status from the patient document itself
         const patientsWithPortal = patients.map(patient => ({
             ...patient,
-            portal: patientMap.get(patient._id.toString()) || {
+            portal: patient.portalAccount ? {
+                hasPortalAccount: patient.portalAccount.hasAccount || false,
+                portalActive: patient.portalAccount.isActive !== false,
+                portalEmail: patient.portalAccount.email,
+                portalLastLogin: patient.portalAccount.lastLogin
+            } : {
                 hasPortalAccount: false,
                 portalActive: null,
                 portalEmail: null,
@@ -356,24 +351,23 @@ router.get("/admin/:id", hasPermission("admin"), async (req, res) => {
             return res.status(404).json({ error: "Patient not found" });
         }
         
-        const portalAccount = await PatientUser.findOne({ patientId: patient._id });
-        
         res.json({
             ...patient.toObject(),
-            portal: portalAccount ? {
-                hasAccount: true,
-                isActive: portalAccount.isActive,
-                email: portalAccount.email,
-                phoneNumber: portalAccount.phoneNumber,
-                createdAt: portalAccount.createdAt,
-                lastLogin: portalAccount.lastLogin,
-                consentGiven: portalAccount.consentGiven,
-                consentDate: portalAccount.consentDate
+            portal: patient.portalAccount ? {
+                hasAccount: patient.portalAccount.hasAccount || false,
+                isActive: patient.portalAccount.isActive !== false,
+                email: patient.portalAccount.email,
+                phoneNumber: patient.portalAccount.phoneNumber,
+                createdAt: patient.portalAccount.createdAt,
+                lastLogin: patient.portalAccount.lastLogin,
+                consentGiven: patient.portalAccount.consentGiven,
+                consentDate: patient.portalAccount.consentDate
             } : {
                 hasAccount: false
             }
         });
     } catch (error) {
+        console.error("Error fetching patient for admin:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -381,36 +375,36 @@ router.get("/admin/:id", hasPermission("admin"), async (req, res) => {
 // SUSPEND patient portal access (admin only)
 router.patch("/admin/:id/suspend-portal", hasPermission("admin"), async (req, res) => {
     try {
-        const { reason, duration } = req.body; // duration in days (optional)
+        const { reason, duration } = req.body;
         
-        const portalAccount = await PatientUser.findOne({ patientId: req.params.id });
+        const patient = await Patient.findById(req.params.id);
+        if (!patient) {
+            return res.status(404).json({ error: "Patient not found" });
+        }
         
-        if (!portalAccount) {
+        if (!patient.portalAccount || !patient.portalAccount.hasAccount) {
             return res.status(404).json({ error: "Patient does not have a portal account" });
         }
         
-        portalAccount.isActive = false;
-        portalAccount.deactivatedAt = new Date();
-        portalAccount.deactivationReason = reason || "Suspended by administrator";
+        patient.portalAccount.isActive = false;
+        patient.portalAccount.suspendedAt = new Date();
+        patient.portalAccount.suspensionReason = reason || "Suspended by administrator";
         
         if (duration) {
-            portalAccount.reactivationDate = new Date(Date.now() + duration * 24 * 60 * 60 * 1000);
+            patient.portalAccount.suspensionDuration = parseInt(duration);
         }
         
-        await portalAccount.save();
-        
-        // Log the action
-        console.log(`Admin ${req.user.userId} suspended portal access for patient ${req.params.id}. Reason: ${reason}`);
+        await patient.save();
         
         res.json({
             message: `Portal access suspended${duration ? ` for ${duration} days` : ''}`,
             suspension: {
-                reason: portalAccount.deactivationReason,
-                suspendedAt: portalAccount.deactivatedAt,
-                reactivationDate: portalAccount.reactivationDate
+                reason: patient.portalAccount.suspensionReason,
+                suspendedAt: patient.portalAccount.suspendedAt
             }
         });
     } catch (error) {
+        console.error("Error suspending portal access:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -418,28 +412,32 @@ router.patch("/admin/:id/suspend-portal", hasPermission("admin"), async (req, re
 // REACTIVATE patient portal access (admin only)
 router.patch("/admin/:id/reactivate-portal", hasPermission("admin"), async (req, res) => {
     try {
-        const portalAccount = await PatientUser.findOne({ patientId: req.params.id });
+        const patient = await Patient.findById(req.params.id);
+        if (!patient) {
+            return res.status(404).json({ error: "Patient not found" });
+        }
         
-        if (!portalAccount) {
+        if (!patient.portalAccount || !patient.portalAccount.hasAccount) {
             return res.status(404).json({ error: "Patient does not have a portal account" });
         }
         
-        portalAccount.isActive = true;
-        portalAccount.deactivatedAt = null;
-        portalAccount.deactivationReason = null;
-        portalAccount.reactivationDate = null;
-        portalAccount.loginAttempts = 0;
-        portalAccount.lockedUntil = null;
+        patient.portalAccount.isActive = true;
+        patient.portalAccount.suspendedAt = null;
+        patient.portalAccount.suspensionReason = null;
+        patient.portalAccount.suspensionDuration = null;
+        patient.portalAccount.loginAttempts = 0;
+        patient.portalAccount.lockedUntil = null;
         
-        await portalAccount.save();
+        await patient.save();
         
         res.json({ message: "Portal access reactivated successfully" });
     } catch (error) {
+        console.error("Error reactivating portal access:", error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// DEACTIVATE patient completely (admin only - soft delete)
+// DEACTIVATE patient completely (admin only)
 router.patch("/admin/:id/deactivate", hasPermission("admin"), async (req, res) => {
     try {
         const { reason } = req.body;
@@ -452,18 +450,18 @@ router.patch("/admin/:id/deactivate", hasPermission("admin"), async (req, res) =
         patient.isActive = false;
         patient.deactivatedAt = new Date();
         patient.deactivationReason = reason || "Deactivated by administrator";
-        await patient.save();
+        patient.deactivatedBy = req.user._id;
         
         // Also suspend portal access if exists
-        const portalAccount = await PatientUser.findOne({ patientId: patient._id });
-        if (portalAccount) {
-            portalAccount.isActive = false;
-            portalAccount.deactivationReason = reason || "Patient account deactivated by administrator";
-            await portalAccount.save();
+        if (patient.portalAccount) {
+            patient.portalAccount.isActive = false;
         }
+        
+        await patient.save();
         
         res.json({ message: "Patient account deactivated successfully" });
     } catch (error) {
+        console.error("Error deactivating patient:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -479,19 +477,12 @@ router.patch("/admin/:id/reactivate", hasPermission("admin"), async (req, res) =
         patient.isActive = true;
         patient.deactivatedAt = null;
         patient.deactivationReason = null;
-        await patient.save();
         
-        // Also reactivate portal access if exists
-        const portalAccount = await PatientUser.findOne({ patientId: patient._id });
-        if (portalAccount) {
-            portalAccount.isActive = true;
-            portalAccount.deactivatedAt = null;
-            portalAccount.deactivationReason = null;
-            await portalAccount.save();
-        }
+        await patient.save();
         
         res.json({ message: "Patient account reactivated successfully" });
     } catch (error) {
+        console.error("Error reactivating patient:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -499,21 +490,23 @@ router.patch("/admin/:id/reactivate", hasPermission("admin"), async (req, res) =
 // GET patient access audit log (admin only)
 router.get("/admin/:id/audit", hasPermission("admin"), async (req, res) => {
     try {
-        const portalAccount = await PatientUser.findOne({ patientId: req.params.id })
-            .select("auditLog loginAttempts lockedUntil isActive deactivationReason");
+        const patient = await Patient.findById(req.params.id)
+            .select("portalAccount.auditLog portalAccount.loginAttempts portalAccount.lockedUntil portalAccount.isActive portalAccount.suspensionReason deactivationReason");
         
-        if (!portalAccount) {
-            return res.json({ message: "No portal account found for this patient", auditLog: [] });
+        if (!patient) {
+            return res.status(404).json({ error: "Patient not found" });
         }
         
         res.json({
-            isActive: portalAccount.isActive,
-            deactivationReason: portalAccount.deactivationReason,
-            loginAttempts: portalAccount.loginAttempts,
-            lockedUntil: portalAccount.lockedUntil,
-            auditLog: portalAccount.auditLog.slice(-50) // Last 50 entries
+            isActive: patient.isActive !== false,
+            deactivationReason: patient.deactivationReason,
+            loginAttempts: patient.portalAccount?.loginAttempts || 0,
+            lockedUntil: patient.portalAccount?.lockedUntil,
+            suspensionReason: patient.portalAccount?.suspensionReason,
+            auditLog: patient.portalAccount?.auditLog?.slice(-50) || []
         });
     } catch (error) {
+        console.error("Error fetching audit log:", error);
         res.status(500).json({ error: error.message });
     }
 });

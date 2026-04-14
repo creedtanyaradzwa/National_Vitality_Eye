@@ -12,6 +12,39 @@ import {
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
+// Create axios instance with base URL and interceptors
+const api = axios.create({
+    baseURL: 'http://localhost:5000/api/patient'
+});
+
+// Add token to every request
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('patientToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+// Handle response errors
+api.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            localStorage.removeItem('patientToken');
+            localStorage.removeItem('patientUser');
+            window.location.href = '/patient/login';
+            toast.error('Session expired. Please login again.');
+        }
+        return Promise.reject(error);
+    }
+);
+
 const PatientDashboard = () => {
     const navigate = useNavigate();
     const [records, setRecords] = useState([]);
@@ -21,44 +54,38 @@ const PatientDashboard = () => {
 
     const token = localStorage.getItem('patientToken');
 
-    // Wrap loadData in useCallback to prevent recreation
-    const loadData = useCallback(async () => {
+    // Check if user is logged in
+    useEffect(() => {
         if (!token) {
             navigate('/patient/login');
-            return;
         }
+    }, [token, navigate]);
+
+    // Load profile and records
+    const loadData = useCallback(async () => {
+        if (!token) return;
         
         setLoading(true);
         try {
             const [profileRes, recordsRes] = await Promise.all([
-                axios.get('http://localhost:5000/api/patient/profile', {
-                    headers: { Authorization: `Bearer ${token}` }
-                }),
-                axios.get('http://localhost:5000/api/patient/records', {
-                    headers: { Authorization: `Bearer ${token}` }
-                })
+                api.get('/profile'),
+                api.get('/records')
             ]);
             setProfile(profileRes.data);
             setRecords(recordsRes.data.records || []);
         } catch (error) {
             console.error('Error loading data:', error);
-            if (error.response?.status === 401) {
-                localStorage.removeItem('patientToken');
-                localStorage.removeItem('patientUser');
-                navigate('/patient/login');
-                toast.error('Session expired. Please login again.');
-            } else {
+            if (error.response?.status !== 401) {
                 toast.error('Failed to load data');
             }
         } finally {
             setLoading(false);
         }
-    }, [token, navigate]);
+    }, [token]);
 
-    // Fixed: useEffect with proper dependencies
     useEffect(() => {
         loadData();
-    }, [loadData]); // Now depends on loadData which is stable
+    }, [loadData]);
 
     const handleLogout = () => {
         localStorage.removeItem('patientToken');
