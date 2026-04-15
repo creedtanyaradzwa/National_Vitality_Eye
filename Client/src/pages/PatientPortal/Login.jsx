@@ -1,16 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon, UserIcon, PhoneIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { EnvelopeIcon, LockClosedIcon, EyeIcon, EyeSlashIcon, UserIcon, PhoneIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import axios from 'axios';
 
 const PatientLogin = () => {
     const navigate = useNavigate();
-    const location = useLocation();
     const [isLogin, setIsLogin] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
-    const [verified, setVerified] = useState(false);
     
     // Login form state
     const [loginData, setLoginData] = useState({
@@ -27,17 +25,6 @@ const PatientLogin = () => {
         confirmPassword: '',
         consent: false
     });
-
-    // Check for verification success in URL
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        if (params.get('verified') === 'true') {
-            setVerified(true);
-            toast.success('Email verified successfully! You can now login.');
-            // Remove the query parameter from URL
-            navigate('/patient/login', { replace: true });
-        }
-    }, [location, navigate]);
 
     const handleLoginChange = (e) => {
         setLoginData({
@@ -122,7 +109,8 @@ const PatientLogin = () => {
             });
             
             toast.success(response.data.message || 'Registration successful! Please check your email to verify your account.');
-            setIsLogin(true);
+            
+            // Clear form and switch to login
             setRegisterData({
                 nationalId: '',
                 email: '',
@@ -131,6 +119,7 @@ const PatientLogin = () => {
                 confirmPassword: '',
                 consent: false
             });
+            setIsLogin(true);
         } catch (error) {
             console.error('Registration error:', error);
             const errorMsg = error.response?.data?.error || 'Registration failed. Please try again.';
@@ -144,15 +133,10 @@ const PatientLogin = () => {
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-md">
                 <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8">
-                    {/* Verification Success Banner */}
-                    {verified && (
-                        <div className="mb-4 p-3 rounded-xl bg-green-500/20 border border-green-500/30 flex items-center space-x-2">
-                            <CheckCircleIcon className="h-5 w-5 text-green-400" />
-                            <span className="text-green-400 text-sm">Email verified! You can now login.</span>
-                        </div>
-                    )}
-
                     <div className="text-center mb-8">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-4">
+                            <UserIcon className="h-8 w-8 text-white" />
+                        </div>
                         <h1 className="text-3xl font-bold text-white mb-2">Patient Portal</h1>
                         <p className="text-gray-400">Access your medical records securely</p>
                     </div>
@@ -221,14 +205,11 @@ const PatientLogin = () => {
                                     </button>
                                 </div>
                             </div>
-                            
-                            {/* Forgot Password Link */}
                             <div className="text-right">
-                                <Link to="/patient/forgot-password" className="text-sm text-purple-400 hover:underline">
+                                <Link to="/patient/forgot-password" className="text-sm text-purple-400 hover:text-purple-300 transition">
                                     Forgot Password?
                                 </Link>
                             </div>
-                            
                             <button
                                 type="submit"
                                 disabled={loading}
@@ -345,6 +326,16 @@ const PatientLogin = () => {
                             </button>
                         </form>
                     )}
+                    
+                    {/* Footer Note */}
+                    <div className="mt-6 pt-4 border-t border-white/10 text-center">
+                        <p className="text-xs text-gray-500">
+                            By using this portal, you agree to our 
+                            <button className="text-purple-400 hover:underline mx-1">Terms of Service</button>
+                            and
+                            <button className="text-purple-400 hover:underline ml-1">Privacy Policy</button>
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

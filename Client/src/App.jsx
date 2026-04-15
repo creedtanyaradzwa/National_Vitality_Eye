@@ -19,12 +19,13 @@ import Admin from './pages/Admin';
 import Alerts from './pages/Alerts';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
-import OfflineStatus from './components/ui/OfflineStatus';
-import VitalsTrendPage from './pages/VitalsTrendPage';
+// Patient Portal Imports
 import PatientLogin from './pages/PatientPortal/Login';
 import PatientDashboard from './pages/PatientPortal/Dashboard';
+import PatientVerify from './pages/PatientPortal/Verify';
 import ForgotPassword from './pages/PatientPortal/ForgotPassword';
 import ResetPassword from './pages/PatientPortal/ResetPassword';
+import OfflineStatus from './components/ui/OfflineStatus';
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated, loading } = useAuth();
@@ -54,8 +55,21 @@ const ProtectedRoute = ({ children }) => {
 function AppRoutes() {
     return (
         <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Welcome />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            
+            {/* Patient Portal Routes (Public) */}
+            <Route path="/patient/login" element={<PatientLogin />} />
+            <Route path="/patient/verify" element={<PatientVerify />} />
+            <Route path="/patient/forgot-password" element={<ForgotPassword />} />
+            <Route path="/patient/reset-password" element={<ResetPassword />} />
+            
+            {/* Patient Portal Protected Routes */}
+            <Route path="/patient/dashboard" element={<PatientDashboard />} />
+            
+            {/* Main App Protected Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
             <Route path="/patients/:id" element={<ProtectedRoute><PatientDetailsPage /></ProtectedRoute>} />
@@ -66,12 +80,6 @@ function AppRoutes() {
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/patients/:id/vitals-trend" element={<ProtectedRoute><VitalsTrendPage /></ProtectedRoute>} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/patient/login" element={<PatientLogin />} />
-            <Route path="/patient/dashboard" element={<PatientDashboard />} />
-            <Route path="/patient/forgot-password" element={<ForgotPassword />} />
-            <Route path="/patient/reset-password/:token" element={<ResetPassword />} />
         </Routes>
     );
 }
@@ -82,33 +90,33 @@ function App() {
             <AuthProvider>
                 <AlertProvider>
                     <DataRefreshProvider>
-                       <Toaster 
-    position="top-right"
-    toastOptions={{
-        duration: 4000,
-        style: {
-            background: 'linear-gradient(135deg, #1E1B4B, #312E81)',
-            color: '#fff',
-            border: '1px solid rgba(79, 70, 229, 0.3)',
-            borderRadius: '12px',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
-        },
-        success: {
-            iconTheme: {
-                primary: '#10B981',
-                secondary: '#fff',
-            },
-        },
-        error: {
-            iconTheme: {
-                primary: '#EF4444',
-                secondary: '#fff',
-            },
-        },
-    }}
-/>
+                        <Toaster 
+                            position="top-right"
+                            toastOptions={{
+                                duration: 4000,
+                                style: {
+                                    background: 'linear-gradient(135deg, #1E1B4B, #312E81)',
+                                    color: '#fff',
+                                    border: '1px solid rgba(79, 70, 229, 0.3)',
+                                    borderRadius: '12px',
+                                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                                },
+                                success: {
+                                    iconTheme: {
+                                        primary: '#10B981',
+                                        secondary: '#fff',
+                                    },
+                                },
+                                error: {
+                                    iconTheme: {
+                                        primary: '#EF4444',
+                                        secondary: '#fff',
+                                    },
+                                },
+                            }}
+                        />
                         <AppRoutes />
-                         <OfflineStatus />
+                        <OfflineStatus />
                     </DataRefreshProvider>
                 </AlertProvider>
             </AuthProvider>

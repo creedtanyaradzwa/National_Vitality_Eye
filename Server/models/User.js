@@ -14,7 +14,11 @@ const UserSchema = new mongoose.Schema({
     position: String,
     
     // Authentication
-    userId: String,
+    userId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
     password: String,
     
     // RBAC & Status
@@ -33,10 +37,10 @@ const UserSchema = new mongoose.Schema({
     
     // Document Upload Fields
     verificationDocuments: {
-        nationalId: String,      // Path to uploaded national ID
-        employmentLetter: String, // Path to employment verification
-        practicingLicense: String, // Path to medical license (optional)
-        profilePhoto: String      // Path to profile photo (optional)
+        nationalId: String,
+        employmentLetter: String,
+        practicingLicense: String,
+        profilePhoto: String
     },
     
     // Admin Actions

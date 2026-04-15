@@ -3,12 +3,13 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const User = require("../models/User");
 const { protect } = require("../middleware/auth");
 const { hasRole, isApproved } = require("../middleware/rbac");
 const { validateRegistration, validateLogin, validatePasswordChange } = require("../middleware/validation");
 const { uploadDocuments, handleUploadError } = require("../middleware/upload");
-const { sendApprovalEmail, sendRejectionEmail } = require("../utils/emailService");
+const { sendApprovalEmail, sendRejectionEmail, sendRegistrationConfirmation } = require("../utils/emailService");
 
 const router = express.Router();
 
@@ -90,6 +91,13 @@ router.post("/register", uploadDocuments, handleUploadError, validateRegistratio
             isActive: true
         });
 
+        // Send registration confirmation email
+        await sendRegistrationConfirmation(
+            user.email,
+            `${user.firstName} ${user.lastName}`,
+            user.userId
+        );
+
         res.status(201).json({
             message: "Registration successful! Your documents have been submitted for review.",
             userId: user.userId,
@@ -112,6 +120,7 @@ router.post("/register", uploadDocuments, handleUploadError, validateRegistratio
                 });
             });
         }
+        console.error("Registration error:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -121,20 +130,26 @@ router.post("/login", validateLogin, async (req, res) => {
     try {
         const { userId, password } = req.body;
         
-        console.log(`Login attempt for userId: ${userId}`);
-
+        console.log("=== LOGIN ATTEMPT ===");
+        console.log("User ID:", userId);
+        
+        // Find user by userId (not _id)
         const user = await User.findOne({ userId }).select("+password");
         
         if (!user) {
-            console.log(`User not found: ${userId}`);
+            console.log("User not found:", userId);
             return res.status(401).json({ error: "Invalid User ID or password" });
         }
         
-        console.log(`User found: ${user.userId}, Role: ${user.role}, Has password: ${!!user.password}`);
+        console.log("User found:", user.userId);
+        console.log("Role:", user.role);
+        console.log("Has password:", !!user.password);
+        console.log("Approval status:", user.approvalStatus);
+        console.log("Is active:", user.isActive);
         
         // Check if user has a password set (approved users only)
         if (!user.password) {
-            console.log(`User has no password: ${userId}`);
+            console.log("No password set - user not approved");
             return res.status(401).json({
                 error: "Account not yet approved. Please wait for admin approval."
             });
@@ -142,19 +157,22 @@ router.post("/login", validateLogin, async (req, res) => {
         
         // Verify password
         const isValid = await bcrypt.compare(password, user.password);
-        console.log(`Password valid: ${isValid}`);
+        console.log("Password valid:", isValid);
         
         if (!isValid) {
+            console.log("Invalid password for user:", userId);
             return res.status(401).json({ error: "Invalid User ID or password" });
         }
 
         // Check if account is active
         if (!user.isActive) {
+            console.log("Account deactivated:", userId);
             return res.status(403).json({ error: "Account is deactivated. Contact admin." });
         }
 
         // Check approval status
         if (user.approvalStatus !== "approved") {
+            console.log("Account not approved:", user.approvalStatus);
             return res.status(403).json({
                 error: `Account ${user.approvalStatus}. Please wait for admin approval.`
             });
@@ -171,7 +189,8 @@ router.post("/login", validateLogin, async (req, res) => {
             { expiresIn: "7d" }
         );
 
-        console.log(`Login successful for: ${user.userId}`);
+        console.log("Login successful for:", userId);
+        console.log("====================");
         
         res.json({
             message: "Login successful",
@@ -209,7 +228,6 @@ router.get("/admin/pending-users", protect, hasRole("admin"), async (req, res) =
 });
 
 // 4. Approve or reject user
-// Approve or reject user
 router.post("/admin/process-approval/:userId", protect, hasRole("admin"), async (req, res) => {
     try {
         const { action, role, rejectionReason } = req.body;
@@ -238,20 +256,14 @@ router.post("/admin/process-approval/:userId", protect, hasRole("admin"), async 
 
             console.log(`✅ User approved: ${targetUser.userId} - Password: ${tempPassword}`);
 
-            // SEND EMAIL - THIS IS THE IMPORTANT PART
-            try {
-                await sendApprovalEmail(
-                    targetUser.email, 
-                    targetUser.userId, 
-                    tempPassword, 
-                    `${targetUser.firstName} ${targetUser.lastName}`,
-                    role
-                );
-                console.log(`✅ Approval email sent to ${targetUser.email}`);
-            } catch (emailError) {
-                console.error(`❌ Failed to send email: ${emailError.message}`);
-                // Email failed but user is still approved
-            }
+            // Send approval email
+            await sendApprovalEmail(
+                targetUser.email, 
+                targetUser.userId, 
+                tempPassword, 
+                `${targetUser.firstName} ${targetUser.lastName}`,
+                role
+            );
 
             res.json({
                 message: "User approved successfully",
@@ -277,16 +289,11 @@ router.post("/admin/process-approval/:userId", protect, hasRole("admin"), async 
             await targetUser.save();
 
             // Send rejection email
-            try {
-                await sendRejectionEmail(
-                    targetUser.email,
-                    `${targetUser.firstName} ${targetUser.lastName}`,
-                    rejectionReason
-                );
-                console.log(`✅ Rejection email sent to ${targetUser.email}`);
-            } catch (emailError) {
-                console.error(`❌ Failed to send rejection email: ${emailError.message}`);
-            }
+            await sendRejectionEmail(
+                targetUser.email,
+                `${targetUser.firstName} ${targetUser.lastName}`,
+                rejectionReason
+            );
 
             res.json({
                 message: "User rejected",
@@ -301,6 +308,7 @@ router.post("/admin/process-approval/:userId", protect, hasRole("admin"), async 
         res.status(500).json({ error: error.message });
     }
 });
+
 // 5. Get all users (admin only)
 router.get("/admin/users", protect, hasRole("admin"), async (req, res) => {
     try {

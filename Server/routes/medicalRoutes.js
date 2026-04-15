@@ -4,6 +4,7 @@ const MedicalRecord = require("../models/MedicalRecord");
 const Patient = require("../models/Patient");
 const { protect } = require("../middleware/auth");
 const { hasPermission, isApproved } = require("../middleware/rbac");
+const { sendMedicalReportEmail } = require("../utils/emailService");
 
 // All routes require authentication and approval
 router.use(protect, isApproved);
@@ -43,6 +44,7 @@ async function syncCurrentVitals(patientId) {
 // POST create medical record
 router.post("/", hasPermission("create:records"), async (req, res) => {
     try {
+        // Check if patient exists
         const patient = await Patient.findById(req.body.patientId);
         if (!patient) {
             return res.status(404).json({ error: "Patient not found" });
@@ -54,7 +56,19 @@ router.post("/", hasPermission("create:records"), async (req, res) => {
         });
         await record.save();
         
+        // Auto-sync current vitals with this new record
         await syncCurrentVitals(req.body.patientId);
+        
+        // ============ SEND MEDICAL REPORT EMAIL TO PATIENT ============
+        if (patient.portalAccount && patient.portalAccount.hasAccount && patient.portalAccount.isVerified && patient.portalAccount.email) {
+            await sendMedicalReportEmail(
+                patient.portalAccount.email,
+                `${patient.firstName} ${patient.lastName}`,
+                `${patient.firstName} ${patient.lastName}`,
+                req.body.visitType || "Medical Visit",
+                record.visitDate || new Date()
+            );
+        }
         
         const populatedRecord = await MedicalRecord.findById(record._id)
             .populate("patientId", "firstName lastName nationalId");
@@ -181,6 +195,7 @@ router.patch("/:id", hasPermission("edit:records"), async (req, res) => {
             return res.status(404).json({ error: "Record not found" });
         }
         
+        // Auto-sync current vitals after update
         await syncCurrentVitals(record.patientId._id || record.patientId);
         
         res.json(record);
@@ -197,6 +212,7 @@ router.delete("/:id", hasPermission("delete:records"), async (req, res) => {
             return res.status(404).json({ error: "Record not found" });
         }
         
+        // Re-sync current vitals with the next latest record after deletion
         await syncCurrentVitals(record.patientId);
         
         res.json({ message: "Record deleted successfully" });
@@ -227,7 +243,7 @@ router.get("/stats/top-diseases", hasPermission("view:analytics"), async (req, r
     }
 });
 
-// GET province statistics (SIMPLE WORKING VERSION - no period filter)
+// GET province statistics
 router.get("/stats/by-province", hasPermission("view:analytics"), async (req, res) => {
     try {
         const stats = await MedicalRecord.aggregate([
@@ -257,7 +273,6 @@ router.get("/stats/by-province", hasPermission("view:analytics"), async (req, re
         
         res.json(stats);
     } catch (error) {
-        console.error("Error fetching province stats:", error);
         res.status(500).json({ error: error.message });
     }
 });

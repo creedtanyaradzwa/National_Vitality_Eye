@@ -242,6 +242,12 @@ const patientSchema = new mongoose.Schema({
         createdAt: Date,
         lastLogin: Date,
         loginAttempts: { type: Number, default: 0 },
+        lockedUntil: Date,
+        isVerified: { type: Boolean, default: false },
+        verificationToken: String,
+        verificationExpires: Date,
+        passwordResetToken: String,
+        passwordResetExpires: Date,
         consentGiven: { type: Boolean, default: false },
         consentDate: Date,
         consentVersion: { type: String, default: "1.0" },
@@ -249,17 +255,14 @@ const patientSchema = new mongoose.Schema({
         suspendedAt: Date,
         suspensionReason: String,
         suspensionDuration: Number,
-        isVerified: { type: Boolean, default: false },
-        verificationToken: String,
-        verificationExpires: Date,
-
         auditLog: [{
             action: {
                 type: String,
-                enum: ["REGISTER", "LOGIN", "LOGIN_FAILED", "LOGOUT", "VIEW_RECORD", "VIEW_RECORDS", 
-                       "DOWNLOAD", "REQUEST_CORRECTION", "CONSENT_CHANGE", "SUSPEND", 
-                       "REACTIVATE", "PASSWORD_CHANGE", "PASSWORD_RESET_REQUEST", 
-                       "PASSWORD_RESET_COMPLETE", "ACCOUNT_LOCKED", "ACCOUNT_UNLOCKED"]
+                enum: ["REGISTER", "VERIFY_EMAIL", "LOGIN", "LOGIN_FAILED", "LOGOUT", 
+                       "VIEW_RECORD", "VIEW_RECORDS", "DOWNLOAD", "REQUEST_CORRECTION", 
+                       "CONSENT_CHANGE", "SUSPEND", "REACTIVATE", "PASSWORD_CHANGE", 
+                       "PASSWORD_RESET_REQUEST", "PASSWORD_RESET_COMPLETE", 
+                       "ACCOUNT_LOCKED", "ACCOUNT_UNLOCKED"]
             },
             timestamp: { type: Date, default: Date.now },
             ipAddress: String,
@@ -302,6 +305,8 @@ patientSchema.virtual("age").get(function() {
 patientSchema.index({ nationalId: 1 });
 patientSchema.index({ firstName: 1, lastName: 1 });
 patientSchema.index({ "portalAccount.email": 1 });
+patientSchema.index({ "portalAccount.verificationToken": 1 });
+patientSchema.index({ "portalAccount.passwordResetToken": 1 });
 patientSchema.index({ isActive: 1 });
 patientSchema.index({ createdAt: -1 });
 
