@@ -26,6 +26,7 @@ import PatientVerify from './pages/PatientPortal/Verify';
 import ForgotPassword from './pages/PatientPortal/ForgotPassword';
 import ResetPassword from './pages/PatientPortal/ResetPassword';
 import OfflineStatus from './components/ui/OfflineStatus';
+import VitalsTrendPage from './pages/VitalsTrendPage';
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated, loading } = useAuth();
@@ -70,6 +71,7 @@ function AppRoutes() {
             <Route path="/patient/dashboard" element={<PatientDashboard />} />
             
             {/* Main App Protected Routes */}
+            <Route path="/patients/:id/vitals-trend" element={<ProtectedRoute><VitalsTrendPage /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
             <Route path="/patients/:id" element={<ProtectedRoute><PatientDetailsPage /></ProtectedRoute>} />

@@ -8,12 +8,9 @@ import {
     addChronicCondition,
     addMedication,
     updateVitalSigns,
-    addRiskFactor,
-    getPatientVitalsHistory,
-    getLatestVitals
+    addRiskFactor
 } from '../services/api';
 import { useAuth } from '../context/useAuth';
-import VitalsTrend from '../components/patients/VitalsTrend';
 import {
     UserIcon,
     EnvelopeIcon,
@@ -32,10 +29,12 @@ import {
     ArrowLeftIcon,
     SparklesIcon,
     CpuChipIcon,
-    ExclamationTriangleIcon,
-    ChartBarIcon
+    ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import PregnancyInfo from '../components/patients/PregnancyInfo';
+import PediatricInfo from '../components/patients/PediatricInfo';
+import SpecialNeeds from '../components/patients/SpecialNeeds';
 
 const PatientDetailsPage = () => {
     const { id } = useParams();
@@ -46,8 +45,6 @@ const PatientDetailsPage = () => {
     const [patient, setPatient] = useState(null);
     const [records, setRecords] = useState([]);
     const [clinicalProfile, setClinicalProfile] = useState(null);
-    const [vitalsHistory, setVitalsHistory] = useState([]);
-    const [latestVitals, setLatestVitals] = useState(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
     const [showAddModal, setShowAddModal] = useState(false);
@@ -58,20 +55,15 @@ const PatientDetailsPage = () => {
     const loadPatientData = useCallback(async () => {
         setLoading(true);
         try {
-            const [patientRes, recordsRes, clinicalRes, vitalsRes, latestVitalsRes] = await Promise.all([
+            const [patientRes, recordsRes, clinicalRes] = await Promise.all([
                 getPatient(id),
                 getPatientRecords(id),
-                getClinicalProfile(id),
-                getPatientVitalsHistory(id),
-                getLatestVitals(id)
+                getClinicalProfile(id)
             ]);
             setPatient(patientRes.data);
             setRecords(recordsRes.data);
             setClinicalProfile(clinicalRes.data || {});
-            setVitalsHistory(vitalsRes.data);
-            setLatestVitals(latestVitalsRes.data);
-        } catch (error) {
-            console.error('Error loading patient data:', error);
+        } catch {
             toast.error('Failed to load patient data');
             navigate('/patients');
         } finally {
@@ -83,14 +75,39 @@ const PatientDetailsPage = () => {
         loadPatientData();
     }, [loadPatientData]);
 
-    const loadVitalsHistory = async () => {
+    // Handler for updating pregnancy info
+    const handleUpdatePregnancy = async (data) => {
         try {
-            const response = await getPatientVitalsHistory(id);
-            setVitalsHistory(response.data);
-            const latestResponse = await getLatestVitals(id);
-            setLatestVitals(latestResponse.data);
-        } catch (error) {
-            console.error('Failed to load vitals history', error);
+            const updatedProfile = { ...clinicalProfile, pregnancyInfo: data };
+            await updateClinicalProfile(id, updatedProfile);
+            toast.success('Pregnancy information updated');
+            loadPatientData();
+        } catch {
+            toast.error('Failed to update pregnancy information');
+        }
+    };
+
+    // Handler for updating pediatric info
+    const handleUpdatePediatric = async (data) => {
+        try {
+            const updatedProfile = { ...clinicalProfile, pediatricInfo: data };
+            await updateClinicalProfile(id, updatedProfile);
+            toast.success('Pediatric information updated');
+            loadPatientData();
+        } catch {
+            toast.error('Failed to update pediatric information');
+        }
+    };
+
+    // Handler for updating special needs
+    const handleUpdateSpecialNeeds = async (data) => {
+        try {
+            const updatedProfile = { ...clinicalProfile, specialNeeds: data };
+            await updateClinicalProfile(id, updatedProfile);
+            toast.success('Special needs information updated');
+            loadPatientData();
+        } catch {
+            toast.error('Failed to update special needs information');
         }
     };
 
@@ -244,9 +261,11 @@ const PatientDetailsPage = () => {
         { id: 'family', label: 'Family', icon: HeartIcon },
         { id: 'immunizations', label: 'Immunizations', icon: SparklesIcon },
         { id: 'vitals', label: 'Vitals', icon: HeartIcon },
-        { id: 'vitals-trend', label: 'Trend', icon: ChartBarIcon },
         { id: 'records', label: 'Records', icon: DocumentTextIcon },
-        { id: 'risk', label: 'Risk', icon: ExclamationTriangleIcon }
+        { id: 'risk', label: 'Risk', icon: ExclamationTriangleIcon },
+        { id: 'pregnancy', label: 'Pregnancy', icon: HeartIcon },
+        { id: 'pediatric', label: 'Pediatric', icon: UserIcon },
+        { id: 'special-needs', label: 'Special Needs', icon: ShieldCheckIcon }
     ];
 
     if (loading) {
@@ -464,100 +483,36 @@ const PatientDetailsPage = () => {
                 </div>
             )}
 
-            {/* Conditions Tab */}
-            {activeTab === 'conditions' && (
+            {/* Pregnancy Tab */}
+            {activeTab === 'pregnancy' && (
                 <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-white flex items-center">
-                            <BeakerIcon className="h-5 w-5 mr-2 text-purple-400" />
-                            Chronic Conditions
-                        </h2>
-                        {canEdit && (
-                            <button
-                                onClick={() => {
-                                    setModalType('condition');
-                                    setFormData({ condition: '', status: 'Active', severity: 'Moderate', notes: '' });
-                                    setShowAddModal(true);
-                                }}
-                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center space-x-1"
-                            >
-                                <PlusIcon className="h-4 w-4" />
-                                <span>Add Condition</span>
-                            </button>
-                        )}
-                    </div>
-                    {clinicalProfile?.chronicConditions?.length === 0 ? (
-                        <p className="text-gray-400">No chronic conditions recorded</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {clinicalProfile?.chronicConditions?.map((condition, idx) => (
-                                <div key={idx} className="rounded-xl bg-white/5 border border-white/10 p-4 hover:border-purple-500/30 transition-all duration-300">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="font-semibold text-white">{condition.condition}</h3>
-                                            <p className="text-sm text-gray-400">Diagnosed: {formatDate(condition.diagnosisDate)}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                                                condition.status === 'Controlled' ? 'bg-green-500/20 text-green-400' :
-                                                condition.status === 'Active' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                'bg-red-500/20 text-red-400'
-                                            }`}>
-                                                {condition.status}
-                                            </span>
-                                            <p className="text-xs text-gray-500 mt-1">Severity: {condition.severity}</p>
-                                        </div>
-                                    </div>
-                                    {condition.notes && <p className="text-sm text-gray-400 mt-2">{condition.notes}</p>}
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    <PregnancyInfo 
+                        pregnancyInfo={clinicalProfile?.pregnancyInfo} 
+                        onUpdate={handleUpdatePregnancy}
+                        canEdit={canEdit}
+                    />
                 </div>
             )}
 
-            {/* Medications Tab */}
-            {activeTab === 'medications' && (
+            {/* Pediatric Tab */}
+            {activeTab === 'pediatric' && (
                 <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-white flex items-center">
-                            <ClipboardDocumentListIcon className="h-5 w-5 mr-2 text-purple-400" />
-                            Current Medications
-                        </h2>
-                        {canEdit && (
-                            <button
-                                onClick={() => {
-                                    setModalType('medication');
-                                    setFormData({ medication: '', dosage: '', frequency: '', active: true });
-                                    setShowAddModal(true);
-                                }}
-                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center space-x-1"
-                            >
-                                <PlusIcon className="h-4 w-4" />
-                                <span>Add Medication</span>
-                            </button>
-                        )}
-                    </div>
-                    {clinicalProfile?.currentMedications?.filter(m => m.active !== false).length === 0 ? (
-                        <p className="text-gray-400">No current medications</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {clinicalProfile?.currentMedications?.filter(m => m.active !== false).map((med, idx) => (
-                                <div key={idx} className="rounded-xl bg-white/5 border border-white/10 p-4 hover:border-purple-500/30 transition-all duration-300">
-                                    <div className="flex justify-between">
-                                        <div>
-                                            <h3 className="font-semibold text-white">{med.medication}</h3>
-                                            <p className="text-sm text-gray-400">{med.dosage} - {med.frequency}</p>
-                                            <p className="text-xs text-gray-500">Prescribed: {formatDate(med.prescribedDate)}</p>
-                                        </div>
-                                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-green-500/20 text-green-400">
-                                            Active
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
+                    <PediatricInfo 
+                        pediatricInfo={clinicalProfile?.pediatricInfo} 
+                        onUpdate={handleUpdatePediatric}
+                        canEdit={canEdit}
+                    />
+                </div>
+            )}
+
+            {/* Special Needs Tab */}
+            {activeTab === 'special-needs' && (
+                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
+                    <SpecialNeeds 
+                        specialNeeds={clinicalProfile?.specialNeeds} 
+                        onUpdate={handleUpdateSpecialNeeds}
+                        canEdit={canEdit}
+                    />
                 </div>
             )}
 
@@ -573,7 +528,7 @@ const PatientDetailsPage = () => {
                             <button
                                 onClick={() => {
                                     setModalType('allergy');
-                                    setFormData({ allergen: '', reaction: '', severity: 'Moderate', notes: '' });
+                                    setFormData({ allergen: '', reaction: '', severity: 'Moderate' });
                                     setShowAddModal(true);
                                 }}
                                 className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center space-x-1"
@@ -769,79 +724,151 @@ const PatientDetailsPage = () => {
                 </div>
             )}
 
-            {/* Current Vital Signs Tab - NOW USING latestVitals */}
-            {activeTab === 'vitals' && (
+            {/* Conditions Tab */}
+            {activeTab === 'conditions' && (
                 <div className="rounded-xl bg-white/5 border border-white/10 p-6">
                     <div className="flex justify-between items-center mb-4">
                         <h2 className="text-xl font-bold text-white flex items-center">
-                            <HeartIcon className="h-5 w-5 mr-2 text-purple-400" />
-                            Current Vital Signs
+                            <BeakerIcon className="h-5 w-5 mr-2 text-purple-400" />
+                            Chronic Conditions
                         </h2>
-                        {latestVitals?.recordedAt && (
-                            <span className="text-xs text-gray-500">
-                                Recorded: {new Date(latestVitals.recordedAt).toLocaleDateString()}
-                            </span>
+                        {canEdit && (
+                            <button
+                                onClick={() => {
+                                    setModalType('condition');
+                                    setFormData({ condition: '', status: 'Active', severity: 'Moderate' });
+                                    setShowAddModal(true);
+                                }}
+                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center space-x-1"
+                            >
+                                <PlusIcon className="h-4 w-4" />
+                                <span>Add Condition</span>
+                            </button>
                         )}
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="rounded-xl bg-white/5 p-4 text-center">
-                            <p className="text-sm text-gray-400">Temperature</p>
-                            <p className="text-xl font-bold text-white">{latestVitals?.vitalSigns?.temperature || '-'} °C</p>
-                        </div>
-                        <div className="rounded-xl bg-white/5 p-4 text-center">
-                            <p className="text-sm text-gray-400">Blood Pressure</p>
-                            <p className="text-xl font-bold text-white">
-                                {latestVitals?.vitalSigns?.bloodPressure?.systolic || '-'}/{latestVitals?.vitalSigns?.bloodPressure?.diastolic || '-'}
-                            </p>
-                        </div>
-                        <div className="rounded-xl bg-white/5 p-4 text-center">
-                            <p className="text-sm text-gray-400">Heart Rate</p>
-                            <p className="text-xl font-bold text-white">{latestVitals?.vitalSigns?.heartRate || '-'} bpm</p>
-                        </div>
-                        <div className="rounded-xl bg-white/5 p-4 text-center">
-                            <p className="text-sm text-gray-400">Respiratory Rate</p>
-                            <p className="text-xl font-bold text-white">{latestVitals?.vitalSigns?.respiratoryRate || '-'}/min</p>
-                        </div>
-                        <div className="rounded-xl bg-white/5 p-4 text-center">
-                            <p className="text-sm text-gray-400">O₂ Saturation</p>
-                            <p className="text-xl font-bold text-white">{latestVitals?.vitalSigns?.oxygenSaturation || '-'}%</p>
-                        </div>
-                        <div className="rounded-xl bg-white/5 p-4 text-center">
-                            <p className="text-sm text-gray-400">Weight</p>
-                            <p className="text-xl font-bold text-white">{latestVitals?.vitalSigns?.weight || '-'} kg</p>
-                        </div>
-                        <div className="rounded-xl bg-white/5 p-4 text-center">
-                            <p className="text-sm text-gray-400">BMI</p>
-                            <p className="text-xl font-bold text-white">{latestVitals?.vitalSigns?.bmi || '-'}</p>
-                        </div>
-                        <div className="rounded-xl bg-white/5 p-4 text-center">
-                            <p className="text-sm text-gray-400">Pain Score</p>
-                            <p className="text-xl font-bold text-white">{latestVitals?.vitalSigns?.painScore || '-'}/10</p>
-                        </div>
-                    </div>
-                    {latestVitals?.visitType && (
-                        <div className="mt-4 text-center text-xs text-gray-500">
-                            From {latestVitals.visitType} visit on {new Date(latestVitals.recordedAt).toLocaleDateString()}
-                        </div>
-                    )}
-                    {(!latestVitals?.vitalSigns || Object.keys(latestVitals.vitalSigns).filter(k => latestVitals.vitalSigns[k]).length === 0) && (
-                        <div className="text-center py-8 text-gray-400">
-                            <HeartIcon className="h-12 w-12 mx-auto mb-3 text-gray-600" />
-                            <p>No vital signs recorded yet</p>
-                            <p className="text-sm text-gray-500 mt-1">Add a medical record with vitals to display here</p>
+                    {clinicalProfile?.chronicConditions?.length === 0 ? (
+                        <p className="text-gray-400">No chronic conditions recorded</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {clinicalProfile?.chronicConditions?.map((condition, idx) => (
+                                <div key={idx} className="rounded-xl bg-white/5 border border-white/10 p-4 hover:border-purple-500/30 transition-all duration-300">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="font-semibold text-white">{condition.condition}</h3>
+                                            <p className="text-sm text-gray-400">Diagnosed: {formatDate(condition.diagnosisDate)}</p>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                                                condition.status === 'Controlled' ? 'bg-green-500/20 text-green-400' :
+                                                condition.status === 'Active' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                'bg-red-500/20 text-red-400'
+                                            }`}>
+                                                {condition.status}
+                                            </span>
+                                            <p className="text-xs text-gray-500 mt-1">Severity: {condition.severity}</p>
+                                        </div>
+                                    </div>
+                                    {condition.notes && <p className="text-sm text-gray-400 mt-2">{condition.notes}</p>}
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>
             )}
 
-            {/* Vitals Trend Tab */}
-            {activeTab === 'vitals-trend' && (
+            {/* Medications Tab */}
+            {activeTab === 'medications' && (
                 <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <VitalsTrend 
-                        vitalsHistory={vitalsHistory} 
-                        patientName={`${patient?.firstName} ${patient?.lastName}`}
-                        onRefresh={loadVitalsHistory}
-                    />
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold text-white flex items-center">
+                            <ClipboardDocumentListIcon className="h-5 w-5 mr-2 text-purple-400" />
+                            Current Medications
+                        </h2>
+                        {canEdit && (
+                            <button
+                                onClick={() => {
+                                    setModalType('medication');
+                                    setFormData({ medication: '', dosage: '', frequency: '', active: true });
+                                    setShowAddModal(true);
+                                }}
+                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center space-x-1"
+                            >
+                                <PlusIcon className="h-4 w-4" />
+                                <span>Add Medication</span>
+                            </button>
+                        )}
+                    </div>
+                    {clinicalProfile?.currentMedications?.filter(m => m.active !== false).length === 0 ? (
+                        <p className="text-gray-400">No current medications</p>
+                    ) : (
+                        <div className="space-y-3">
+                            {clinicalProfile?.currentMedications?.filter(m => m.active !== false).map((med, idx) => (
+                                <div key={idx} className="rounded-xl bg-white/5 border border-white/10 p-4 hover:border-purple-500/30 transition-all duration-300">
+                                    <div className="flex justify-between">
+                                        <div>
+                                            <h3 className="font-semibold text-white">{med.medication}</h3>
+                                            <p className="text-sm text-gray-400">{med.dosage} - {med.frequency}</p>
+                                            <p className="text-xs text-gray-500">Prescribed: {formatDate(med.prescribedDate)}</p>
+                                        </div>
+                                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-green-500/20 text-green-400">
+                                            Active
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Vital Signs Tab */}
+            {activeTab === 'vitals' && (
+                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
+                    <div className="flex justify-between items-center mb-4">
+                        <h2 className="text-xl font-bold text-white flex items-center">
+                            <HeartIcon className="h-5 w-5 mr-2 text-purple-400" />
+                            Vital Signs
+                        </h2>
+                        {canEdit && (
+                            <button
+                                onClick={() => {
+                                    setEditingField('vitals');
+                                    setFormData(clinicalProfile?.vitalSigns || {});
+                                }}
+                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300"
+                            >
+                                Update Vitals
+                            </button>
+                        )}
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div className="rounded-xl bg-white/5 p-4 text-center">
+                            <p className="text-sm text-gray-400">Height</p>
+                            <p className="text-xl font-bold text-white">{clinicalProfile?.vitalSigns?.height || '-'} cm</p>
+                        </div>
+                        <div className="rounded-xl bg-white/5 p-4 text-center">
+                            <p className="text-sm text-gray-400">Weight</p>
+                            <p className="text-xl font-bold text-white">{clinicalProfile?.vitalSigns?.weight || '-'} kg</p>
+                        </div>
+                        <div className="rounded-xl bg-white/5 p-4 text-center">
+                            <p className="text-sm text-gray-400">BMI</p>
+                            <p className="text-xl font-bold text-white">{clinicalProfile?.vitalSigns?.bmi || '-'}</p>
+                        </div>
+                        <div className="rounded-xl bg-white/5 p-4 text-center">
+                            <p className="text-sm text-gray-400">Blood Pressure</p>
+                            <p className="text-xl font-bold text-white">
+                                {clinicalProfile?.vitalSigns?.bloodPressure?.systolic || '-'}/{clinicalProfile?.vitalSigns?.bloodPressure?.diastolic || '-'}
+                            </p>
+                        </div>
+                        <div className="rounded-xl bg-white/5 p-4 text-center">
+                            <p className="text-sm text-gray-400">Heart Rate</p>
+                            <p className="text-xl font-bold text-white">{clinicalProfile?.vitalSigns?.heartRate || '-'} bpm</p>
+                        </div>
+                        <div className="rounded-xl bg-white/5 p-4 text-center">
+                            <p className="text-sm text-gray-400">Temperature</p>
+                            <p className="text-xl font-bold text-white">{clinicalProfile?.vitalSigns?.temperature || '-'} °C</p>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -958,7 +985,7 @@ const PatientDetailsPage = () => {
                 </div>
             )}
 
-            {/* Add Modals */}
+            {/* Add Modals - same as before with modern styling */}
             {showAddModal && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
                     <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-md mx-4">
@@ -996,8 +1023,8 @@ const PatientDetailsPage = () => {
                                 )}
                                 {modalType === 'allergy' && (
                                     <>
-                                        <input type="text" placeholder="Allergen" value={formData.allergen || ''} onChange={(e) => setFormData({ ...formData, allergen: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                        <input type="text" placeholder="Reaction" value={formData.reaction || ''} onChange={(e) => setFormData({ ...formData, reaction: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
+                                        <input type="text" placeholder="Allergen (e.g., Penicillin, Peanuts)" value={formData.allergen || ''} onChange={(e) => setFormData({ ...formData, allergen: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
+                                        <input type="text" placeholder="Reaction (e.g., Rash, Swelling)" value={formData.reaction || ''} onChange={(e) => setFormData({ ...formData, reaction: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
                                         <select value={formData.severity || 'Moderate'} onChange={(e) => setFormData({ ...formData, severity: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500">
                                             <option value="Mild">Mild</option><option value="Moderate">Moderate</option><option value="Severe">Severe</option><option value="Life-Threatening">Life-Threatening</option>
                                         </select>
@@ -1018,7 +1045,7 @@ const PatientDetailsPage = () => {
                                         <select value={formData.member || ''} onChange={(e) => setFormData({ ...formData, member: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500">
                                             <option value="">Select Family Member</option><option value="mother">Mother</option><option value="father">Father</option><option value="siblings">Siblings</option>
                                         </select>
-                                        <input type="text" placeholder="Condition" value={formData.condition || ''} onChange={(e) => setFormData({ ...formData, condition: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
+                                        <input type="text" placeholder="Condition (e.g., Diabetes, Hypertension)" value={formData.condition || ''} onChange={(e) => setFormData({ ...formData, condition: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
                                         <textarea placeholder="Additional Notes" value={formData.notes || ''} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" rows="2" />
                                     </>
                                 )}
@@ -1026,7 +1053,7 @@ const PatientDetailsPage = () => {
                                     <>
                                         <input type="text" placeholder="Vaccine Name" value={formData.vaccine || ''} onChange={(e) => setFormData({ ...formData, vaccine: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
                                         <input type="date" placeholder="Date Given" value={formData.dateGiven || ''} onChange={(e) => setFormData({ ...formData, dateGiven: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500" />
-                                        <input type="date" placeholder="Next Due Date" value={formData.nextDueDate || ''} onChange={(e) => setFormData({ ...formData, nextDueDate: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500" />
+                                        <input type="date" placeholder="Next Due Date (Optional)" value={formData.nextDueDate || ''} onChange={(e) => setFormData({ ...formData, nextDueDate: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500" />
                                         <input type="text" placeholder="Administered By" value={formData.administeredBy || ''} onChange={(e) => setFormData({ ...formData, administeredBy: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
                                         <textarea placeholder="Notes" value={formData.notes || ''} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" rows="2" />
                                     </>

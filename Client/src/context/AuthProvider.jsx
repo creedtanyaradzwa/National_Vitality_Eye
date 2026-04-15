@@ -1,4 +1,3 @@
-// src/context/AuthProvider.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { login as loginApi, getProfile } from '../services/api';
 import toast from 'react-hot-toast';

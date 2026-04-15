@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -15,7 +14,9 @@
     "@heroicons/react": "^2.2.0",
     "axios": "^1.13.6",
     "date-fns": "^4.1.0",
+    "html2canvas": "^1.4.1",
     "idb": "^8.0.3",
+    "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",

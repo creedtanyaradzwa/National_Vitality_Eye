@@ -7,12 +7,12 @@ import {
     ArrowLeftOnRectangleIcon,
     ShieldCheckIcon,
     EyeIcon,
-    ClockIcon
+    ClockIcon,
+    ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { DocumentArrowDownIcon } from '@heroicons/react/24/outline';
-
+import { generateMedicalRecordsPDF } from '../../utils/pdfGenerator';
 
 // Create axios instance with base URL and interceptors
 const api = axios.create({
@@ -53,6 +53,7 @@ const PatientDashboard = () => {
     const [profile, setProfile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [selectedRecord, setSelectedRecord] = useState(null);
+    const [downloading, setDownloading] = useState(false);
 
     const token = localStorage.getItem('patientToken');
 
@@ -94,6 +95,24 @@ const PatientDashboard = () => {
         localStorage.removeItem('patientUser');
         navigate('/patient/login');
         toast.success('Logged out successfully');
+    };
+
+    const handleDownloadPDF = async () => {
+        if (!profile || records.length === 0) {
+            toast.error('No records to download');
+            return;
+        }
+        
+        setDownloading(true);
+        try {
+            await generateMedicalRecordsPDF(profile, records);
+            toast.success('PDF downloaded successfully!');
+        } catch (error) {
+            console.error('PDF generation error:', error);
+            toast.error('Failed to generate PDF');
+        } finally {
+            setDownloading(false);
+        }
     };
 
     const formatDate = (date) => {
@@ -164,9 +183,20 @@ const PatientDashboard = () => {
                                     <p className="text-gray-400 text-sm">Here's a summary of your medical information</p>
                                 </div>
                             </div>
-                            <div className="flex items-center space-x-2 text-sm text-gray-400">
-                                <ClockIcon className="h-4 w-4" />
-                                <span>Last updated: {new Date().toLocaleDateString()}</span>
+                            <div className="flex items-center space-x-3">
+                                <div className="flex items-center space-x-2 text-sm text-gray-400">
+                                    <ClockIcon className="h-4 w-4" />
+                                    <span>Last updated: {new Date().toLocaleDateString()}</span>
+                                </div>
+                                {/* Download PDF Button */}
+                                <button
+                                    onClick={handleDownloadPDF}
+                                    disabled={downloading || records.length === 0}
+                                    className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+                                >
+                                    <ArrowDownTrayIcon className="h-5 w-5" />
+                                    <span>{downloading ? 'Generating...' : 'Download PDF'}</span>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -205,11 +235,21 @@ const PatientDashboard = () => {
 
                 {/* Medical Records Section */}
                 <div className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
-                    <div className="p-5 border-b border-white/10 bg-white/5">
+                    <div className="p-5 border-b border-white/10 bg-white/5 flex justify-between items-center">
                         <div>
                             <h2 className="text-xl font-bold text-white">Your Medical Records</h2>
                             <p className="text-gray-400 text-sm mt-1">Click on any record to view full details</p>
                         </div>
+                        {records.length > 0 && (
+                            <button
+                                onClick={handleDownloadPDF}
+                                disabled={downloading}
+                                className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-all duration-300 text-sm"
+                            >
+                                <ArrowDownTrayIcon className="h-4 w-4" />
+                                <span>Download All</span>
+                            </button>
+                        )}
                     </div>
 
                     {records.length === 0 ? (
@@ -267,7 +307,7 @@ const PatientDashboard = () => {
                 </div>
             </div>
 
-            {/* Record Detail Modal */}
+            {/* Record Detail Modal - same as before */}
             {selectedRecord && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
                     <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-2xl max-h-[85vh] overflow-y-auto">
@@ -283,7 +323,7 @@ const PatientDashboard = () => {
                                 </button>
                             </div>
                             
-                            {/* Modal Body */}
+                            {/* Modal Body - same as before */}
                             <div className="p-5 space-y-4">
                                 {/* Visit Information */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

@@ -4,7 +4,6 @@ const MedicalRecord = require("../models/MedicalRecord");
 const Patient = require("../models/Patient");
 const { protect } = require("../middleware/auth");
 const { hasPermission, isApproved } = require("../middleware/rbac");
-const { sendMedicalReportEmail } = require("../utils/emailService");
 
 // All routes require authentication and approval
 router.use(protect, isApproved);
@@ -41,7 +40,7 @@ async function syncCurrentVitals(patientId) {
 
 // ============ MEDICAL RECORD MANAGEMENT ============
 
-// POST create medical record
+// POST create medical record - OPTIMIZED (no email)
 router.post("/", hasPermission("create:records"), async (req, res) => {
     try {
         // Check if patient exists
@@ -56,19 +55,10 @@ router.post("/", hasPermission("create:records"), async (req, res) => {
         });
         await record.save();
         
-        // Auto-sync current vitals with this new record
-        await syncCurrentVitals(req.body.patientId);
-        
-        // ============ SEND MEDICAL REPORT EMAIL TO PATIENT ============
-        if (patient.portalAccount && patient.portalAccount.hasAccount && patient.portalAccount.isVerified && patient.portalAccount.email) {
-            await sendMedicalReportEmail(
-                patient.portalAccount.email,
-                `${patient.firstName} ${patient.lastName}`,
-                `${patient.firstName} ${patient.lastName}`,
-                req.body.visitType || "Medical Visit",
-                record.visitDate || new Date()
-            );
-        }
+        // Run sync in background (non-blocking)
+        setImmediate(() => {
+            syncCurrentVitals(req.body.patientId).catch(console.error);
+        });
         
         const populatedRecord = await MedicalRecord.findById(record._id)
             .populate("patientId", "firstName lastName nationalId");
@@ -195,8 +185,10 @@ router.patch("/:id", hasPermission("edit:records"), async (req, res) => {
             return res.status(404).json({ error: "Record not found" });
         }
         
-        // Auto-sync current vitals after update
-        await syncCurrentVitals(record.patientId._id || record.patientId);
+        // Auto-sync current vitals after update (background)
+        setImmediate(() => {
+            syncCurrentVitals(record.patientId._id || record.patientId).catch(console.error);
+        });
         
         res.json(record);
     } catch (error) {
@@ -212,8 +204,10 @@ router.delete("/:id", hasPermission("delete:records"), async (req, res) => {
             return res.status(404).json({ error: "Record not found" });
         }
         
-        // Re-sync current vitals with the next latest record after deletion
-        await syncCurrentVitals(record.patientId);
+        // Re-sync current vitals with the next latest record after deletion (background)
+        setImmediate(() => {
+            syncCurrentVitals(record.patientId).catch(console.error);
+        });
         
         res.json({ message: "Record deleted successfully" });
     } catch (error) {

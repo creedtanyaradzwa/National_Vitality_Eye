@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { EnvelopeIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { EnvelopeIcon, ArrowLeftIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
@@ -39,7 +40,10 @@ const ForgotPassword = () => {
                         </div>
                         <h1 className="text-2xl font-bold text-white mb-2">Check Your Email</h1>
                         <p className="text-gray-400 mb-6">
-                            If an account exists with {email}, you will receive a password reset link.
+                            We've sent a password reset link to <strong className="text-purple-400">{email}</strong>
+                        </p>
+                        <p className="text-gray-500 text-sm mb-6">
+                            If you don't see it, check your spam folder.
                         </p>
                         <Link
                             to="/patient/login"
@@ -58,6 +62,9 @@ const ForgotPassword = () => {
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-md">
                 <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8">
                     <div className="text-center mb-8">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-4">
+                            <EnvelopeIcon className="h-8 w-8 text-white" />
+                        </div>
                         <h1 className="text-2xl font-bold text-white mb-2">Forgot Password?</h1>
                         <p className="text-gray-400 text-sm">
                             Enter your email address and we'll send you a link to reset your password.

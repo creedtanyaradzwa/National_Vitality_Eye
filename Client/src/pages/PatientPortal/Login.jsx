@@ -72,7 +72,6 @@ const PatientLogin = () => {
     const handleRegisterSubmit = async (e) => {
         e.preventDefault();
         
-        // Validation
         if (!registerData.nationalId) {
             toast.error('National ID is required');
             return;
@@ -110,7 +109,6 @@ const PatientLogin = () => {
             
             toast.success(response.data.message || 'Registration successful! Please check your email to verify your account.');
             
-            // Clear form and switch to login
             setRegisterData({
                 nationalId: '',
                 email: '',
@@ -205,6 +203,7 @@ const PatientLogin = () => {
                                     </button>
                                 </div>
                             </div>
+                            {/* Forgot Password Link */}
                             <div className="text-right">
                                 <Link to="/patient/forgot-password" className="text-sm text-purple-400 hover:text-purple-300 transition">
                                     Forgot Password?
@@ -327,7 +326,6 @@ const PatientLogin = () => {
                         </form>
                     )}
                     
-                    {/* Footer Note */}
                     <div className="mt-6 pt-4 border-t border-white/10 text-center">
                         <p className="text-xs text-gray-500">
                             By using this portal, you agree to our 

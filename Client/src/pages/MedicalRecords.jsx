@@ -16,10 +16,11 @@ import {
     HeartIcon,
     BeakerIcon,
     ClipboardDocumentListIcon,
-    ChatBubbleLeftRightIcon,
-    CheckCircleIcon,
     ExclamationTriangleIcon,
-    ChartBarIcon
+    ChartBarIcon,
+    MicroscopeIcon,
+    CameraIcon,
+    ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -60,6 +61,24 @@ const MedicalRecords = () => {
         dischargeInstructions: '',
         province: '',
         notes: '',
+        // New Fields
+        physicalExam: {
+            general: '',
+            cardiovascular: '',
+            respiratory: '',
+            abdominal: '',
+            neurological: '',
+            musculoskeletal: ''
+        },
+        differentialDiagnosis: [],
+        differentialInput: '',
+        investigations: {
+            labTests: [],
+            radiology: []
+        },
+        labTestInput: { testName: '', result: '', referenceRange: '', abnormal: false },
+        radiologyInput: { studyType: '', findings: '', impression: '' },
+        // Vital Signs
         vitalSigns: {
             temperature: '',
             bloodPressureSystolic: '',
@@ -149,6 +168,22 @@ const MedicalRecords = () => {
             dischargeInstructions: '',
             province: selectedPatient.province || '',
             notes: '',
+            physicalExam: {
+                general: '',
+                cardiovascular: '',
+                respiratory: '',
+                abdominal: '',
+                neurological: '',
+                musculoskeletal: ''
+            },
+            differentialDiagnosis: [],
+            differentialInput: '',
+            investigations: {
+                labTests: [],
+                radiology: []
+            },
+            labTestInput: { testName: '', result: '', referenceRange: '', abnormal: false },
+            radiologyInput: { studyType: '', findings: '', impression: '' },
             vitalSigns: {
                 temperature: '',
                 bloodPressureSystolic: '',
@@ -188,6 +223,19 @@ const MedicalRecords = () => {
             dischargeInstructions: record.dischargeInstructions || '',
             province: record.province || selectedPatient?.province || '',
             notes: record.notes || '',
+            physicalExam: record.physicalExam || {
+                general: '',
+                cardiovascular: '',
+                respiratory: '',
+                abdominal: '',
+                neurological: '',
+                musculoskeletal: ''
+            },
+            differentialDiagnosis: record.differentialDiagnosis || [],
+            differentialInput: '',
+            investigations: record.investigations || { labTests: [], radiology: [] },
+            labTestInput: { testName: '', result: '', referenceRange: '', abnormal: false },
+            radiologyInput: { studyType: '', findings: '', impression: '' },
             vitalSigns: {
                 temperature: record.vitalSigns?.temperature || '',
                 bloodPressureSystolic: record.vitalSigns?.bloodPressure?.systolic || '',
@@ -286,6 +334,77 @@ const MedicalRecords = () => {
         }));
     };
 
+    const addDifferentialDiagnosis = () => {
+        if (formData.differentialInput.trim()) {
+            setFormData(prev => ({
+                ...prev,
+                differentialDiagnosis: [...prev.differentialDiagnosis, prev.differentialInput.trim()],
+                differentialInput: ''
+            }));
+        }
+    };
+
+    const removeDifferentialDiagnosis = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            differentialDiagnosis: prev.differentialDiagnosis.filter((_, i) => i !== index)
+        }));
+    };
+
+    const addLabTest = () => {
+        if (formData.labTestInput.testName) {
+            setFormData(prev => ({
+                ...prev,
+                investigations: {
+                    ...prev.investigations,
+                    labTests: [...(prev.investigations?.labTests || []), { 
+                        ...prev.labTestInput, 
+                        orderedDate: new Date(),
+                        resultDate: new Date()
+                    }]
+                },
+                labTestInput: { testName: '', result: '', referenceRange: '', abnormal: false }
+            }));
+        }
+    };
+
+    const removeLabTest = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            investigations: {
+                ...prev.investigations,
+                labTests: prev.investigations.labTests.filter((_, i) => i !== index)
+            }
+        }));
+    };
+
+    const addRadiology = () => {
+        if (formData.radiologyInput.studyType) {
+            setFormData(prev => ({
+                ...prev,
+                investigations: {
+                    ...prev.investigations,
+                    radiology: [...(prev.investigations?.radiology || []), { 
+                        ...prev.radiologyInput, 
+                        orderedDate: new Date(),
+                        resultDate: new Date()
+                    }]
+                },
+                radiologyInput: { studyType: '', findings: '', impression: '' }
+            }));
+        }
+    };
+
+    const removeRadiology = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            investigations: {
+                ...prev.investigations,
+                radiology: prev.investigations.radiology.filter((_, i) => i !== index)
+            }
+        }));
+    };
+
     const calculateBMI = (weight, height) => {
         if (weight && height && height > 0) {
             const heightInMeters = height / 100;
@@ -306,6 +425,13 @@ const MedicalRecords = () => {
         }
         
         setFormData(prev => ({ ...prev, vitalSigns: newVitals }));
+    };
+
+    const handlePhysicalExamChange = (field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            physicalExam: { ...prev.physicalExam, [field]: value }
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -330,6 +456,9 @@ const MedicalRecords = () => {
             dischargeInstructions: formData.dischargeInstructions,
             province: formData.province,
             notes: formData.notes,
+            physicalExam: formData.physicalExam,
+            differentialDiagnosis: formData.differentialDiagnosis,
+            investigations: formData.investigations,
             vitalSigns: {
                 temperature: formData.vitalSigns.temperature ? parseFloat(formData.vitalSigns.temperature) : null,
                 bloodPressure: {
@@ -441,7 +570,7 @@ const MedicalRecords = () => {
                         </div>
                         <div>
                             <h1 className="text-3xl font-bold text-white">Medical Records</h1>
-                            <p className="text-gray-400">Complete patient medical history with vital signs and treatment plans</p>
+                            <p className="text-gray-400">Complete patient medical history with vitals, exams, and investigations</p>
                         </div>
                     </div>
                 </div>
@@ -480,7 +609,6 @@ const MedicalRecords = () => {
                                 <p className="text-sm text-gray-400">Province: {selectedPatient.province}</p>
                             </div>
                             <div className="flex space-x-3">
-                                {/* Vitals Trend Button - NEW */}
                                 <button
                                     onClick={() => navigate(`/patients/${selectedPatient._id}/vitals-trend`)}
                                     className="relative px-5 py-2.5 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-lg hover:shadow-blue-500/25 flex items-center space-x-2"
@@ -503,7 +631,7 @@ const MedicalRecords = () => {
                 )}
             </div>
 
-            {/* Medical Records List - Enhanced Cards */}
+            {/* Medical Records List */}
             {selectedPatient && (
                 <div className="space-y-4">
                     <div className="flex justify-between items-center">
@@ -583,7 +711,6 @@ const MedicalRecords = () => {
 
                                     {/* Always Visible Content */}
                                     <div className="p-5">
-                                        {/* Primary Diagnosis */}
                                         <div className="mb-4">
                                             <div className="flex items-center space-x-2 mb-2">
                                                 <BeakerIcon className="h-4 w-4 text-purple-400" />
@@ -592,7 +719,6 @@ const MedicalRecords = () => {
                                             <p className="text-gray-300 ml-6">{record.primaryDiagnosis?.name || record.diagnosis || 'N/A'}</p>
                                         </div>
 
-                                        {/* Disease Category */}
                                         {record.disease && (
                                             <div className="mb-4">
                                                 <p className="text-sm text-purple-400 mb-1">Disease Category</p>
@@ -600,7 +726,6 @@ const MedicalRecords = () => {
                                             </div>
                                         )}
 
-                                        {/* Quick Stats Row */}
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t border-white/10">
                                             {record.symptoms && record.symptoms.length > 0 && (
                                                 <div className="text-center">
@@ -629,12 +754,12 @@ const MedicalRecords = () => {
                                         </div>
                                     </div>
 
-                                    {/* Expanded Content - Shows ALL Details */}
+                                    {/* Expanded Content */}
                                     {isExpanded && (
-                                        <div className="p-5 pt-0 border-t border-white/10 animate-fadeIn">
-                                            {/* Symptoms Section */}
+                                        <div className="p-5 pt-0 border-t border-white/10 space-y-4">
+                                            {/* Symptoms */}
                                             {record.symptoms && record.symptoms.length > 0 && (
-                                                <div className="mb-4">
+                                                <div>
                                                     <h4 className="font-semibold text-purple-400 mb-2 flex items-center">
                                                         <ClipboardDocumentListIcon className="h-4 w-4 mr-2" />
                                                         Symptoms
@@ -651,7 +776,7 @@ const MedicalRecords = () => {
 
                                             {/* Secondary Diagnoses */}
                                             {record.secondaryDiagnoses && record.secondaryDiagnoses.length > 0 && (
-                                                <div className="mb-4">
+                                                <div>
                                                     <h4 className="font-semibold text-purple-400 mb-2">Secondary Diagnoses</h4>
                                                     <ul className="list-disc list-inside text-gray-300 space-y-1 ml-2">
                                                         {record.secondaryDiagnoses.map((diag, idx) => (
@@ -661,13 +786,120 @@ const MedicalRecords = () => {
                                                 </div>
                                             )}
 
+                                            {/* Differential Diagnosis */}
+                                            {record.differentialDiagnosis && record.differentialDiagnosis.length > 0 && (
+                                                <div>
+                                                    <h4 className="font-semibold text-yellow-400 mb-2 flex items-center">
+                                                        <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
+                                                        Differential Diagnosis
+                                                    </h4>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        {record.differentialDiagnosis.map((diag, idx) => (
+                                                            <span key={idx} className="px-3 py-1.5 rounded-lg bg-yellow-500/20 text-yellow-400 text-sm">
+                                                                {diag}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Physical Examination */}
+                                            {record.physicalExam && Object.values(record.physicalExam).some(v => v) && (
+                                                <div>
+                                                    <h4 className="font-semibold text-purple-400 mb-3 flex items-center">
+                                                        <HeartIcon className="h-4 w-4 mr-2" />
+                                                        Physical Examination
+                                                    </h4>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                        {record.physicalExam.general && (
+                                                            <div className="bg-white/5 rounded-lg p-2">
+                                                                <p className="text-xs text-gray-500">General</p>
+                                                                <p className="text-sm text-gray-300">{record.physicalExam.general}</p>
+                                                            </div>
+                                                        )}
+                                                        {record.physicalExam.cardiovascular && (
+                                                            <div className="bg-white/5 rounded-lg p-2">
+                                                                <p className="text-xs text-gray-500">Cardiovascular</p>
+                                                                <p className="text-sm text-gray-300">{record.physicalExam.cardiovascular}</p>
+                                                            </div>
+                                                        )}
+                                                        {record.physicalExam.respiratory && (
+                                                            <div className="bg-white/5 rounded-lg p-2">
+                                                                <p className="text-xs text-gray-500">Respiratory</p>
+                                                                <p className="text-sm text-gray-300">{record.physicalExam.respiratory}</p>
+                                                            </div>
+                                                        )}
+                                                        {record.physicalExam.abdominal && (
+                                                            <div className="bg-white/5 rounded-lg p-2">
+                                                                <p className="text-xs text-gray-500">Abdominal</p>
+                                                                <p className="text-sm text-gray-300">{record.physicalExam.abdominal}</p>
+                                                            </div>
+                                                        )}
+                                                        {record.physicalExam.neurological && (
+                                                            <div className="bg-white/5 rounded-lg p-2">
+                                                                <p className="text-xs text-gray-500">Neurological</p>
+                                                                <p className="text-sm text-gray-300">{record.physicalExam.neurological}</p>
+                                                            </div>
+                                                        )}
+                                                        {record.physicalExam.musculoskeletal && (
+                                                            <div className="bg-white/5 rounded-lg p-2">
+                                                                <p className="text-xs text-gray-500">Musculoskeletal</p>
+                                                                <p className="text-sm text-gray-300">{record.physicalExam.musculoskeletal}</p>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Lab Tests */}
+                                            {record.investigations?.labTests && record.investigations.labTests.length > 0 && (
+                                                <div>
+                                                    <h4 className="font-semibold text-purple-400 mb-3 flex items-center">
+                                                        <MicroscopeIcon className="h-4 w-4 mr-2" />
+                                                        Laboratory Investigations
+                                                    </h4>
+                                                    <div className="space-y-2">
+                                                        {record.investigations.labTests.map((test, idx) => (
+                                                            <div key={idx} className="bg-white/5 rounded-lg p-3">
+                                                                <div className="flex justify-between">
+                                                                    <div>
+                                                                        <p className="font-semibold text-white">{test.testName}</p>
+                                                                        <p className="text-sm text-gray-400">Result: {test.result}</p>
+                                                                        {test.referenceRange && <p className="text-xs text-gray-500">Reference: {test.referenceRange}</p>}
+                                                                        {test.abnormal && <p className="text-xs text-red-400 mt-1">⚠️ Abnormal result</p>}
+                                                                    </div>
+                                                                    <p className="text-xs text-gray-500">{new Date(test.resultDate).toLocaleDateString()}</p>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Radiology */}
+                                            {record.investigations?.radiology && record.investigations.radiology.length > 0 && (
+                                                <div>
+                                                    <h4 className="font-semibold text-purple-400 mb-3 flex items-center">
+                                                        <CameraIcon className="h-4 w-4 mr-2" />
+                                                        Radiology/Imaging
+                                                    </h4>
+                                                    <div className="space-y-2">
+                                                        {record.investigations.radiology.map((study, idx) => (
+                                                            <div key={idx} className="bg-white/5 rounded-lg p-3">
+                                                                <p className="font-semibold text-white">{study.studyType}</p>
+                                                                <p className="text-sm text-gray-400">Findings: {study.findings}</p>
+                                                                {study.impression && <p className="text-sm text-gray-500">Impression: {study.impression}</p>}
+                                                                <p className="text-xs text-gray-500 mt-1">{new Date(study.resultDate).toLocaleDateString()}</p>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {/* Medications */}
                                             {record.prescribedMedications && record.prescribedMedications.length > 0 && (
-                                                <div className="mb-4">
-                                                    <h4 className="font-semibold text-purple-400 mb-2 flex items-center">
-                                                        <ClipboardDocumentListIcon className="h-4 w-4 mr-2" />
-                                                        Prescribed Medications
-                                                    </h4>
+                                                <div>
+                                                    <h4 className="font-semibold text-purple-400 mb-2">Prescribed Medications</h4>
                                                     <div className="flex flex-wrap gap-2">
                                                         {record.prescribedMedications.map((med, idx) => (
                                                             <span key={idx} className="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-400 text-sm">
@@ -679,119 +911,99 @@ const MedicalRecords = () => {
                                             )}
 
                                             {/* Treatment Plan */}
-                                            {(record.treatmentPlan?.plan || (record.treatmentPlan?.lifestyleAdvice && record.treatmentPlan.lifestyleAdvice.length > 0)) && (
-                                                <div className="mb-4">
+                                            {record.treatmentPlan && (record.treatmentPlan.plan || record.treatmentPlan.lifestyleAdvice?.length > 0) && (
+                                                <div>
                                                     <h4 className="font-semibold text-purple-400 mb-2">Treatment Plan</h4>
-                                                    {record.treatmentPlan?.plan && (
-                                                        <p className="text-gray-300 mb-2">{record.treatmentPlan.plan}</p>
-                                                    )}
-                                                    {record.treatmentPlan?.lifestyleAdvice && record.treatmentPlan.lifestyleAdvice.length > 0 && (
-                                                        <div>
-                                                            <p className="text-sm text-gray-400 mb-1">Lifestyle Advice:</p>
-                                                            <ul className="list-disc list-inside text-gray-300 ml-4">
-                                                                {record.treatmentPlan.lifestyleAdvice.map((advice, idx) => (
-                                                                    <li key={idx}>{advice}</li>
-                                                                ))}
-                                                            </ul>
-                                                        </div>
+                                                    {record.treatmentPlan.plan && <p className="text-gray-300 mb-2">{record.treatmentPlan.plan}</p>}
+                                                    {record.treatmentPlan.lifestyleAdvice && record.treatmentPlan.lifestyleAdvice.length > 0 && (
+                                                        <ul className="list-disc list-inside text-gray-300 space-y-1 ml-2">
+                                                            {record.treatmentPlan.lifestyleAdvice.map((advice, idx) => (
+                                                                <li key={idx}>{advice}</li>
+                                                            ))}
+                                                        </ul>
                                                     )}
                                                 </div>
                                             )}
 
-                                            {/* Vital Signs Section - Enhanced */}
-                                            {(record.vitalSigns && Object.values(record.vitalSigns).some(v => v)) && (
-                                                <div className="mb-4">
+                                            {/* Discharge Instructions */}
+                                            {record.dischargeInstructions && (
+                                                <div className="mt-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                                                    <p className="font-semibold text-blue-400 text-sm">Discharge Instructions</p>
+                                                    <p className="text-blue-300 text-sm">{record.dischargeInstructions}</p>
+                                                </div>
+                                            )}
+
+                                            {/* Vital Signs Details */}
+                                            {record.vitalSigns && Object.values(record.vitalSigns).some(v => v) && (
+                                                <div>
                                                     <h4 className="font-semibold text-purple-400 mb-3 flex items-center">
                                                         <HeartIcon className="h-4 w-4 mr-2" />
-                                                        Vital Signs
+                                                        Vital Signs Details
                                                     </h4>
                                                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                                                         {record.vitalSigns.temperature && (
                                                             <div className="bg-white/5 rounded-lg p-2 text-center">
                                                                 <p className="text-xs text-gray-500">Temperature</p>
-                                                                <p className="text-lg font-semibold text-white">{record.vitalSigns.temperature}°C</p>
+                                                                <p className="text-white font-medium">{record.vitalSigns.temperature}°C</p>
                                                             </div>
                                                         )}
                                                         {record.vitalSigns.bloodPressure?.systolic && (
                                                             <div className="bg-white/5 rounded-lg p-2 text-center">
                                                                 <p className="text-xs text-gray-500">Blood Pressure</p>
-                                                                <p className="text-lg font-semibold text-white">{record.vitalSigns.bloodPressure.systolic}/{record.vitalSigns.bloodPressure.diastolic}</p>
+                                                                <p className="text-white font-medium">{record.vitalSigns.bloodPressure.systolic}/{record.vitalSigns.bloodPressure.diastolic}</p>
                                                             </div>
                                                         )}
                                                         {record.vitalSigns.heartRate && (
                                                             <div className="bg-white/5 rounded-lg p-2 text-center">
                                                                 <p className="text-xs text-gray-500">Heart Rate</p>
-                                                                <p className="text-lg font-semibold text-white">{record.vitalSigns.heartRate} bpm</p>
+                                                                <p className="text-white font-medium">{record.vitalSigns.heartRate} bpm</p>
                                                             </div>
                                                         )}
                                                         {record.vitalSigns.respiratoryRate && (
                                                             <div className="bg-white/5 rounded-lg p-2 text-center">
                                                                 <p className="text-xs text-gray-500">Respiratory Rate</p>
-                                                                <p className="text-lg font-semibold text-white">{record.vitalSigns.respiratoryRate} /min</p>
+                                                                <p className="text-white font-medium">{record.vitalSigns.respiratoryRate} /min</p>
                                                             </div>
                                                         )}
                                                         {record.vitalSigns.oxygenSaturation && (
                                                             <div className="bg-white/5 rounded-lg p-2 text-center">
                                                                 <p className="text-xs text-gray-500">O₂ Saturation</p>
-                                                                <p className={`text-lg font-semibold ${oxygenStatus?.color || 'text-white'}`}>{record.vitalSigns.oxygenSaturation}%</p>
-                                                                {oxygenStatus && <p className="text-xs">{oxygenStatus.label}</p>}
+                                                                <p className={`font-medium ${oxygenStatus?.color || 'text-white'}`}>{record.vitalSigns.oxygenSaturation}%</p>
                                                             </div>
                                                         )}
                                                         {record.vitalSigns.weight && (
                                                             <div className="bg-white/5 rounded-lg p-2 text-center">
                                                                 <p className="text-xs text-gray-500">Weight</p>
-                                                                <p className="text-lg font-semibold text-white">{record.vitalSigns.weight} kg</p>
+                                                                <p className="text-white font-medium">{record.vitalSigns.weight} kg</p>
                                                             </div>
                                                         )}
                                                         {record.vitalSigns.height && (
                                                             <div className="bg-white/5 rounded-lg p-2 text-center">
                                                                 <p className="text-xs text-gray-500">Height</p>
-                                                                <p className="text-lg font-semibold text-white">{record.vitalSigns.height} cm</p>
+                                                                <p className="text-white font-medium">{record.vitalSigns.height} cm</p>
                                                             </div>
                                                         )}
-                                                        {record.vitalSigns.bmi && (
+                                                        {record.vitalSigns.bmi && bmiCategory && (
                                                             <div className="bg-white/5 rounded-lg p-2 text-center">
                                                                 <p className="text-xs text-gray-500">BMI</p>
-                                                                <p className={`text-lg font-semibold ${bmiCategory?.color || 'text-white'}`}>{record.vitalSigns.bmi}</p>
-                                                                {bmiCategory && <p className="text-xs">{bmiCategory.label}</p>}
+                                                                <p className={`font-medium ${bmiCategory.color}`}>{record.vitalSigns.bmi} ({bmiCategory.label})</p>
                                                             </div>
                                                         )}
                                                         {record.vitalSigns.painScore && (
                                                             <div className="bg-white/5 rounded-lg p-2 text-center">
                                                                 <p className="text-xs text-gray-500">Pain Score</p>
-                                                                <p className={`text-lg font-semibold ${getPainScoreColor(record.vitalSigns.painScore)}`}>{record.vitalSigns.painScore}/10</p>
+                                                                <p className={`font-medium ${getPainScoreColor(record.vitalSigns.painScore)}`}>{record.vitalSigns.painScore}/10</p>
                                                             </div>
                                                         )}
                                                     </div>
                                                 </div>
                                             )}
 
-                                            {/* Discharge Instructions */}
-                                            {record.dischargeInstructions && (
-                                                <div className="mb-4 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                                                    <h4 className="font-semibold text-blue-400 mb-1 flex items-center">
-                                                        <CheckCircleIcon className="h-4 w-4 mr-2" />
-                                                        Discharge Instructions
-                                                    </h4>
-                                                    <p className="text-blue-300 text-sm">{record.dischargeInstructions}</p>
-                                                </div>
-                                            )}
-
-                                            {/* Additional Notes */}
+                                            {/* Notes */}
                                             {record.notes && (
-                                                <div className="mb-4 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20">
-                                                    <h4 className="font-semibold text-yellow-400 mb-1 flex items-center">
-                                                        <ChatBubbleLeftRightIcon className="h-4 w-4 mr-2" />
-                                                        Clinical Notes
-                                                    </h4>
-                                                    <p className="text-yellow-300 text-sm">{record.notes}</p>
-                                                </div>
-                                            )}
-
-                                            {/* Province */}
-                                            {record.province && (
-                                                <div className="text-right text-xs text-gray-500 mt-2">
-                                                    Location: {record.province}
+                                                <div>
+                                                    <h4 className="font-semibold text-purple-400 mb-2">Additional Notes</h4>
+                                                    <p className="text-gray-300 text-sm">{record.notes}</p>
                                                 </div>
                                             )}
                                         </div>
@@ -806,7 +1018,7 @@ const MedicalRecords = () => {
             {/* Add/Edit Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto py-8">
-                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-4xl mx-4">
+                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-5xl mx-4">
                         <div className="rounded-2xl bg-slate-900/95 backdrop-blur-xl max-h-[90vh] overflow-y-auto">
                             <div className="p-6 border-b border-white/10 sticky top-0 bg-slate-900/95">
                                 <h2 className="text-2xl font-bold text-white">
@@ -842,21 +1054,48 @@ const MedicalRecords = () => {
 
                                 {/* Vital Signs Section */}
                                 <div className="border-t border-white/10 pt-4">
-                                    <h3 className="text-lg font-semibold text-purple-400 mb-3 flex items-center">
-                                        <HeartIcon className="h-5 w-5 mr-2" />
-                                        Vital Signs
-                                    </h3>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                        <div><label className="block text-xs text-gray-400 mb-1">Temperature (°C)</label><input type="number" step="0.1" value={formData.vitalSigns.temperature} onChange={(e) => handleVitalChange('temperature', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="36.5" /></div>
-                                        <div><label className="block text-xs text-gray-400 mb-1">Systolic BP</label><input type="number" value={formData.vitalSigns.bloodPressureSystolic} onChange={(e) => handleVitalChange('bloodPressureSystolic', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="120" /></div>
-                                        <div><label className="block text-xs text-gray-400 mb-1">Diastolic BP</label><input type="number" value={formData.vitalSigns.bloodPressureDiastolic} onChange={(e) => handleVitalChange('bloodPressureDiastolic', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="80" /></div>
-                                        <div><label className="block text-xs text-gray-400 mb-1">Heart Rate (bpm)</label><input type="number" value={formData.vitalSigns.heartRate} onChange={(e) => handleVitalChange('heartRate', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="72" /></div>
-                                        <div><label className="block text-xs text-gray-400 mb-1">Respiratory Rate</label><input type="number" value={formData.vitalSigns.respiratoryRate} onChange={(e) => handleVitalChange('respiratoryRate', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="16" /></div>
-                                        <div><label className="block text-xs text-gray-400 mb-1">O₂ Saturation (%)</label><input type="number" value={formData.vitalSigns.oxygenSaturation} onChange={(e) => handleVitalChange('oxygenSaturation', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="98" /></div>
-                                        <div><label className="block text-xs text-gray-400 mb-1">Weight (kg)</label><input type="number" step="0.1" value={formData.vitalSigns.weight} onChange={(e) => handleVitalChange('weight', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="70" /></div>
-                                        <div><label className="block text-xs text-gray-400 mb-1">Height (cm)</label><input type="number" step="0.1" value={formData.vitalSigns.height} onChange={(e) => handleVitalChange('height', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="170" /></div>
-                                        {formData.vitalSigns.bmi && <div><label className="block text-xs text-gray-400 mb-1">BMI</label><input type="text" value={formData.vitalSigns.bmi} disabled className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/10 text-gray-300" /></div>}
-                                        <div><label className="block text-xs text-gray-400 mb-1">Pain Score (0-10)</label><input type="number" min="0" max="10" value={formData.vitalSigns.painScore} onChange={(e) => handleVitalChange('painScore', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="0" /></div>
+                                    <h3 className="text-lg font-semibold text-purple-400 mb-3">Vital Signs</h3>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Temperature (°C)</label>
+                                            <input type="number" step="0.1" value={formData.vitalSigns.temperature} onChange={(e) => handleVitalChange('temperature', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="36.5" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Heart Rate (bpm)</label>
+                                            <input type="number" value={formData.vitalSigns.heartRate} onChange={(e) => handleVitalChange('heartRate', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="75" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Respiratory Rate (/min)</label>
+                                            <input type="number" value={formData.vitalSigns.respiratoryRate} onChange={(e) => handleVitalChange('respiratoryRate', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="16" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">O₂ Saturation (%)</label>
+                                            <input type="number" value={formData.vitalSigns.oxygenSaturation} onChange={(e) => handleVitalChange('oxygenSaturation', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="98" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Systolic BP (mmHg)</label>
+                                            <input type="number" value={formData.vitalSigns.bloodPressureSystolic} onChange={(e) => handleVitalChange('bloodPressureSystolic', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="120" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Diastolic BP (mmHg)</label>
+                                            <input type="number" value={formData.vitalSigns.bloodPressureDiastolic} onChange={(e) => handleVitalChange('bloodPressureDiastolic', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="80" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Weight (kg)</label>
+                                            <input type="number" step="0.1" value={formData.vitalSigns.weight} onChange={(e) => handleVitalChange('weight', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="70" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Height (cm)</label>
+                                            <input type="number" step="0.1" value={formData.vitalSigns.height} onChange={(e) => handleVitalChange('height', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="170" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">BMI</label>
+                                            <input type="number" step="0.1" value={formData.vitalSigns.bmi} disabled className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-400" placeholder="Auto-calculated" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Pain Score (0-10)</label>
+                                            <input type="number" min="0" max="10" value={formData.vitalSigns.painScore} onChange={(e) => handleVitalChange('painScore', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="0" />
+                                        </div>
                                     </div>
                                 </div>
 
@@ -865,45 +1104,223 @@ const MedicalRecords = () => {
                                     <label className="block text-sm font-medium text-gray-300 mb-2">Symptoms</label>
                                     <div className="flex gap-2 mb-2">
                                         <input type="text" value={formData.symptomInput} onChange={(e) => setFormData(prev => ({ ...prev, symptomInput: e.target.value }))} onKeyPress={(e) => e.key === 'Enter' && addSymptom()} className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" placeholder="Enter a symptom" />
-                                        <button type="button" onClick={addSymptom} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Add</button>
+                                        <button type="button" onClick={addSymptom} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all duration-300">Add</button>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">{formData.symptoms.map((symptom, idx) => (<span key={idx} className="px-2 py-1 rounded-lg bg-white/10 text-gray-300 text-sm flex items-center space-x-1"><span>{symptom}</span><button type="button" onClick={() => removeSymptom(idx)} className="text-red-400">×</button></span>))}</div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {formData.symptoms.map((symptom, idx) => (
+                                            <span key={idx} className="px-2 py-1 rounded-lg bg-white/10 text-gray-300 text-sm flex items-center space-x-1">
+                                                <span>{symptom}</span>
+                                                <button type="button" onClick={() => removeSymptom(idx)} className="text-red-400 hover:text-red-300 ml-1">×</button>
+                                            </span>
+                                        ))}
+                                    </div>
                                 </div>
 
-                                {/* Diagnoses */}
+                                {/* Diagnoses Section */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div><label className="block text-sm font-medium text-gray-300 mb-1">Primary Diagnosis *</label><input type="text" name="primaryDiagnosis" value={formData.primaryDiagnosis} onChange={(e) => setFormData(prev => ({ ...prev, primaryDiagnosis: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" required /></div>
-                                    <div><label className="block text-sm font-medium text-gray-300 mb-1">Disease Category</label><input type="text" name="disease" value={formData.disease} onChange={(e) => setFormData(prev => ({ ...prev, disease: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" /></div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-300 mb-1">Primary Diagnosis *</label>
+                                        <input type="text" name="primaryDiagnosis" value={formData.primaryDiagnosis} onChange={(e) => setFormData(prev => ({ ...prev, primaryDiagnosis: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-300 mb-1">Disease Category</label>
+                                        <input type="text" name="disease" value={formData.disease} onChange={(e) => setFormData(prev => ({ ...prev, disease: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
+                                    </div>
                                 </div>
 
                                 {/* Secondary Diagnoses */}
-                                <div><label className="block text-sm font-medium text-gray-300 mb-2">Secondary Diagnoses</label><div className="flex gap-2 mb-2"><input type="text" value={formData.secondaryDiagnosisInput} onChange={(e) => setFormData(prev => ({ ...prev, secondaryDiagnosisInput: e.target.value }))} onKeyPress={(e) => e.key === 'Enter' && addSecondaryDiagnosis()} className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Enter secondary diagnosis" /><button type="button" onClick={addSecondaryDiagnosis} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Add</button></div><div className="flex flex-wrap gap-2">{formData.secondaryDiagnoses.map((diag, idx) => (<span key={idx} className="px-2 py-1 rounded-lg bg-yellow-500/20 text-yellow-400 text-sm flex items-center space-x-1"><span>{diag}</span><button type="button" onClick={() => removeSecondaryDiagnosis(idx)} className="text-red-400">×</button></span>))}</div></div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Secondary Diagnoses</label>
+                                    <div className="flex gap-2 mb-2">
+                                        <input type="text" value={formData.secondaryDiagnosisInput} onChange={(e) => setFormData(prev => ({ ...prev, secondaryDiagnosisInput: e.target.value }))} onKeyPress={(e) => e.key === 'Enter' && addSecondaryDiagnosis()} className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" placeholder="Enter secondary diagnosis" />
+                                        <button type="button" onClick={addSecondaryDiagnosis} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Add</button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {formData.secondaryDiagnoses.map((diag, idx) => (
+                                            <span key={idx} className="px-2 py-1 rounded-lg bg-blue-500/20 text-blue-400 text-sm flex items-center space-x-1">
+                                                <span>{diag}</span>
+                                                <button type="button" onClick={() => removeSecondaryDiagnosis(idx)} className="text-red-400 hover:text-red-300 ml-1">×</button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
 
-                                {/* Medications */}
-                                <div><label className="block text-sm font-medium text-gray-300 mb-2">Prescribed Medications</label><div className="flex gap-2 mb-2"><input type="text" value={formData.medicationInput} onChange={(e) => setFormData(prev => ({ ...prev, medicationInput: e.target.value }))} onKeyPress={(e) => e.key === 'Enter' && addMedication()} className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Enter medication" /><button type="button" onClick={addMedication} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Add</button></div><div className="flex flex-wrap gap-2">{formData.prescribedMedications.map((med, idx) => (<span key={idx} className="px-2 py-1 rounded-lg bg-purple-500/20 text-purple-400 text-sm flex items-center space-x-1"><span>{med}</span><button type="button" onClick={() => removeMedication(idx)} className="text-red-400">×</button></span>))}</div></div>
+                                {/* Differential Diagnosis */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
+                                        <ExclamationTriangleIcon className="h-4 w-4 mr-1 text-yellow-400" />
+                                        Differential Diagnosis
+                                    </label>
+                                    <div className="flex gap-2 mb-2">
+                                        <input type="text" value={formData.differentialInput} onChange={(e) => setFormData(prev => ({ ...prev, differentialInput: e.target.value }))} onKeyPress={(e) => e.key === 'Enter' && addDifferentialDiagnosis()} className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" placeholder="Enter differential diagnosis" />
+                                        <button type="button" onClick={addDifferentialDiagnosis} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Add</button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {formData.differentialDiagnosis.map((diag, idx) => (
+                                            <span key={idx} className="px-2 py-1 rounded-lg bg-yellow-500/20 text-yellow-400 text-sm flex items-center space-x-1">
+                                                <span>{diag}</span>
+                                                <button type="button" onClick={() => removeDifferentialDiagnosis(idx)} className="text-red-400 hover:text-red-300 ml-1">×</button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Physical Examination */}
+                                <div>
+                                    <h3 className="text-lg font-semibold text-purple-400 mb-3">Physical Examination</h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">General Appearance</label>
+                                            <textarea value={formData.physicalExam.general} onChange={(e) => handlePhysicalExamChange('general', e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="General appearance..." />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Cardiovascular</label>
+                                            <textarea value={formData.physicalExam.cardiovascular} onChange={(e) => handlePhysicalExamChange('cardiovascular', e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Heart sounds, murmurs..." />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Respiratory</label>
+                                            <textarea value={formData.physicalExam.respiratory} onChange={(e) => handlePhysicalExamChange('respiratory', e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Breath sounds, wheezing..." />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Abdominal</label>
+                                            <textarea value={formData.physicalExam.abdominal} onChange={(e) => handlePhysicalExamChange('abdominal', e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Tenderness, masses..." />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Neurological</label>
+                                            <textarea value={formData.physicalExam.neurological} onChange={(e) => handlePhysicalExamChange('neurological', e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="CNS, reflexes..." />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Musculoskeletal</label>
+                                            <textarea value={formData.physicalExam.musculoskeletal} onChange={(e) => handlePhysicalExamChange('musculoskeletal', e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Joints, range of motion..." />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Medications Section */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Prescribed Medications</label>
+                                    <div className="flex gap-2 mb-2">
+                                        <input type="text" value={formData.medicationInput} onChange={(e) => setFormData(prev => ({ ...prev, medicationInput: e.target.value }))} onKeyPress={(e) => e.key === 'Enter' && addMedication()} className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" placeholder="Enter medication" />
+                                        <button type="button" onClick={addMedication} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Add</button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {formData.prescribedMedications.map((med, idx) => (
+                                            <span key={idx} className="px-2 py-1 rounded-lg bg-purple-500/20 text-purple-400 text-sm flex items-center space-x-1">
+                                                <span>{med}</span>
+                                                <button type="button" onClick={() => removeMedication(idx)} className="text-red-400 hover:text-red-300 ml-1">×</button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Lab Tests */}
+                                <div>
+                                    <h3 className="text-lg font-semibold text-purple-400 mb-3 flex items-center">
+                                        <MicroscopeIcon className="h-4 w-4 mr-2" />
+                                        Laboratory Tests
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
+                                        <input type="text" placeholder="Test Name" value={formData.labTestInput.testName} onChange={(e) => setFormData(prev => ({ ...prev, labTestInput: { ...prev.labTestInput, testName: e.target.value } }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
+                                        <input type="text" placeholder="Result" value={formData.labTestInput.result} onChange={(e) => setFormData(prev => ({ ...prev, labTestInput: { ...prev.labTestInput, result: e.target.value } }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
+                                        <input type="text" placeholder="Reference Range" value={formData.labTestInput.referenceRange} onChange={(e) => setFormData(prev => ({ ...prev, labTestInput: { ...prev.labTestInput, referenceRange: e.target.value } }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
+                                        <button type="button" onClick={addLabTest} className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg transition-all">Add Test</button>
+                                    </div>
+                                    <div className="space-y-2 mt-2">
+                                        {formData.investigations.labTests.map((test, idx) => (
+                                            <div key={idx} className="bg-white/5 rounded-lg p-3 flex justify-between items-center">
+                                                <div>
+                                                    <p className="font-semibold text-white">{test.testName}</p>
+                                                    <p className="text-sm text-gray-400">Result: {test.result} {test.referenceRange && `(Ref: ${test.referenceRange})`}</p>
+                                                </div>
+                                                <button type="button" onClick={() => removeLabTest(idx)} className="text-red-400">Remove</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Radiology */}
+                                <div>
+                                    <h3 className="text-lg font-semibold text-purple-400 mb-3 flex items-center">
+                                        <CameraIcon className="h-4 w-4 mr-2" />
+                                        Radiology / Imaging
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
+                                        <input type="text" placeholder="Study Type (X-ray, CT, MRI, Ultrasound)" value={formData.radiologyInput.studyType} onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, studyType: e.target.value } }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
+                                        <input type="text" placeholder="Findings" value={formData.radiologyInput.findings} onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, findings: e.target.value } }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
+                                        <button type="button" onClick={addRadiology} className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg transition-all">Add Study</button>
+                                    </div>
+                                    <textarea placeholder="Impression" value={formData.radiologyInput.impression} onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, impression: e.target.value } }))} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white mb-2" />
+                                    <div className="space-y-2">
+                                        {formData.investigations.radiology.map((study, idx) => (
+                                            <div key={idx} className="bg-white/5 rounded-lg p-3 flex justify-between items-center">
+                                                <div>
+                                                    <p className="font-semibold text-white">{study.studyType}</p>
+                                                    <p className="text-sm text-gray-400">Findings: {study.findings}</p>
+                                                    {study.impression && <p className="text-xs text-gray-500">Impression: {study.impression}</p>}
+                                                </div>
+                                                <button type="button" onClick={() => removeRadiology(idx)} className="text-red-400">Remove</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
 
                                 {/* Treatment Plan */}
-                                <div><label className="block text-sm font-medium text-gray-300 mb-1">Treatment Plan</label><textarea name="treatmentPlan" value={formData.treatmentPlan} onChange={(e) => setFormData(prev => ({ ...prev, treatmentPlan: e.target.value }))} rows={3} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" placeholder="Describe the treatment plan..." /></div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Treatment Plan</label>
+                                    <textarea name="treatmentPlan" value={formData.treatmentPlan} onChange={(e) => setFormData(prev => ({ ...prev, treatmentPlan: e.target.value }))} rows={3} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" placeholder="Describe the treatment plan..." />
+                                </div>
 
                                 {/* Lifestyle Advice */}
-                                <div><label className="block text-sm font-medium text-gray-300 mb-2">Lifestyle Advice</label><div className="flex gap-2 mb-2"><input type="text" value={formData.adviceInput} onChange={(e) => setFormData(prev => ({ ...prev, adviceInput: e.target.value }))} onKeyPress={(e) => e.key === 'Enter' && addLifestyleAdvice()} className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="e.g., Rest, Exercise, Diet" /><button type="button" onClick={addLifestyleAdvice} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Add</button></div><div className="flex flex-wrap gap-2">{formData.lifestyleAdvice.map((advice, idx) => (<span key={idx} className="px-2 py-1 rounded-lg bg-green-500/20 text-green-400 text-sm flex items-center space-x-1"><span>{advice}</span><button type="button" onClick={() => removeLifestyleAdvice(idx)} className="text-red-400">×</button></span>))}</div></div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-2">Lifestyle Advice</label>
+                                    <div className="flex gap-2 mb-2">
+                                        <input type="text" value={formData.adviceInput} onChange={(e) => setFormData(prev => ({ ...prev, adviceInput: e.target.value }))} onKeyPress={(e) => e.key === 'Enter' && addLifestyleAdvice()} className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" placeholder="Enter lifestyle advice" />
+                                        <button type="button" onClick={addLifestyleAdvice} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Add</button>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {formData.lifestyleAdvice.map((advice, idx) => (
+                                            <span key={idx} className="px-2 py-1 rounded-lg bg-green-500/20 text-green-400 text-sm flex items-center space-x-1">
+                                                <span>{advice}</span>
+                                                <button type="button" onClick={() => removeLifestyleAdvice(idx)} className="text-red-400 hover:text-red-300 ml-1">×</button>
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
 
-                                {/* Disposition and Province */}
+                                {/* Disposition */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div><label className="block text-sm font-medium text-gray-300 mb-1">Disposition</label><select name="disposition" value={formData.disposition} onChange={(e) => setFormData(prev => ({ ...prev, disposition: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500">{dispositions.map(disp => <option key={disp} value={disp}>{disp}</option>)}</select></div>
-                                    <div><label className="block text-sm font-medium text-gray-300 mb-1">Province</label><select name="province" value={formData.province} onChange={(e) => setFormData(prev => ({ ...prev, province: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500">{provinces.map(p => <option key={p} value={p}>{p}</option>)}</select></div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-300 mb-1">Disposition</label>
+                                        <select name="disposition" value={formData.disposition} onChange={(e) => setFormData(prev => ({ ...prev, disposition: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500">
+                                            {dispositions.map(disp => <option key={disp} value={disp}>{disp}</option>)}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-300 mb-1">Province</label>
+                                        <select name="province" value={formData.province} onChange={(e) => setFormData(prev => ({ ...prev, province: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500">
+                                            {provinces.map(p => <option key={p} value={p}>{p}</option>)}
+                                        </select>
+                                    </div>
                                 </div>
 
                                 {/* Discharge Instructions */}
-                                <div><label className="block text-sm font-medium text-gray-300 mb-1">Discharge Instructions</label><textarea name="dischargeInstructions" value={formData.dischargeInstructions} onChange={(e) => setFormData(prev => ({ ...prev, dischargeInstructions: e.target.value }))} rows={2} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" placeholder="Follow-up instructions for the patient" /></div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-1">Discharge Instructions</label>
+                                    <textarea name="dischargeInstructions" value={formData.dischargeInstructions} onChange={(e) => setFormData(prev => ({ ...prev, dischargeInstructions: e.target.value }))} rows={2} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
+                                </div>
 
                                 {/* Additional Notes */}
-                                <div><label className="block text-sm font-medium text-gray-300 mb-1">Additional Notes</label><textarea name="notes" value={formData.notes} onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))} rows={2} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" placeholder="Any additional clinical notes" /></div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-300 mb-1">Additional Notes</label>
+                                    <textarea name="notes" value={formData.notes} onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))} rows={2} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
+                                </div>
 
                                 {/* Form Buttons */}
                                 <div className="flex justify-end space-x-3 pt-4 border-t border-white/10 sticky bottom-0 bg-slate-900/95 py-4">
                                     <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all duration-300">Cancel</button>
-                                    <button type="submit" className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300">{editingRecord ? 'Update' : 'Create'} Medical Record</button>
+                                    <button type="submit" className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300">
+                                        {editingRecord ? 'Update' : 'Create'} Medical Record
+                                    </button>
                                 </div>
                             </form>
                         </div>

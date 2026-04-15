@@ -12,16 +12,21 @@ const VitalsTrendPage = () => {
     const [vitalsHistory, setVitalsHistory] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // FIXED: Wrap loadData in useCallback to prevent recreation on every render
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
+            console.log('Loading vitals for patient ID:', id);
+            
             const [patientRes, vitalsRes] = await Promise.all([
                 getPatient(id),
                 getPatientVitalsHistory(id)
             ]);
+            
+            console.log('Patient data loaded:', patientRes.data?.firstName, patientRes.data?.lastName);
+            console.log('Vitals history count:', vitalsRes.data?.length);
+            
             setPatient(patientRes.data);
-            setVitalsHistory(vitalsRes.data);
+            setVitalsHistory(vitalsRes.data || []);
         } catch (error) {
             console.error('Error loading vitals data:', error);
             toast.error('Failed to load vitals data');
@@ -29,12 +34,11 @@ const VitalsTrendPage = () => {
         } finally {
             setLoading(false);
         }
-    }, [id, navigate]); // Only recreate when id or navigate changes
+    }, [id, navigate]);
 
-    // FIXED: useEffect with proper dependency
     useEffect(() => {
         loadData();
-    }, [loadData]); // Now loadData is stable
+    }, [loadData]);
 
     if (loading) {
         return (
@@ -48,6 +52,24 @@ const VitalsTrendPage = () => {
             </div>
         );
     }
+
+    if (!patient) {
+        return (
+            <div className="text-center py-12">
+                <p className="text-gray-400">Patient not found</p>
+                <button onClick={() => navigate('/patients')} className="mt-4 text-purple-400 hover:underline">
+                    Back to Patients
+                </button>
+            </div>
+        );
+    }
+
+    // Debug - log what we're passing to VitalsTrend
+    console.log('Passing to VitalsTrend:', {
+        vitalsHistoryLength: vitalsHistory.length,
+        patientName: `${patient.firstName} ${patient.lastName}`,
+        firstRecordVitals: vitalsHistory[0]?.vitalSigns
+    });
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
@@ -70,7 +92,7 @@ const VitalsTrendPage = () => {
                         <div>
                             <h1 className="text-3xl font-bold text-white">Vitals Trend Analysis</h1>
                             <p className="text-gray-400">
-                                {patient?.firstName} {patient?.lastName} - {patient?.nationalId}
+                                {patient.firstName} {patient.lastName} - {patient.nationalId}
                             </p>
                         </div>
                     </div>
@@ -79,8 +101,8 @@ const VitalsTrendPage = () => {
 
             {/* Vitals Trend Component */}
             <VitalsTrend 
-                vitalsHistory={vitalsHistory} 
-                patientName={`${patient?.firstName} ${patient?.lastName}`}
+                vitalsHistory={vitalsHistory}
+                patientName={`${patient.firstName} ${patient.lastName}`}
                 onRefresh={loadData}
             />
         </div>

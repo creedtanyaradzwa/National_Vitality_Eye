@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { LockClosedIcon, EyeIcon, EyeSlashIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { LockClosedIcon, EyeIcon, EyeSlashIcon, CheckCircleIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
@@ -70,12 +70,12 @@ const ResetPassword = () => {
                     <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8 text-center">
                         <h1 className="text-2xl font-bold text-white mb-2">Invalid or Expired Link</h1>
                         <p className="text-gray-400 mb-6">{error}</p>
-                        <button
-                            onClick={() => navigate('/patient/forgot-password')}
-                            className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300"
+                        <Link
+                            to="/patient/forgot-password"
+                            className="inline-block w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300 text-center"
                         >
                             Request New Reset Link
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </div>
@@ -94,12 +94,12 @@ const ResetPassword = () => {
                         <p className="text-gray-400 mb-6">
                             Your password has been successfully reset. You can now login with your new password.
                         </p>
-                        <button
-                            onClick={() => navigate('/patient/login')}
-                            className="w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:shadow-lg transition-all duration-300"
+                        <Link
+                            to="/patient/login"
+                            className="inline-block w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:shadow-lg transition-all duration-300 text-center"
                         >
                             Go to Login
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </div>
@@ -111,6 +111,9 @@ const ResetPassword = () => {
             <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-md">
                 <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8">
                     <div className="text-center mb-8">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-4">
+                            <LockClosedIcon className="h-8 w-8 text-white" />
+                        </div>
                         <h1 className="text-2xl font-bold text-white mb-2">Reset Password</h1>
                         <p className="text-gray-400 text-sm">
                             Enter your new password below.
@@ -142,7 +145,7 @@ const ResetPassword = () => {
                         </div>
 
                         <div>
-                            <label className="block text-gray-300 text-sm font-medium mb-2">Confirm Password</label>
+                            <label className="block text-gray-300 text-sm font-medium mb-2">Confirm New Password</label>
                             <div className="relative">
                                 <LockClosedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                                 <input
@@ -165,13 +168,10 @@ const ResetPassword = () => {
                         </button>
 
                         <div className="text-center">
-                            <button
-                                type="button"
-                                onClick={() => navigate('/patient/login')}
-                                className="text-gray-400 hover:text-white text-sm"
-                            >
+                            <Link to="/patient/login" className="text-gray-400 hover:text-white text-sm inline-flex items-center">
+                                <ArrowLeftIcon className="h-4 w-4 mr-1" />
                                 Back to Login
-                            </button>
+                            </Link>
                         </div>
                     </form>
                 </div>

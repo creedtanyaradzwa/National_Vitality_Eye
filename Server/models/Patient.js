@@ -261,7 +261,7 @@ const patientSchema = new mongoose.Schema({
                 enum: ["REGISTER", "VERIFY_EMAIL", "LOGIN", "LOGIN_FAILED", "LOGOUT", 
                        "VIEW_RECORD", "VIEW_RECORDS", "DOWNLOAD", "REQUEST_CORRECTION", 
                        "CONSENT_CHANGE", "SUSPEND", "REACTIVATE", "PASSWORD_CHANGE", 
-                       "PASSWORD_RESET_REQUEST", "PASSWORD_RESET_COMPLETE", 
+                       "PASSWORD_RESET_REQUEST", "PASSWORD_RESET_COMPLETE","PASSWORD_RESET", 
                        "ACCOUNT_LOCKED", "ACCOUNT_UNLOCKED"]
             },
             timestamp: { type: Date, default: Date.now },
