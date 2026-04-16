@@ -1,22 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ShieldCheckIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 const SpecialNeeds = ({ specialNeeds, onUpdate, canEdit }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
-        hasDisability: specialNeeds?.hasDisability || false,
-        disabilityType: specialNeeds?.disabilityType || '',
-        requiresAssistance: specialNeeds?.requiresAssistance || false,
-        notes: specialNeeds?.notes || ''
+        hasDisability: false,
+        disabilityType: '',
+        requiresAssistance: false,
+        notes: ''
     });
+
+    useEffect(() => {
+        if (specialNeeds) {
+            setFormData({
+                hasDisability: specialNeeds.hasDisability || false,
+                disabilityType: specialNeeds.disabilityType || '',
+                requiresAssistance: specialNeeds.requiresAssistance || false,
+                notes: specialNeeds.notes || ''
+            });
+        }
+    }, [specialNeeds]);
 
     const handleSave = async () => {
         try {
             await onUpdate(formData);
             toast.success('Special needs information updated');
             setIsEditing(false);
-        } catch  {
+        } catch (error) {
             toast.error('Failed to update');
         }
     };
@@ -30,14 +41,16 @@ const SpecialNeeds = ({ specialNeeds, onUpdate, canEdit }) => {
                         Special Needs / Disabilities
                     </h3>
                     {canEdit && (
-                        <button onClick={() => setIsEditing(true)} className="text-blue-400 hover:text-blue-300 text-sm">
+                        <button onClick={() => setIsEditing(true)} className="text-blue-400 hover:text-blue-300 text-sm px-3 py-1 rounded-lg bg-blue-500/20">
                             Edit
                         </button>
                     )}
                 </div>
 
                 {!specialNeeds?.hasDisability ? (
-                    <p className="text-gray-400">No special needs or disabilities recorded</p>
+                    <div className="bg-white/5 rounded-lg p-4 text-center">
+                        <p className="text-gray-400">No special needs or disabilities recorded</p>
+                    </div>
                 ) : (
                     <div className="bg-white/5 rounded-lg p-4 space-y-2">
                         <p><span className="text-gray-400">Type:</span> <span className="text-white">{specialNeeds.disabilityType || 'Not specified'}</span></p>
@@ -88,8 +101,8 @@ const SpecialNeeds = ({ specialNeeds, onUpdate, canEdit }) => {
             )}
 
             <div className="flex space-x-3 pt-4">
-                <button onClick={handleSave} className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg">Save Changes</button>
-                <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-white/10 text-white rounded-lg">Cancel</button>
+                <button onClick={handleSave} className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition">Save Changes</button>
+                <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition">Cancel</button>
             </div>
         </div>
     );

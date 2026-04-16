@@ -1,24 +1,41 @@
-import React, { useState } from 'react';
-import { HeartIcon, PlusIcon, XMarkIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import React, { useState, useEffect } from 'react';
+import { HeartIcon, PlusIcon, XMarkIcon, CalendarIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 const PregnancyInfo = ({ pregnancyInfo, onUpdate, canEdit }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
-        isPregnant: pregnancyInfo?.isPregnant || false,
-        dueDate: pregnancyInfo?.dueDate ? pregnancyInfo.dueDate.split('T')[0] : '',
-        gravida: pregnancyInfo?.gravida || '',
-        para: pregnancyInfo?.para || '',
-        abortions: pregnancyInfo?.abortions || '',
-        livingChildren: pregnancyInfo?.livingChildren || '',
-        lastMenstrualPeriod: pregnancyInfo?.lastMenstrualPeriod ? pregnancyInfo.lastMenstrualPeriod.split('T')[0] : '',
-        highRisk: pregnancyInfo?.highRisk || false,
-        notes: pregnancyInfo?.notes || ''
+        isPregnant: false,
+        dueDate: '',
+        gravida: '',
+        para: '',
+        abortions: '',
+        livingChildren: '',
+        lastMenstrualPeriod: '',
+        highRisk: false,
+        notes: ''
     });
-
-    const [antenatalVisits, setAntenatalVisits] = useState(pregnancyInfo?.antenatalVisits || []);
+    const [antenatalVisits, setAntenatalVisits] = useState([]);
     const [showVisitForm, setShowVisitForm] = useState(false);
     const [newVisit, setNewVisit] = useState({ facility: '', notes: '' });
+
+    // Update form when pregnancyInfo changes
+    useEffect(() => {
+        if (pregnancyInfo) {
+            setFormData({
+                isPregnant: pregnancyInfo.isPregnant || false,
+                dueDate: pregnancyInfo.dueDate ? pregnancyInfo.dueDate.split('T')[0] : '',
+                gravida: pregnancyInfo.gravida || '',
+                para: pregnancyInfo.para || '',
+                abortions: pregnancyInfo.abortions || '',
+                livingChildren: pregnancyInfo.livingChildren || '',
+                lastMenstrualPeriod: pregnancyInfo.lastMenstrualPeriod ? pregnancyInfo.lastMenstrualPeriod.split('T')[0] : '',
+                highRisk: pregnancyInfo.highRisk || false,
+                notes: pregnancyInfo.notes || ''
+            });
+            setAntenatalVisits(pregnancyInfo.antenatalVisits || []);
+        }
+    }, [pregnancyInfo]);
 
     const handleSave = async () => {
         try {
@@ -28,17 +45,23 @@ const PregnancyInfo = ({ pregnancyInfo, onUpdate, canEdit }) => {
             });
             toast.success('Pregnancy information updated');
             setIsEditing(false);
-        } catch  {
+        } catch (error) {
             toast.error('Failed to update');
         }
     };
 
     const addAntenatalVisit = () => {
         if (newVisit.facility) {
-            setAntenatalVisits([...antenatalVisits, { ...newVisit, visitDate: new Date() }]);
+            const updatedVisits = [...antenatalVisits, { ...newVisit, visitDate: new Date() }];
+            setAntenatalVisits(updatedVisits);
             setNewVisit({ facility: '', notes: '' });
             setShowVisitForm(false);
         }
+    };
+
+    const removeAntenatalVisit = (index) => {
+        const updatedVisits = antenatalVisits.filter((_, i) => i !== index);
+        setAntenatalVisits(updatedVisits);
     };
 
     if (!isEditing) {
@@ -50,61 +73,66 @@ const PregnancyInfo = ({ pregnancyInfo, onUpdate, canEdit }) => {
                         Pregnancy Information
                     </h3>
                     {canEdit && (
-                        <button onClick={() => setIsEditing(true)} className="text-blue-400 hover:text-blue-300 text-sm">
+                        <button onClick={() => setIsEditing(true)} className="text-blue-400 hover:text-blue-300 text-sm px-3 py-1 rounded-lg bg-blue-500/20">
                             Edit
                         </button>
                     )}
                 </div>
 
                 {!pregnancyInfo?.isPregnant ? (
-                    <p className="text-gray-400">Not pregnant / No pregnancy information recorded</p>
+                    <div className="bg-white/5 rounded-lg p-4 text-center">
+                        <p className="text-gray-400">Not pregnant / No pregnancy information recorded</p>
+                    </div>
                 ) : (
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white/5 rounded-lg p-3">
-                            <p className="text-xs text-gray-500">Due Date</p>
-                            <p className="text-white font-medium">{pregnancyInfo.dueDate ? new Date(pregnancyInfo.dueDate).toLocaleDateString() : 'N/A'}</p>
+                    <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white/5 rounded-lg p-3">
+                                <p className="text-xs text-gray-500">Due Date</p>
+                                <p className="text-white font-medium">{pregnancyInfo.dueDate ? new Date(pregnancyInfo.dueDate).toLocaleDateString() : 'N/A'}</p>
+                            </div>
+                            <div className="bg-white/5 rounded-lg p-3">
+                                <p className="text-xs text-gray-500">Gravida (Pregnancies)</p>
+                                <p className="text-white font-medium">{pregnancyInfo.gravida || 'N/A'}</p>
+                            </div>
+                            <div className="bg-white/5 rounded-lg p-3">
+                                <p className="text-xs text-gray-500">Para (Births)</p>
+                                <p className="text-white font-medium">{pregnancyInfo.para || 'N/A'}</p>
+                            </div>
+                            <div className="bg-white/5 rounded-lg p-3">
+                                <p className="text-xs text-gray-500">Living Children</p>
+                                <p className="text-white font-medium">{pregnancyInfo.livingChildren || 'N/A'}</p>
+                            </div>
+                            <div className="bg-white/5 rounded-lg p-3">
+                                <p className="text-xs text-gray-500">Abortions/Miscarriages</p>
+                                <p className="text-white font-medium">{pregnancyInfo.abortions || 'N/A'}</p>
+                            </div>
+                            <div className="bg-white/5 rounded-lg p-3">
+                                <p className="text-xs text-gray-500">Last Menstrual Period</p>
+                                <p className="text-white font-medium">{pregnancyInfo.lastMenstrualPeriod ? new Date(pregnancyInfo.lastMenstrualPeriod).toLocaleDateString() : 'N/A'}</p>
+                            </div>
                         </div>
-                        <div className="bg-white/5 rounded-lg p-3">
-                            <p className="text-xs text-gray-500">Gravida (Pregnancies)</p>
-                            <p className="text-white font-medium">{pregnancyInfo.gravida || 'N/A'}</p>
-                        </div>
-                        <div className="bg-white/5 rounded-lg p-3">
-                            <p className="text-xs text-gray-500">Para (Births)</p>
-                            <p className="text-white font-medium">{pregnancyInfo.para || 'N/A'}</p>
-                        </div>
-                        <div className="bg-white/5 rounded-lg p-3">
-                            <p className="text-xs text-gray-500">Living Children</p>
-                            <p className="text-white font-medium">{pregnancyInfo.livingChildren || 'N/A'}</p>
-                        </div>
-                        <div className="bg-white/5 rounded-lg p-3">
-                            <p className="text-xs text-gray-500">Abortions/Miscarriages</p>
-                            <p className="text-white font-medium">{pregnancyInfo.abortions || 'N/A'}</p>
-                        </div>
-                        <div className="bg-white/5 rounded-lg p-3">
-                            <p className="text-xs text-gray-500">Last Menstrual Period</p>
-                            <p className="text-white font-medium">{pregnancyInfo.lastMenstrualPeriod ? new Date(pregnancyInfo.lastMenstrualPeriod).toLocaleDateString() : 'N/A'}</p>
-                        </div>
+                        
                         {pregnancyInfo.highRisk && (
-                            <div className="col-span-2 bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
                                 <p className="text-sm text-red-400 font-medium">⚠️ High Risk Pregnancy</p>
-                                <p className="text-xs text-red-300 mt-1">{pregnancyInfo.notes}</p>
+                                {pregnancyInfo.notes && <p className="text-xs text-red-300 mt-1">{pregnancyInfo.notes}</p>}
                             </div>
                         )}
-                    </div>
-                )}
 
-                {antenatalVisits.length > 0 && (
-                    <div className="mt-4">
-                        <h4 className="font-semibold text-white mb-2">Antenatal Visits</h4>
-                        <div className="space-y-2">
-                            {antenatalVisits.map((visit, idx) => (
-                                <div key={idx} className="bg-white/5 rounded-lg p-3">
-                                    <p className="text-sm text-white">{visit.facility}</p>
-                                    <p className="text-xs text-gray-400">{new Date(visit.visitDate).toLocaleDateString()}</p>
-                                    {visit.notes && <p className="text-xs text-gray-500 mt-1">{visit.notes}</p>}
+                        {antenatalVisits.length > 0 && (
+                            <div className="mt-3">
+                                <h4 className="font-semibold text-white mb-2">Antenatal Visits ({antenatalVisits.length})</h4>
+                                <div className="space-y-2">
+                                    {antenatalVisits.map((visit, idx) => (
+                                        <div key={idx} className="bg-white/5 rounded-lg p-3">
+                                            <p className="text-sm text-white font-medium">{visit.facility}</p>
+                                            <p className="text-xs text-gray-400">{new Date(visit.visitDate).toLocaleDateString()}</p>
+                                            {visit.notes && <p className="text-xs text-gray-500 mt-1">{visit.notes}</p>}
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -172,7 +200,7 @@ const PregnancyInfo = ({ pregnancyInfo, onUpdate, canEdit }) => {
                     {/* Antenatal Visits */}
                     <div className="border-t border-white/10 pt-4">
                         <div className="flex justify-between items-center mb-3">
-                            <h4 className="font-semibold text-white">Antenatal Visits</h4>
+                            <h4 className="font-semibold text-white">Antenatal Visits ({antenatalVisits.length})</h4>
                             <button onClick={() => setShowVisitForm(!showVisitForm)} className="text-purple-400 text-sm flex items-center">
                                 <PlusIcon className="h-4 w-4 mr-1" />
                                 Add Visit
@@ -191,10 +219,13 @@ const PregnancyInfo = ({ pregnancyInfo, onUpdate, canEdit }) => {
                         )}
 
                         {antenatalVisits.map((visit, idx) => (
-                            <div key={idx} className="bg-white/5 rounded-lg p-3 mb-2">
-                                <p className="text-sm text-white">{visit.facility}</p>
-                                <p className="text-xs text-gray-400">{new Date(visit.visitDate).toLocaleDateString()}</p>
-                                {visit.notes && <p className="text-xs text-gray-500 mt-1">{visit.notes}</p>}
+                            <div key={idx} className="bg-white/5 rounded-lg p-3 mb-2 flex justify-between items-start">
+                                <div>
+                                    <p className="text-sm text-white font-medium">{visit.facility}</p>
+                                    <p className="text-xs text-gray-400">{new Date(visit.visitDate).toLocaleDateString()}</p>
+                                    {visit.notes && <p className="text-xs text-gray-500 mt-1">{visit.notes}</p>}
+                                </div>
+                                <button onClick={() => removeAntenatalVisit(idx)} className="text-red-400 text-sm">Remove</button>
                             </div>
                         ))}
                     </div>
@@ -202,8 +233,8 @@ const PregnancyInfo = ({ pregnancyInfo, onUpdate, canEdit }) => {
             )}
 
             <div className="flex space-x-3 pt-4">
-                <button onClick={handleSave} className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg">Save Changes</button>
-                <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-white/10 text-white rounded-lg">Cancel</button>
+                <button onClick={handleSave} className="px-4 py-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition">Save Changes</button>
+                <button onClick={() => setIsEditing(false)} className="px-4 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition">Cancel</button>
             </div>
         </div>
     );

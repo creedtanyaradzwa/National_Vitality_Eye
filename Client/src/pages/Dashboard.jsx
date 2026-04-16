@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getTopDiseases, getProvinceStats, getPatientCount } from '../services/api';
-import { useAlerts } from '../context/useAlerts';
+import { useAlerts } from "../context/AlertProvider";
 import { useDataRefresh } from '../context/useDataRefresh';
 import StatsCards from '../components/dashboard/StatsCards';
 import RecentAlerts from '../components/dashboard/RecentAlerts';

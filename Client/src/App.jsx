@@ -2,9 +2,10 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthProvider';
-import { AlertProvider } from './context/AlertProvider';
+ // Default import
 import { DataRefreshProvider } from './context/DataRefreshProvider';
 import { useAuth } from './context/useAuth';
+import AlertProvider from './context/AlertProvider'; 
 import Navbar from './components/layout/Navbar';
 import Welcome from './pages/Welcome';
 import Login from './pages/Login';
@@ -19,13 +20,6 @@ import Admin from './pages/Admin';
 import Alerts from './pages/Alerts';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
-// Patient Portal Imports
-import PatientLogin from './pages/PatientPortal/Login';
-import PatientDashboard from './pages/PatientPortal/Dashboard';
-import PatientVerify from './pages/PatientPortal/Verify';
-import ForgotPassword from './pages/PatientPortal/ForgotPassword';
-import ResetPassword from './pages/PatientPortal/ResetPassword';
-import OfflineStatus from './components/ui/OfflineStatus';
 import VitalsTrendPage from './pages/VitalsTrendPage';
 
 const ProtectedRoute = ({ children }) => {
@@ -56,24 +50,12 @@ const ProtectedRoute = ({ children }) => {
 function AppRoutes() {
     return (
         <Routes>
-            {/* Public Routes */}
             <Route path="/" element={<Welcome />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            
-            {/* Patient Portal Routes (Public) */}
-            <Route path="/patient/login" element={<PatientLogin />} />
-            <Route path="/patient/verify" element={<PatientVerify />} />
-            <Route path="/patient/forgot-password" element={<ForgotPassword />} />
-            <Route path="/patient/reset-password" element={<ResetPassword />} />
-            
-            {/* Patient Portal Protected Routes */}
-            <Route path="/patient/dashboard" element={<PatientDashboard />} />
-            
-            {/* Main App Protected Routes */}
-            <Route path="/patients/:id/vitals-trend" element={<ProtectedRoute><VitalsTrendPage /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+
             <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
+            <Route path="/patients/:id/vitals-trend" element={<ProtectedRoute><VitalsTrendPage /></ProtectedRoute>} />
             <Route path="/patients/:id" element={<ProtectedRoute><PatientDetailsPage /></ProtectedRoute>} />
             <Route path="/records" element={<ProtectedRoute><MedicalRecords /></ProtectedRoute>} />
             <Route path="/ai-predictor" element={<ProtectedRoute><AIPredictor /></ProtectedRoute>} />
@@ -82,6 +64,7 @@ function AppRoutes() {
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/register" element={<Register />} />
         </Routes>
     );
 }
@@ -103,22 +86,9 @@ function App() {
                                     borderRadius: '12px',
                                     boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
                                 },
-                                success: {
-                                    iconTheme: {
-                                        primary: '#10B981',
-                                        secondary: '#fff',
-                                    },
-                                },
-                                error: {
-                                    iconTheme: {
-                                        primary: '#EF4444',
-                                        secondary: '#fff',
-                                    },
-                                },
                             }}
                         />
                         <AppRoutes />
-                        <OfflineStatus />
                     </DataRefreshProvider>
                 </AlertProvider>
             </AuthProvider>

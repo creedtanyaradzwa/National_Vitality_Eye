@@ -19,62 +19,58 @@ import {
     ArrowTrendingUpIcon,
     ArrowTrendingDownIcon,
     ChartBarIcon,
-    CalendarIcon,
     PrinterIcon,
-    ArrowPathIcon
+    ArrowPathIcon,
+    BeakerIcon,
+    ClipboardDocumentListIcon
 } from '@heroicons/react/24/outline';
 
-const VitalsTrend = ({ vitalsHistory, patientName, onRefresh }) => {
+const VitalsTrend = ({ vitalsHistory = [], patientName = '', onRefresh }) => {
     const [selectedVital, setSelectedVital] = useState('bloodPressure');
     const [timeRange, setTimeRange] = useState('all');
 
-    if (!vitalsHistory || vitalsHistory.length === 0) {
-        return (
-            <div className="text-center py-12">
-                <HeartIcon className="h-12 w-12 mx-auto text-gray-600 mb-3" />
-                <p className="text-gray-400">No vital signs recorded yet</p>
-                <p className="text-sm text-gray-500 mt-1">Vital signs will appear here after medical visits</p>
-            </div>
-        );
-    }
+    console.log('VitalsTrend received:', vitalsHistory.length, 'records');
 
-    // Filter by time range
+    // Filter data based on time range
     const getFilteredData = () => {
-        const now = new Date();
+        if (!vitalsHistory || vitalsHistory.length === 0) return [];
+        
         let filtered = [...vitalsHistory];
+        const now = new Date();
         
         if (timeRange === '3months') {
-            const threeMonthsAgo = new Date(now.setMonth(now.getMonth() - 3));
-            filtered = filtered.filter(v => new Date(v.visitDate) > threeMonthsAgo);
+            const cutoff = new Date();
+            cutoff.setMonth(now.getMonth() - 3);
+            filtered = filtered.filter(v => new Date(v.visitDate) > cutoff);
         } else if (timeRange === '6months') {
-            const sixMonthsAgo = new Date(now.setMonth(now.getMonth() - 6));
-            filtered = filtered.filter(v => new Date(v.visitDate) > sixMonthsAgo);
+            const cutoff = new Date();
+            cutoff.setMonth(now.getMonth() - 6);
+            filtered = filtered.filter(v => new Date(v.visitDate) > cutoff);
         } else if (timeRange === '12months') {
-            const twelveMonthsAgo = new Date(now.setMonth(now.getMonth() - 12));
-            filtered = filtered.filter(v => new Date(v.visitDate) > twelveMonthsAgo);
+            const cutoff = new Date();
+            cutoff.setFullYear(now.getFullYear() - 1);
+            filtered = filtered.filter(v => new Date(v.visitDate) > cutoff);
         }
         
         return filtered.sort((a, b) => new Date(a.visitDate) - new Date(b.visitDate));
     };
 
-    const prepareChartData = () => {
-        const filtered = getFilteredData();
-        return filtered.map(record => ({
-            date: new Date(record.visitDate).toLocaleDateString(),
-            fullDate: record.visitDate,
-            temperature: record.vitalSigns?.temperature,
-            heartRate: record.vitalSigns?.heartRate,
-            respiratoryRate: record.vitalSigns?.respiratoryRate,
-            oxygenSaturation: record.vitalSigns?.oxygenSaturation,
-            systolicBP: record.vitalSigns?.bloodPressure?.systolic,
-            diastolicBP: record.vitalSigns?.bloodPressure?.diastolic,
-            weight: record.vitalSigns?.weight,
-            bmi: record.vitalSigns?.bmi,
-            painScore: record.vitalSigns?.painScore
-        }));
-    };
-
-    const chartData = prepareChartData();
+    const filteredData = getFilteredData();
+    
+    // Prepare chart data
+    const chartData = filteredData.map(record => ({
+        date: new Date(record.visitDate).toLocaleDateString(),
+        fullDate: record.visitDate,
+        temperature: record.vitalSigns?.temperature,
+        heartRate: record.vitalSigns?.heartRate,
+        respiratoryRate: record.vitalSigns?.respiratoryRate,
+        oxygenSaturation: record.vitalSigns?.oxygenSaturation,
+        systolicBP: record.vitalSigns?.bloodPressure?.systolic,
+        diastolicBP: record.vitalSigns?.bloodPressure?.diastolic,
+        weight: record.vitalSigns?.weight,
+        bmi: record.vitalSigns?.bmi,
+        painScore: record.vitalSigns?.painScore
+    }));
 
     const getVitalRanges = (vital) => {
         const ranges = {
@@ -116,6 +112,28 @@ const VitalsTrend = ({ vitalsHistory, patientName, onRefresh }) => {
         return latest.vitalSigns?.[key];
     };
 
+    const getBMICategory = (bmi) => {
+        if (!bmi) return null;
+        if (bmi < 18.5) return { label: 'Underweight', color: 'text-yellow-400' };
+        if (bmi < 25) return { label: 'Normal', color: 'text-green-400' };
+        if (bmi < 30) return { label: 'Overweight', color: 'text-orange-400' };
+        return { label: 'Obese', color: 'text-red-400' };
+    };
+
+    const getPainScoreColor = (score) => {
+        if (!score) return 'text-gray-400';
+        if (score <= 3) return 'text-green-400';
+        if (score <= 6) return 'text-yellow-400';
+        return 'text-red-400';
+    };
+
+    const getOxygenStatus = (spo2) => {
+        if (!spo2) return null;
+        if (spo2 >= 95) return { label: 'Normal', color: 'text-green-400' };
+        if (spo2 >= 90) return { label: 'Low', color: 'text-yellow-400' };
+        return { label: 'Critical', color: 'text-red-400' };
+    };
+
     const vitals = [
         { key: 'temperature', label: 'Temperature', unit: '°C', icon: '🌡️', normalRange: '36.1-37.2' },
         { key: 'heartRate', label: 'Heart Rate', unit: 'bpm', icon: '❤️', normalRange: '60-100' },
@@ -128,95 +146,30 @@ const VitalsTrend = ({ vitalsHistory, patientName, onRefresh }) => {
         { key: 'painScore', label: 'Pain Score', unit: '/10', icon: '😖', normalRange: '0-3' }
     ];
 
-    const renderChart = () => {
-        const commonProps = {
-            data: chartData,
-            margin: { top: 10, right: 30, left: 0, bottom: 0 }
-        };
+    if (filteredData.length === 0 && vitalsHistory.length > 0) {
+        return (
+            <div className="text-center py-12">
+                <HeartIcon className="h-12 w-12 mx-auto text-gray-600 mb-3" />
+                <p className="text-gray-400">No data for selected time range</p>
+                <button onClick={() => setTimeRange('all')} className="mt-4 px-4 py-2 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-all">Show All Time</button>
+            </div>
+        );
+    }
 
-        switch (selectedVital) {
-            case 'temperature':
-                return (
-                    <LineChart {...commonProps}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
-                        <YAxis domain={[35, 40]} stroke="rgba(255,255,255,0.3)" />
-                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
-                        <Legend wrapperStyle={{ color: '#94a3b8' }} />
-                        <ReferenceLine y={36.1} stroke="#3b82f6" strokeDasharray="3 3" label={{ value: 'Normal Low', fill: '#3b82f6', fontSize: 10 }} />
-                        <ReferenceLine y={37.2} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'Normal High', fill: '#ef4444', fontSize: 10 }} />
-                        <Line type="monotone" dataKey="temperature" stroke="#f59e0b" strokeWidth={2} dot={{ r: 4 }} name="Temperature (°C)" />
-                    </LineChart>
-                );
-            case 'heartRate':
-                return (
-                    <LineChart {...commonProps}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
-                        <YAxis domain={[40, 140]} stroke="rgba(255,255,255,0.3)" />
-                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
-                        <Legend wrapperStyle={{ color: '#94a3b8' }} />
-                        <ReferenceLine y={60} stroke="#3b82f6" strokeDasharray="3 3" />
-                        <ReferenceLine y={100} stroke="#ef4444" strokeDasharray="3 3" />
-                        <Line type="monotone" dataKey="heartRate" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} name="Heart Rate (bpm)" />
-                    </LineChart>
-                );
-            case 'bloodPressure':
-                return (
-                    <LineChart {...commonProps}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
-                        <YAxis domain={[40, 180]} stroke="rgba(255,255,255,0.3)" />
-                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
-                        <Legend wrapperStyle={{ color: '#94a3b8' }} />
-                        <ReferenceLine y={90} stroke="#3b82f6" strokeDasharray="3 3" />
-                        <ReferenceLine y={120} stroke="#ef4444" strokeDasharray="3 3" />
-                        <Line type="monotone" dataKey="systolicBP" stroke="#f59e0b" strokeWidth={2} name="Systolic BP" />
-                        <Line type="monotone" dataKey="diastolicBP" stroke="#ec4899" strokeWidth={2} name="Diastolic BP" />
-                    </LineChart>
-                );
-            case 'oxygenSaturation':
-                return (
-                    <AreaChart {...commonProps}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
-                        <YAxis domain={[80, 100]} stroke="rgba(255,255,255,0.3)" />
-                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
-                        <Legend wrapperStyle={{ color: '#94a3b8' }} />
-                        <ReferenceLine y={95} stroke="#3b82f6" strokeDasharray="3 3" />
-                        <Area type="monotone" dataKey="oxygenSaturation" stroke="#10b981" fill="#10b981" fillOpacity={0.3} name="O₂ Saturation (%)" />
-                    </AreaChart>
-                );
-            case 'weight':
-                return (
-                    <BarChart {...commonProps}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
-                        <YAxis stroke="rgba(255,255,255,0.3)" />
-                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
-                        <Bar dataKey="weight" fill="#8b5cf6" radius={[4, 4, 0, 0]} name="Weight (kg)" />
-                    </BarChart>
-                );
-            default:
-                return (
-                    <LineChart {...commonProps}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                        <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
-                        <YAxis stroke="rgba(255,255,255,0.3)" />
-                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
-                        <Line type="monotone" dataKey={selectedVital} stroke="#8b5cf6" strokeWidth={2} dot={{ r: 4 }} />
-                    </LineChart>
-                );
-        }
-    };
-
-    const handlePrint = () => {
-        window.print();
-    };
+    if (filteredData.length === 0) {
+        return (
+            <div className="text-center py-12">
+                <HeartIcon className="h-12 w-12 mx-auto text-gray-600 mb-3" />
+                <p className="text-gray-400">No vital signs recorded yet</p>
+                <p className="text-sm text-gray-500 mt-1">Vital signs will appear here after medical visits</p>
+                {onRefresh && <button onClick={onRefresh} className="mt-4 px-4 py-2 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-all">Refresh Data</button>}
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-6">
-            {/* Header with Patient Info */}
+            {/* Header */}
             <div className="flex justify-between items-center flex-wrap gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-white flex items-center">
@@ -224,60 +177,40 @@ const VitalsTrend = ({ vitalsHistory, patientName, onRefresh }) => {
                         Vitals Trend Analysis
                     </h2>
                     <p className="text-gray-400 text-sm mt-1">
-                        Tracking {patientName}'s vital signs over time
+                        Tracking {patientName}'s vital signs over time ({chartData.length} records)
                     </p>
                 </div>
                 <div className="flex space-x-2">
-                    <button
-                        onClick={onRefresh}
-                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-300"
-                        title="Refresh Data"
-                    >
-                        <ArrowPathIcon className="h-5 w-5 text-gray-400" />
-                    </button>
-                    <button
-                        onClick={handlePrint}
-                        className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-300"
-                        title="Print Report"
-                    >
-                        <PrinterIcon className="h-5 w-5 text-gray-400" />
-                    </button>
+                    {onRefresh && <button onClick={onRefresh} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-300"><ArrowPathIcon className="h-5 w-5 text-gray-400" /></button>}
+                    <button onClick={() => window.print()} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-all duration-300"><PrinterIcon className="h-5 w-5 text-gray-400" /></button>
                 </div>
             </div>
 
             {/* Time Range Filter */}
-            <div className="flex space-x-2">
+            <div className="flex flex-wrap gap-2">
                 {[
                     { value: 'all', label: 'All Time' },
                     { value: '3months', label: '3 Months' },
                     { value: '6months', label: '6 Months' },
                     { value: '12months', label: '12 Months' }
                 ].map(range => (
-                    <button
-                        key={range.value}
-                        onClick={() => setTimeRange(range.value)}
-                        className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 ${
-                            timeRange === range.value
-                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                                : 'bg-white/10 text-gray-400 hover:text-white'
-                        }`}
-                    >
+                    <button key={range.value} onClick={() => setTimeRange(range.value)} className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 ${timeRange === range.value ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25' : 'bg-white/10 text-gray-400 hover:text-white'}`}>
                         {range.label}
                     </button>
                 ))}
             </div>
 
-            {/* Vital Stats Cards */}
+            {/* Vital Stats Cards - All 9 vitals */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {vitals.map(vital => {
                     const latestValue = getLatestValue(vital.key);
-                    if (!latestValue) return null;
+                    if (!latestValue && vital.key !== 'bmi') return null;
                     return (
-                        <div key={vital.key} className="bg-white/5 rounded-lg p-3 text-center hover:bg-white/10 transition-all duration-300">
+                        <div key={vital.key} className="bg-white/5 rounded-lg p-3 text-center hover:bg-white/10 transition-all duration-300 group">
                             <div className="text-2xl mb-1">{vital.icon}</div>
                             <p className="text-xs text-gray-400">{vital.label}</p>
                             <p className={`text-lg font-bold ${getStatusColor(latestValue, vital.key)}`}>
-                                {latestValue}{vital.unit}
+                                {latestValue || '-'}{vital.unit}
                             </p>
                             <div className="flex items-center justify-center mt-1">
                                 {getTrendIcon(chartData, vital.key)}
@@ -288,57 +221,28 @@ const VitalsTrend = ({ vitalsHistory, patientName, onRefresh }) => {
                 })}
             </div>
 
-            {/* Chart Selector */}
+            {/* Chart Selector - All options */}
             <div className="flex flex-wrap gap-2">
-                <button
-                    onClick={() => setSelectedVital('bloodPressure')}
-                    className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 ${
-                        selectedVital === 'bloodPressure'
-                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                            : 'bg-white/10 text-gray-400 hover:text-white'
-                    }`}
-                >
-                    💓 Blood Pressure
+                <button onClick={() => setSelectedVital('bloodPressure')} className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 flex items-center space-x-2 ${selectedVital === 'bloodPressure' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25' : 'bg-white/10 text-gray-400 hover:text-white'}`}>
+                    <span>💓</span><span>Blood Pressure</span>
                 </button>
-                <button
-                    onClick={() => setSelectedVital('temperature')}
-                    className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 ${
-                        selectedVital === 'temperature'
-                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                            : 'bg-white/10 text-gray-400 hover:text-white'
-                    }`}
-                >
-                    🌡️ Temperature
+                <button onClick={() => setSelectedVital('temperature')} className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 flex items-center space-x-2 ${selectedVital === 'temperature' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25' : 'bg-white/10 text-gray-400 hover:text-white'}`}>
+                    <span>🌡️</span><span>Temperature</span>
                 </button>
-                <button
-                    onClick={() => setSelectedVital('heartRate')}
-                    className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 ${
-                        selectedVital === 'heartRate'
-                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                            : 'bg-white/10 text-gray-400 hover:text-white'
-                    }`}
-                >
-                    ❤️ Heart Rate
+                <button onClick={() => setSelectedVital('heartRate')} className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 flex items-center space-x-2 ${selectedVital === 'heartRate' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25' : 'bg-white/10 text-gray-400 hover:text-white'}`}>
+                    <span>❤️</span><span>Heart Rate</span>
                 </button>
-                <button
-                    onClick={() => setSelectedVital('oxygenSaturation')}
-                    className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 ${
-                        selectedVital === 'oxygenSaturation'
-                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                            : 'bg-white/10 text-gray-400 hover:text-white'
-                    }`}
-                >
-                    🫁 O₂ Saturation
+                <button onClick={() => setSelectedVital('respiratoryRate')} className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 flex items-center space-x-2 ${selectedVital === 'respiratoryRate' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25' : 'bg-white/10 text-gray-400 hover:text-white'}`}>
+                    <span>🌬️</span><span>Respiratory Rate</span>
                 </button>
-                <button
-                    onClick={() => setSelectedVital('weight')}
-                    className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 ${
-                        selectedVital === 'weight'
-                            ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-                            : 'bg-white/10 text-gray-400 hover:text-white'
-                    }`}
-                >
-                    ⚖️ Weight/BMI
+                <button onClick={() => setSelectedVital('oxygenSaturation')} className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 flex items-center space-x-2 ${selectedVital === 'oxygenSaturation' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25' : 'bg-white/10 text-gray-400 hover:text-white'}`}>
+                    <span>🫁</span><span>O₂ Saturation</span>
+                </button>
+                <button onClick={() => setSelectedVital('weight')} className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 flex items-center space-x-2 ${selectedVital === 'weight' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25' : 'bg-white/10 text-gray-400 hover:text-white'}`}>
+                    <span>⚖️</span><span>Weight/BMI</span>
+                </button>
+                <button onClick={() => setSelectedVital('painScore')} className={`px-4 py-2 rounded-lg text-sm transition-all duration-300 flex items-center space-x-2 ${selectedVital === 'painScore' ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25' : 'bg-white/10 text-gray-400 hover:text-white'}`}>
+                    <span>😖</span><span>Pain Score</span>
                 </button>
             </div>
 
@@ -346,15 +250,94 @@ const VitalsTrend = ({ vitalsHistory, patientName, onRefresh }) => {
             <div className="bg-white/5 rounded-xl p-4">
                 <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                        {renderChart()}
+                        {selectedVital === 'bloodPressure' ? (
+                            <LineChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
+                                <YAxis domain={[40, 180]} stroke="rgba(255,255,255,0.3)" />
+                                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
+                                <Legend wrapperStyle={{ color: '#94a3b8' }} />
+                                <ReferenceLine y={90} stroke="#3b82f6" strokeDasharray="3 3" label={{ value: 'Low', fill: '#3b82f6', fontSize: 10 }} />
+                                <ReferenceLine y={120} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'High', fill: '#ef4444', fontSize: 10 }} />
+                                <Line type="monotone" dataKey="systolicBP" stroke="#f59e0b" strokeWidth={2} name="Systolic BP" dot={{ r: 3 }} />
+                                <Line type="monotone" dataKey="diastolicBP" stroke="#ec4899" strokeWidth={2} name="Diastolic BP" dot={{ r: 3 }} />
+                            </LineChart>
+                        ) : selectedVital === 'temperature' ? (
+                            <LineChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
+                                <YAxis domain={[35, 40]} stroke="rgba(255,255,255,0.3)" />
+                                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
+                                <Legend wrapperStyle={{ color: '#94a3b8' }} />
+                                <ReferenceLine y={36.1} stroke="#3b82f6" strokeDasharray="3 3" label={{ value: 'Low', fill: '#3b82f6', fontSize: 10 }} />
+                                <ReferenceLine y={37.2} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'High', fill: '#ef4444', fontSize: 10 }} />
+                                <Line type="monotone" dataKey="temperature" stroke="#f59e0b" strokeWidth={2} name="Temperature (°C)" dot={{ r: 3 }} />
+                            </LineChart>
+                        ) : selectedVital === 'heartRate' ? (
+                            <LineChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
+                                <YAxis domain={[40, 140]} stroke="rgba(255,255,255,0.3)" />
+                                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
+                                <Legend wrapperStyle={{ color: '#94a3b8' }} />
+                                <ReferenceLine y={60} stroke="#3b82f6" strokeDasharray="3 3" label={{ value: 'Low', fill: '#3b82f6', fontSize: 10 }} />
+                                <ReferenceLine y={100} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'High', fill: '#ef4444', fontSize: 10 }} />
+                                <Line type="monotone" dataKey="heartRate" stroke="#ef4444" strokeWidth={2} name="Heart Rate (bpm)" dot={{ r: 3 }} />
+                            </LineChart>
+                        ) : selectedVital === 'respiratoryRate' ? (
+                            <LineChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
+                                <YAxis domain={[8, 30]} stroke="rgba(255,255,255,0.3)" />
+                                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
+                                <Legend wrapperStyle={{ color: '#94a3b8' }} />
+                                <ReferenceLine y={12} stroke="#3b82f6" strokeDasharray="3 3" label={{ value: 'Low', fill: '#3b82f6', fontSize: 10 }} />
+                                <ReferenceLine y={20} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'High', fill: '#ef4444', fontSize: 10 }} />
+                                <Line type="monotone" dataKey="respiratoryRate" stroke="#06b6d4" strokeWidth={2} name="Respiratory Rate (/min)" dot={{ r: 3 }} />
+                            </LineChart>
+                        ) : selectedVital === 'oxygenSaturation' ? (
+                            <AreaChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
+                                <YAxis domain={[80, 100]} stroke="rgba(255,255,255,0.3)" />
+                                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
+                                <Legend wrapperStyle={{ color: '#94a3b8' }} />
+                                <ReferenceLine y={95} stroke="#3b82f6" strokeDasharray="3 3" label={{ value: 'Normal', fill: '#3b82f6', fontSize: 10 }} />
+                                <Area type="monotone" dataKey="oxygenSaturation" stroke="#10b981" fill="#10b981" fillOpacity={0.3} name="O₂ Saturation (%)" />
+                            </AreaChart>
+                        ) : selectedVital === 'painScore' ? (
+                            <BarChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
+                                <YAxis domain={[0, 10]} stroke="rgba(255,255,255,0.3)" />
+                                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
+                                <Legend wrapperStyle={{ color: '#94a3b8' }} />
+                                <ReferenceLine y={3} stroke="#3b82f6" strokeDasharray="3 3" label={{ value: 'Mild', fill: '#3b82f6', fontSize: 10 }} />
+                                <ReferenceLine y={6} stroke="#ef4444" strokeDasharray="3 3" label={{ value: 'Severe', fill: '#ef4444', fontSize: 10 }} />
+                                <Bar dataKey="painScore" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Pain Score (/10)" />
+                            </BarChart>
+                        ) : (
+                            <LineChart data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
+                                <YAxis stroke="rgba(255,255,255,0.3)" />
+                                <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px' }} />
+                                <Legend wrapperStyle={{ color: '#94a3b8' }} />
+                                <Line type="monotone" dataKey="weight" stroke="#8b5cf6" strokeWidth={2} name="Weight (kg)" dot={{ r: 3 }} />
+                                <Line type="monotone" dataKey="bmi" stroke="#ec4899" strokeWidth={2} name="BMI" dot={{ r: 3 }} />
+                            </LineChart>
+                        )}
                     </ResponsiveContainer>
                 </div>
             </div>
 
-            {/* Data Table */}
+            {/* Data Table with ALL vitals */}
             <div className="bg-white/5 rounded-xl overflow-hidden">
-                <div className="p-4 border-b border-white/10">
-                    <h3 className="font-semibold text-white">Historical Vitals Data</h3>
+                <div className="p-4 border-b border-white/10 bg-white/5">
+                    <h3 className="font-semibold text-white flex items-center">
+                        <ClipboardDocumentListIcon className="h-4 w-4 mr-2 text-purple-400" />
+                        Historical Vitals Data
+                    </h3>
                 </div>
                 <div className="overflow-x-auto max-h-64">
                     <table className="min-w-full divide-y divide-white/10">
@@ -364,7 +347,7 @@ const VitalsTrend = ({ vitalsHistory, patientName, onRefresh }) => {
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">Temp (°C)</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">BP</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">HR (bpm)</th>
-                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">RR</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">RR (/min)</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">O₂ (%)</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">Weight (kg)</th>
                                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-400">BMI</th>
@@ -372,62 +355,54 @@ const VitalsTrend = ({ vitalsHistory, patientName, onRefresh }) => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/10">
-                            {chartData.slice().reverse().map((record, idx) => (
-                                <tr key={idx} className="hover:bg-white/5 transition">
-                                    <td className="px-4 py-2 text-sm text-white">{record.date}</td>
-                                    <td className={`px-4 py-2 text-sm ${getStatusColor(record.temperature, 'temperature')}`}>{record.temperature || '-'}</td>
-                                    <td className="px-4 py-2 text-sm text-white">{record.systolicBP && record.diastolicBP ? `${record.systolicBP}/${record.diastolicBP}` : '-'}</td>
-                                    <td className={`px-4 py-2 text-sm ${getStatusColor(record.heartRate, 'heartRate')}`}>{record.heartRate || '-'}</td>
-                                    <td className="px-4 py-2 text-sm text-white">{record.respiratoryRate || '-'}</td>
-                                    <td className={`px-4 py-2 text-sm ${getStatusColor(record.oxygenSaturation, 'oxygenSaturation')}`}>{record.oxygenSaturation || '-'}</td>
-                                    <td className="px-4 py-2 text-sm text-white">{record.weight || '-'}</td>
-                                    <td className={`px-4 py-2 text-sm ${getStatusColor(record.bmi, 'bmi')}`}>{record.bmi || '-'}</td>
-                                    <td className={`px-4 py-2 text-sm ${getStatusColor(record.painScore, 'painScore')}`}>{record.painScore || '-'}</td>
-                                </tr>
-                            ))}
+                            {chartData.slice().reverse().map((record, idx) => {
+                                const bmiCategory = getBMICategory(record.bmi);
+                                const oxygenStatus = getOxygenStatus(record.oxygenSaturation);
+                                return (
+                                    <tr key={idx} className="hover:bg-white/5 transition-all duration-300">
+                                        <td className="px-4 py-2 text-sm text-white whitespace-nowrap">{record.date}</td>
+                                        <td className={`px-4 py-2 text-sm ${getStatusColor(record.temperature, 'temperature')}`}>{record.temperature?.toFixed(1) || '-'}</td>
+                                        <td className="px-4 py-2 text-sm text-white">{record.systolicBP && record.diastolicBP ? `${record.systolicBP}/${record.diastolicBP}` : '-'}</td>
+                                        <td className={`px-4 py-2 text-sm ${getStatusColor(record.heartRate, 'heartRate')}`}>{record.heartRate || '-'}</td>
+                                        <td className={`px-4 py-2 text-sm ${getStatusColor(record.respiratoryRate, 'respiratoryRate')}`}>{record.respiratoryRate || '-'}</td>
+                                        <td className={`px-4 py-2 text-sm ${oxygenStatus?.color || 'text-white'}`}>{record.oxygenSaturation || '-'}%</td>
+                                        <td className="px-4 py-2 text-sm text-white">{record.weight || '-'}</td>
+                                        <td className={`px-4 py-2 text-sm ${bmiCategory?.color || 'text-white'}`}>{record.bmi?.toFixed(1) || '-'}</td>
+                                        <td className={`px-4 py-2 text-sm ${getPainScoreColor(record.painScore)}`}>{record.painScore || '-'}/10</td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            {/* Summary Insights */}
-            {chartData.length >= 2 && (
-                <div className="bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-xl p-4 border border-purple-500/30">
-                    <h3 className="font-semibold text-white mb-2 flex items-center">
-                        <ChartBarIcon className="h-5 w-5 mr-2 text-purple-400" />
-                        Clinical Insights
-                    </h3>
-                    <div className="space-y-2 text-sm">
-                        {(() => {
-                            const first = chartData[0];
-                            const last = chartData[chartData.length - 1];
-                            const insights = [];
-                            
-                            if (first.systolicBP && last.systolicBP) {
-                                const bpChange = last.systolicBP - first.systolicBP;
-                                if (bpChange < -10) insights.push(`📉 Blood pressure has improved by ${Math.abs(bpChange)} points`);
-                                else if (bpChange > 10) insights.push(`📈 Blood pressure has increased by ${bpChange} points - monitor closely`);
-                            }
-                            
-                            if (first.weight && last.weight) {
-                                const weightChange = (last.weight - first.weight).toFixed(1);
-                                if (weightChange < -2) insights.push(`⚖️ Weight decreased by ${Math.abs(weightChange)}kg`);
-                                else if (weightChange > 2) insights.push(`⚖️ Weight increased by ${weightChange}kg`);
-                            }
-                            
-                            if (first.oxygenSaturation && last.oxygenSaturation && last.oxygenSaturation < 95) {
-                                insights.push(`🫁 Oxygen saturation is below normal range (${last.oxygenSaturation}%) - clinical review recommended`);
-                            }
-                            
-                            if (insights.length === 0) {
-                                insights.push('✅ All vitals are within normal ranges');
-                            }
-                            
-                            return insights.map((insight, i) => <p key={i} className="text-gray-300">{insight}</p>);
-                        })()}
-                    </div>
+            {/* Summary Statistics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-500">Avg Heart Rate</p>
+                    <p className="text-lg font-bold text-white">
+                        {Math.round(chartData.reduce((sum, r) => sum + (r.heartRate || 0), 0) / chartData.filter(r => r.heartRate).length) || '-'} bpm
+                    </p>
                 </div>
-            )}
+                <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-500">Avg Blood Pressure</p>
+                    <p className="text-lg font-bold text-white">
+                        {Math.round(chartData.reduce((sum, r) => sum + (r.systolicBP || 0), 0) / chartData.filter(r => r.systolicBP).length) || '-'}/
+                        {Math.round(chartData.reduce((sum, r) => sum + (r.diastolicBP || 0), 0) / chartData.filter(r => r.diastolicBP).length) || '-'}
+                    </p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-500">Avg Temperature</p>
+                    <p className="text-lg font-bold text-white">
+                        {Math.round((chartData.reduce((sum, r) => sum + (r.temperature || 0), 0) / chartData.filter(r => r.temperature).length) * 10) / 10 || '-'} °C
+                    </p>
+                </div>
+                <div className="bg-white/5 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-500">Total Records</p>
+                    <p className="text-lg font-bold text-white">{chartData.length}</p>
+                </div>
+            </div>
         </div>
     );
 };

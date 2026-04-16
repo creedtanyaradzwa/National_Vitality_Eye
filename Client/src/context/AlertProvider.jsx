@@ -1,9 +1,20 @@
-// src/context/AlertProvider.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
-import { AlertContext } from './AlertContext';
 
+// Create context
+const AlertContext = React.createContext(undefined);
+
+// Custom hook for using alerts - MUST BE EXPORTED
+export const useAlerts = () => {
+    const context = React.useContext(AlertContext);
+    if (context === undefined) {
+        throw new Error('useAlerts must be used within an AlertProvider');
+    }
+    return context;
+};
+
+// Alert Provider Component
 export const AlertProvider = ({ children }) => {
     const [alerts, setAlerts] = useState([]);
     const [activeAlerts, setActiveAlerts] = useState([]);
@@ -89,3 +100,5 @@ export const AlertProvider = ({ children }) => {
         </AlertContext.Provider>
     );
 };
+
+export default AlertProvider;

@@ -124,15 +124,18 @@ router.patch("/:id/clinical-profile", hasPermission("edit:patients"), async (req
             return res.status(404).json({ error: "Patient not found" });
         }
         
+        // Merge the new clinical profile data with existing
         patient.clinicalProfile = {
             ...patient.clinicalProfile,
             ...req.body
         };
+        
         patient.updatedBy = req.user._id;
         await patient.save();
         
         res.json(patient.clinicalProfile);
     } catch (error) {
+        console.error("Error updating clinical profile:", error);
         res.status(500).json({ error: error.message });
     }
 });
