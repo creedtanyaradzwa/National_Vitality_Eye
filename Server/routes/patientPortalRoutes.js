@@ -2,315 +2,274 @@ const express = require("express");
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const crypto = require("crypto");
 const Patient = require("../models/Patient");
 const MedicalRecord = require("../models/MedicalRecord");
-const { sendPatientVerificationEmail, sendPasswordResetEmail } = require("../utils/emailService");
 
-// ============ PATIENT REGISTRATION ============
-router.post("/register", async (req, res) => {
-    try {
-        const { nationalId, email, phoneNumber, password, consent } = req.body;
-        
-        console.log("Registration attempt for nationalId:", nationalId);
-        
-        if (!nationalId) return res.status(400).json({ error: "National ID required" });
-        if (!email) return res.status(400).json({ error: "Email required" });
-        if (!password || password.length < 8) return res.status(400).json({ error: "Password must be at least 8 characters" });
-        if (consent !== "true" && consent !== true) return res.status(400).json({ error: "Consent is required" });
-        
-        const patient = await Patient.findOne({ nationalId });
-        if (!patient) {
-            return res.status(404).json({ error: "Patient not found. Please contact your healthcare provider." });
-        }
-        
-        if (patient.portalAccount && patient.portalAccount.hasAccount) {
-            return res.status(400).json({ error: "Account already exists. Please login." });
-        }
-        
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-        
-        const verificationToken = crypto.randomBytes(32).toString("hex");
-        
-        patient.portalAccount = {
-            hasAccount: true,
-            email: email,
-            phoneNumber: phoneNumber || "",
-            password: hashedPassword,
-            createdAt: new Date(),
-            consentGiven: consent === "true" || consent === true,
-            consentDate: new Date(),
-            isActive: true,
-            isVerified: false,
-            verificationToken: verificationToken,
-            verificationExpires: Date.now() + 24 * 60 * 60 * 1000,
-            auditLog: [{
-                action: "REGISTER",
-                timestamp: new Date(),
-                ipAddress: req.ip,
-                userAgent: req.get("User-Agent")
-            }]
-        };
-        
-        await patient.save();
-        
-        await sendPatientVerificationEmail(email, `${patient.firstName} ${patient.lastName}`, verificationToken);
-        
-        console.log("Patient portal account created for:", email);
-        console.log("Verification token:", verificationToken);
-        
-        res.status(201).json({
-            message: "Registration successful! Please check your email to verify your account.",
-            success: true,
-            requiresVerification: true
-        });
-        
-    } catch (error) {
-        console.error("Registration error:", error);
-        res.status(500).json({ error: error.message });
-    }
-});
+// ============ PATIENT AUTHENTICATION ============
 
-// ============ EMAIL VERIFICATION ============
-router.get("/verify", async (req, res) => {
-    try {
-        const { token } = req.query;
-        
-        console.log("Verification attempt with token:", token);
-        
-        if (!token) {
-            return res.status(400).json({ error: "Verification token required" });
-        }
-        
-        const patient = await Patient.findOne({ 
-            "portalAccount.verificationToken": token,
-            "portalAccount.verificationExpires": { $gt: Date.now() }
-        });
-        
-        console.log("Patient found:", patient ? "YES" : "NO");
-        
-        if (!patient) {
-            const expiredPatient = await Patient.findOne({ 
-                "portalAccount.verificationToken": token
-            });
-            if (expiredPatient) {
-                return res.status(400).json({ error: "Verification token has expired. Please register again." });
-            }
-            return res.status(400).json({ error: "Invalid verification token" });
-        }
-        
-        patient.portalAccount.isVerified = true;
-        patient.portalAccount.verificationToken = null;
-        patient.portalAccount.verificationExpires = null;
-        
-        if (!patient.portalAccount.auditLog) patient.portalAccount.auditLog = [];
-        patient.portalAccount.auditLog.push({
-            action: "VERIFY_EMAIL",
-            timestamp: new Date(),
-            ipAddress: req.ip,
-            userAgent: req.get("User-Agent")
-        });
-        
-        await patient.save();
-        
-        console.log("Email verified for patient:", patient._id);
-        
-        res.json({ 
-            message: "Email verified successfully! You can now login.",
-            success: true 
-        });
-    } catch (error) {
-        console.error("Verification error:", error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// ============ PATIENT LOGIN ============
+// Patient Login
 router.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
         
-        console.log("Patient login attempt for:", email);
+        console.log("Patient login attempt:", email);
         
         const patient = await Patient.findOne({ "portalAccount.email": email });
+        
         if (!patient) {
-            return res.status(401).json({ error: "Invalid credentials" });
+            console.log("Patient not found:", email);
+            return res.status(401).json({ error: "Invalid email or password" });
         }
         
-        if (!patient.portalAccount || !patient.portalAccount.isActive) {
-            return res.status(401).json({ error: "Account deactivated. Contact support." });
+        if (!patient.portalAccount?.hasAccount) {
+            return res.status(401).json({ error: "No portal account found. Please contact your hospital." });
+        }
+        
+        if (!patient.portalAccount.isActive) {
+            return res.status(401).json({ error: "Account is deactivated. Contact support." });
         }
         
         if (!patient.portalAccount.isVerified) {
-            return res.status(401).json({ error: "Please verify your email before logging in." });
+            return res.status(401).json({ error: "Please verify your email first." });
         }
         
         const isValid = await bcrypt.compare(password, patient.portalAccount.password);
         if (!isValid) {
-            patient.portalAccount.loginAttempts = (patient.portalAccount.loginAttempts || 0) + 1;
-            await patient.save();
-            return res.status(401).json({ error: "Invalid credentials" });
+            return res.status(401).json({ error: "Invalid email or password" });
         }
         
-        patient.portalAccount.loginAttempts = 0;
         patient.portalAccount.lastLogin = new Date();
-        if (!patient.portalAccount.auditLog) patient.portalAccount.auditLog = [];
-        patient.portalAccount.auditLog.push({
-            action: "LOGIN",
-            timestamp: new Date(),
-            ipAddress: req.ip,
-            userAgent: req.get("User-Agent")
-        });
         await patient.save();
         
         const token = jwt.sign(
-            { patientId: patient._id, nationalId: patient.nationalId, role: "patient" },
+            { id: patient._id, email: patient.portalAccount.email, type: "patient" },
             process.env.JWT_SECRET,
             { expiresIn: "7d" }
         );
         
+        console.log("Patient logged in:", patient.firstName, patient.lastName);
+        
         res.json({
             token,
-            user: {
-                patientId: patient._id,
-                name: `${patient.firstName} ${patient.lastName}`,
+            patient: {
+                id: patient._id,
+                firstName: patient.firstName,
+                lastName: patient.lastName,
                 email: patient.portalAccount.email,
-                nationalId: patient.nationalId
+                nationalId: patient.nationalId,
+                dateOfBirth: patient.dateOfBirth,
+                gender: patient.gender,
+                province: patient.province
             }
         });
-        
     } catch (error) {
-        console.error("Login error:", error);
+        console.error("Patient login error:", error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// ============ FORGOT PASSWORD ============
+// Forgot Password
 router.post("/forgot-password", async (req, res) => {
     try {
         const { email } = req.body;
         
-        if (!email) {
-            return res.status(400).json({ error: "Email required" });
-        }
-        
         const patient = await Patient.findOne({ "portalAccount.email": email });
         
-        if (patient && patient.portalAccount && patient.portalAccount.hasAccount) {
-            const resetToken = crypto.randomBytes(32).toString("hex");
-            patient.portalAccount.passwordResetToken = resetToken;
-            patient.portalAccount.passwordResetExpires = Date.now() + 3600000;
-            await patient.save();
-            
-            await sendPasswordResetEmail(email, `${patient.firstName} ${patient.lastName}`, resetToken);
-            console.log("Password reset token sent for:", email);
+        if (!patient || !patient.portalAccount?.hasAccount) {
+            return res.json({ message: "If an account exists, a reset link will be sent" });
         }
         
-        res.json({ message: "If an account exists, a reset link has been sent." });
+        const resetToken = jwt.sign(
+            { id: patient._id, email: patient.portalAccount.email },
+            process.env.JWT_SECRET,
+            { expiresIn: "1h" }
+        );
+        
+        patient.portalAccount.resetToken = resetToken;
+        patient.portalAccount.resetTokenExpiry = new Date(Date.now() + 3600000);
+        await patient.save();
+        
+        res.json({ message: "Reset link sent to your email" });
     } catch (error) {
         console.error("Forgot password error:", error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// ============ RESET PASSWORD ============
+// Reset Password
 router.post("/reset-password", async (req, res) => {
     try {
         const { token, newPassword } = req.body;
         
-        if (!token || !newPassword) {
-            return res.status(400).json({ error: "Token and new password required" });
-        }
-        
-        if (newPassword.length < 8) {
-            return res.status(400).json({ error: "Password must be at least 8 characters" });
-        }
-        
-        const patient = await Patient.findOne({
-            "portalAccount.passwordResetToken": token,
-            "portalAccount.passwordResetExpires": { $gt: Date.now() }
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const patient = await Patient.findOne({ 
+            _id: decoded.id,
+            "portalAccount.resetToken": token,
+            "portalAccount.resetTokenExpiry": { $gt: new Date() }
         });
         
         if (!patient) {
-            return res.status(400).json({ error: "Invalid or expired reset token" });
+            return res.status(400).json({ error: "Invalid or expired reset link" });
         }
         
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(newPassword, salt);
-        
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
         patient.portalAccount.password = hashedPassword;
-        patient.portalAccount.passwordResetToken = null;
-        patient.portalAccount.passwordResetExpires = null;
-        if (!patient.portalAccount.auditLog) patient.portalAccount.auditLog = [];
-        patient.portalAccount.auditLog.push({
-            action: "PASSWORD_RESET",
-            timestamp: new Date(),
-            ipAddress: req.ip,
-            userAgent: req.get("User-Agent")
-        });
-        
+        patient.portalAccount.resetToken = undefined;
+        patient.portalAccount.resetTokenExpiry = undefined;
         await patient.save();
         
-        res.json({ message: "Password reset successfully! You can now login." });
+        res.json({ message: "Password reset successful" });
     } catch (error) {
         console.error("Reset password error:", error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// ============ VERIFY TOKEN MIDDLEWARE ============
-const verifyPatientToken = (req, res, next) => {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) {
-        return res.status(401).json({ error: "Unauthorized" });
-    }
-    
+// Verify Email
+router.get("/verify", async (req, res) => {
     try {
+        const { token } = req.query;
+        
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if (decoded.role !== "patient") {
-            return res.status(403).json({ error: "Forbidden" });
+        const patient = await Patient.findOne({ _id: decoded.id });
+        
+        if (!patient) {
+            return res.status(400).json({ error: "Invalid verification link" });
         }
-        req.patientId = decoded.patientId;
-        next();
+        
+        patient.portalAccount.isVerified = true;
+        await patient.save();
+        
+        res.json({ message: "Email verified successfully" });
     } catch (error) {
-        return res.status(401).json({ error: "Invalid token" });
+        console.error("Verification error:", error);
+        res.status(500).json({ error: error.message });
     }
-};
+});
 
-// ============ GET PATIENT PROFILE ============
-router.get("/profile", verifyPatientToken, async (req, res) => {
+// ============ PATIENT DATA ACCESS ============
+
+// Get patient's medical records
+router.get("/records", async (req, res) => {
     try {
-        const patient = await Patient.findById(req.patientId)
-            .select("firstName lastName nationalId dateOfBirth gender province");
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+        
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const patient = await Patient.findById(decoded.id);
         
         if (!patient) {
             return res.status(404).json({ error: "Patient not found" });
         }
         
-        res.json({
-            name: `${patient.firstName} ${patient.lastName}`,
-            nationalId: patient.nationalId,
-            dateOfBirth: patient.dateOfBirth,
-            gender: patient.gender,
-            province: patient.province
-        });
+        const records = await MedicalRecord.find({ patientId: patient._id })
+            .sort({ visitDate: -1 })
+            .select({
+                visitDate: 1,
+                visitType: 1,
+                hospital: 1,
+                doctorName: 1,
+                disposition: 1,
+                dischargeInstructions: 1,
+                symptoms: 1,
+                primaryDiagnosis: 1,
+                secondaryDiagnoses: 1,
+                disease: 1,
+                differentialDiagnosis: 1,
+                physicalExam: 1,
+                prescribedMedications: 1,
+                treatmentPlan: 1,
+                investigations: 1,
+                vitalSigns: 1,
+                notes: 1,
+                province: 1
+            });
+        
+        res.json({ records });
     } catch (error) {
-        console.error("Profile error:", error);
+        console.error("Error fetching patient records:", error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// ============ GET PATIENT MEDICAL RECORDS ============
-router.get("/records", verifyPatientToken, async (req, res) => {
+// Get patient's vital signs history
+router.get("/vitals", async (req, res) => {
     try {
-        const records = await MedicalRecord.find({ patientId: req.patientId })
-            .sort({ visitDate: -1 })
-            .limit(50);
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
         
-        res.json({ records });
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const patient = await Patient.findById(decoded.id);
+        
+        if (!patient) {
+            return res.status(404).json({ error: "Patient not found" });
+        }
+        
+        const vitalsHistory = await MedicalRecord.find(
+            { patientId: patient._id },
+            { 
+                visitDate: 1, 
+                visitType: 1,
+                'vitalSigns.temperature': 1,
+                'vitalSigns.bloodPressure': 1,
+                'vitalSigns.heartRate': 1,
+                'vitalSigns.respiratoryRate': 1,
+                'vitalSigns.oxygenSaturation': 1,
+                'vitalSigns.weight': 1,
+                'vitalSigns.height': 1,
+                'vitalSigns.bmi': 1,
+                'vitalSigns.painScore': 1
+            }
+        ).sort({ visitDate: -1 });
+        
+        res.json({ vitals: vitalsHistory });
     } catch (error) {
-        console.error("Records error:", error);
+        console.error("Error fetching vitals:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get patient profile
+router.get("/profile", async (req, res) => {
+    try {
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            return res.status(401).json({ error: "Unauthorized" });
+        }
+        
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const patient = await Patient.findById(decoded.id).select("-portalAccount.password");
+        
+        if (!patient) {
+            return res.status(404).json({ error: "Patient not found" });
+        }
+        
+        const recordsCount = await MedicalRecord.countDocuments({ patientId: patient._id });
+        const lastVisit = await MedicalRecord.findOne({ patientId: patient._id }).sort({ visitDate: -1 });
+        
+        res.json({
+            patient: {
+                id: patient._id,
+                firstName: patient.firstName,
+                lastName: patient.lastName,
+                nationalId: patient.nationalId,
+                dateOfBirth: patient.dateOfBirth,
+                gender: patient.gender,
+                province: patient.province,
+                contactInfo: patient.contactInfo
+            },
+            stats: {
+                totalRecords: recordsCount,
+                lastVisitDate: lastVisit?.visitDate || null,
+                lastVisitHospital: lastVisit?.hospital || null
+            }
+        });
+    } catch (error) {
+        console.error("Error fetching profile:", error);
         res.status(500).json({ error: error.message });
     }
 });

@@ -39,6 +39,8 @@ const MedicalRecords = () => {
     const [editingRecord, setEditingRecord] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedRecord, setExpandedRecord] = useState(null);
+    const [uploadingImages, setUploadingImages] = useState(false);
+    
     const [formData, setFormData] = useState({
         patientId: '',
         hospital: '',
@@ -69,10 +71,16 @@ const MedicalRecords = () => {
         differentialInput: '',
         // Lab Tests
         labTests: [],
-        labTestInput: { testName: '', result: '', referenceRange: '' },
+        labTestInput: { testName: '', result: '', referenceRange: '', abnormal: false },
         // Radiology
         radiology: [],
-        radiologyInput: { studyType: '', findings: '', impression: '' },
+        radiologyInput: { 
+            studyType: '', 
+            bodyPart: '',
+            findings: '', 
+            impression: '',
+            previewImages: []
+        },
         // Vital Signs
         vitalSigns: {
             temperature: '',
@@ -170,9 +178,15 @@ const MedicalRecords = () => {
             differentialDiagnosis: [],
             differentialInput: '',
             labTests: [],
-            labTestInput: { testName: '', result: '', referenceRange: '' },
+            labTestInput: { testName: '', result: '', referenceRange: '', abnormal: false },
             radiology: [],
-            radiologyInput: { studyType: '', findings: '', impression: '' },
+            radiologyInput: { 
+                studyType: '', 
+                bodyPart: '',
+                findings: '', 
+                impression: '',
+                previewImages: []
+            },
             vitalSigns: {
                 temperature: '',
                 bloodPressureSystolic: '',
@@ -219,9 +233,15 @@ const MedicalRecords = () => {
             differentialDiagnosis: record.differentialDiagnosis || [],
             differentialInput: '',
             labTests: record.investigations?.labTests || [],
-            labTestInput: { testName: '', result: '', referenceRange: '' },
+            labTestInput: { testName: '', result: '', referenceRange: '', abnormal: false },
             radiology: record.investigations?.radiology || [],
-            radiologyInput: { studyType: '', findings: '', impression: '' },
+            radiologyInput: { 
+                studyType: '', 
+                bodyPart: '',
+                findings: '', 
+                impression: '',
+                previewImages: []
+            },
             vitalSigns: {
                 temperature: record.vitalSigns?.temperature || '',
                 bloodPressureSystolic: record.vitalSigns?.bloodPressure?.systolic || '',
@@ -250,6 +270,114 @@ const MedicalRecords = () => {
                 toast.error('Failed to delete record');
             }
         }
+    };
+
+    // Image upload handler
+    const handleImageUpload = (e) => {
+        const files = Array.from(e.target.files);
+        const previewImages = files.map(file => ({
+            file: file,
+            preview: URL.createObjectURL(file),
+            name: file.name
+        }));
+        
+        setFormData(prev => ({
+            ...prev,
+            radiologyInput: {
+                ...prev.radiologyInput,
+                previewImages: [...(prev.radiologyInput.previewImages || []), ...previewImages]
+            }
+        }));
+    };
+
+    // Remove preview image
+    const removePreviewImage = (index) => {
+        setFormData(prev => ({
+            ...prev,
+            radiologyInput: {
+                ...prev.radiologyInput,
+                previewImages: prev.radiologyInput.previewImages.filter((_, i) => i !== index)
+            }
+        }));
+    };
+
+    // Remove image from saved radiology study
+    const removeImageFromRadiology = (studyIndex, imageIndex) => {
+        setFormData(prev => ({
+            ...prev,
+            radiology: prev.radiology.map((study, idx) => {
+                if (idx === studyIndex) {
+                    return {
+                        ...study,
+                        images: study.images.filter((_, i) => i !== imageIndex)
+                    };
+                }
+                return study;
+            })
+        }));
+    };
+
+    // Add radiology study with images
+    const addRadiologyWithImages = async () => {
+        if (!formData.radiologyInput.studyType) {
+            toast.error('Please select a study type');
+            return;
+        }
+        
+        const newStudy = {
+            studyType: formData.radiologyInput.studyType,
+            bodyPart: formData.radiologyInput.bodyPart,
+            findings: formData.radiologyInput.findings,
+            impression: formData.radiologyInput.impression,
+            images: [],
+            reportDate: new Date()
+        };
+        
+        // Upload images if any
+        if (formData.radiologyInput.previewImages && formData.radiologyInput.previewImages.length > 0) {
+            setUploadingImages(true);
+            const uploadFormData = new FormData();
+            uploadFormData.append('patientId', selectedPatient._id);
+            uploadFormData.append('studyType', formData.radiologyInput.studyType);
+            
+            formData.radiologyInput.previewImages.forEach(img => {
+                uploadFormData.append('images', img.file);
+            });
+            
+            try {
+                const token = localStorage.getItem('token');
+                const uploadRes = await fetch('http://localhost:5000/medical-records/upload-images', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: uploadFormData
+                });
+                
+                const uploadedImages = await uploadRes.json();
+                if (uploadedImages.images) {
+                    newStudy.images = uploadedImages.images;
+                    toast.success(`${uploadedImages.images.length} image(s) uploaded`);
+                }
+            } catch (error) {
+                console.error('Image upload failed:', error);
+                toast.error('Failed to upload images');
+            } finally {
+                setUploadingImages(false);
+            }
+        }
+        
+        setFormData(prev => ({
+            ...prev,
+            radiology: [...prev.radiology, newStudy],
+            radiologyInput: { 
+                studyType: '', 
+                bodyPart: '', 
+                findings: '', 
+                impression: '', 
+                previewImages: [] 
+            }
+        }));
     };
 
     const addSymptom = () => {
@@ -307,8 +435,8 @@ const MedicalRecords = () => {
         if (formData.labTestInput.testName) {
             setFormData(prev => ({
                 ...prev,
-                labTests: [...prev.labTests, { ...prev.labTestInput, orderedDate: new Date() }],
-                labTestInput: { testName: '', result: '', referenceRange: '' }
+                labTests: [...prev.labTests, { ...formData.labTestInput, orderedDate: new Date() }],
+                labTestInput: { testName: '', result: '', referenceRange: '', abnormal: false }
             }));
         }
     };
@@ -317,23 +445,6 @@ const MedicalRecords = () => {
         setFormData(prev => ({
             ...prev,
             labTests: prev.labTests.filter((_, i) => i !== index)
-        }));
-    };
-
-    const addRadiology = () => {
-        if (formData.radiologyInput.studyType) {
-            setFormData(prev => ({
-                ...prev,
-                radiology: [...prev.radiology, { ...prev.radiologyInput, orderedDate: new Date() }],
-                radiologyInput: { studyType: '', findings: '', impression: '' }
-            }));
-        }
-    };
-
-    const removeRadiology = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            radiology: prev.radiology.filter((_, i) => i !== index)
         }));
     };
 
@@ -764,24 +875,43 @@ const MedicalRecords = () => {
                                                 </div>
                                             )}
 
-                                            {/* Radiology */}
+                                            {/* Radiology with Images */}
                                             {record.investigations?.radiology && record.investigations.radiology.length > 0 && (
                                                 <div>
                                                     <h4 className="font-semibold text-purple-400 mb-3 flex items-center">
                                                         <CameraIcon className="h-4 w-4 mr-2" />
                                                         Radiology / Imaging
                                                     </h4>
-                                                    <div className="space-y-2">
+                                                    <div className="space-y-3">
                                                         {record.investigations.radiology.map((study, idx) => (
                                                             <div key={idx} className="bg-white/5 rounded-lg p-3">
-                                                                <div className="flex justify-between">
+                                                                <div className="flex justify-between items-start">
                                                                     <div>
                                                                         <p className="font-semibold text-white">{study.studyType}</p>
+                                                                        {study.bodyPart && <p className="text-sm text-gray-400">Body Part: {study.bodyPart}</p>}
                                                                         <p className="text-sm text-gray-400">Findings: {study.findings}</p>
                                                                         {study.impression && <p className="text-sm text-gray-500">Impression: {study.impression}</p>}
                                                                     </div>
-                                                                    <p className="text-xs text-gray-500">{new Date(study.orderedDate).toLocaleDateString()}</p>
+                                                                    <p className="text-xs text-gray-500">{new Date(study.reportDate).toLocaleDateString()}</p>
                                                                 </div>
+                                                                
+                                                                {/* Display Images */}
+                                                                {study.images && study.images.length > 0 && (
+                                                                    <div className="mt-3">
+                                                                        <p className="text-xs text-gray-400 mb-2">Attached Images ({study.images.length})</p>
+                                                                        <div className="flex flex-wrap gap-2">
+                                                                            {study.images.map((img, imgIdx) => (
+                                                                                <img 
+                                                                                    key={imgIdx}
+                                                                                    src={`http://localhost:5000${img.url}`} 
+                                                                                    alt={img.originalName}
+                                                                                    className="w-20 h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
+                                                                                    onClick={() => window.open(`http://localhost:5000${img.url}`, '_blank')}
+                                                                                />
+                                                                            ))}
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         ))}
                                                     </div>
@@ -837,7 +967,7 @@ const MedicalRecords = () => {
             {/* Add/Edit Modal */}
             {showModal && (
                 <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto py-8">
-                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-4xl mx-4">
+                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-5xl mx-4">
                         <div className="rounded-2xl bg-slate-900/95 backdrop-blur-xl max-h-[90vh] overflow-y-auto">
                             <div className="p-6 border-b border-white/10 sticky top-0 bg-slate-900/95">
                                 <h2 className="text-2xl font-bold text-white">
@@ -996,13 +1126,13 @@ const MedicalRecords = () => {
                                         <BeakerIcon className="h-4 w-4 mr-2" />
                                         Laboratory Tests
                                     </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-2">
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
                                         <input type="text" placeholder="Test Name" value={formData.labTestInput.testName} onChange={(e) => setFormData(prev => ({ ...prev, labTestInput: { ...prev.labTestInput, testName: e.target.value } }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
                                         <input type="text" placeholder="Result" value={formData.labTestInput.result} onChange={(e) => setFormData(prev => ({ ...prev, labTestInput: { ...prev.labTestInput, result: e.target.value } }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
                                         <input type="text" placeholder="Reference Range" value={formData.labTestInput.referenceRange} onChange={(e) => setFormData(prev => ({ ...prev, labTestInput: { ...prev.labTestInput, referenceRange: e.target.value } }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
+                                        <button type="button" onClick={addLabTest} className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg transition-all">Add Test</button>
                                     </div>
-                                    <button type="button" onClick={addLabTest} className="mb-3 px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Add Lab Test</button>
-                                    <div className="space-y-2">
+                                    <div className="space-y-2 mt-2">
                                         {formData.labTests.map((test, idx) => (
                                             <div key={idx} className="bg-white/5 rounded-lg p-3 flex justify-between items-center">
                                                 <div>
@@ -1015,29 +1145,152 @@ const MedicalRecords = () => {
                                     </div>
                                 </div>
 
-                                {/* Radiology */}
-                                <div>
+                                {/* Radiology with Image Upload */}
+                                <div className="border-t border-white/10 pt-4">
                                     <h3 className="text-lg font-semibold text-purple-400 mb-3 flex items-center">
-                                        <CameraIcon className="h-4 w-4 mr-2" />
+                                        <CameraIcon className="h-5 w-5 mr-2" />
                                         Radiology / Imaging
                                     </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mb-2">
-                                        <input type="text" placeholder="Study Type (X-ray, CT, MRI)" value={formData.radiologyInput.studyType} onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, studyType: e.target.value } }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                        <input type="text" placeholder="Findings" value={formData.radiologyInput.findings} onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, findings: e.target.value } }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                    </div>
-                                    <textarea placeholder="Impression" value={formData.radiologyInput.impression} onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, impression: e.target.value } }))} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white mb-2" />
-                                    <button type="button" onClick={addRadiology} className="mb-3 px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Add Study</button>
-                                    <div className="space-y-2">
+                                    
+                                    {/* Radiology List */}
+                                    <div className="space-y-3 mb-4">
                                         {formData.radiology.map((study, idx) => (
-                                            <div key={idx} className="bg-white/5 rounded-lg p-3 flex justify-between items-center">
-                                                <div>
-                                                    <p className="font-semibold text-white">{study.studyType}</p>
-                                                    <p className="text-sm text-gray-400">Findings: {study.findings}</p>
-                                                    {study.impression && <p className="text-xs text-gray-500">Impression: {study.impression}</p>}
+                                            <div key={idx} className="bg-white/5 rounded-lg p-4 border border-white/10">
+                                                <div className="flex justify-between items-start mb-2">
+                                                    <div>
+                                                        <p className="font-semibold text-white">{study.studyType}</p>
+                                                        {study.bodyPart && <p className="text-sm text-gray-400">Body Part: {study.bodyPart}</p>}
+                                                        <p className="text-sm text-gray-400">Findings: {study.findings}</p>
+                                                        {study.impression && <p className="text-sm text-gray-500">Impression: {study.impression}</p>}
+                                                    </div>
+                                                    <button type="button" onClick={() => {
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            radiology: prev.radiology.filter((_, i) => i !== idx)
+                                                        }));
+                                                    }} className="text-red-400 text-sm">Remove</button>
                                                 </div>
-                                                <button type="button" onClick={() => removeRadiology(idx)} className="text-red-400 text-sm">Remove</button>
+                                                
+                                                {/* Display Images */}
+                                                {study.images && study.images.length > 0 && (
+                                                    <div className="mt-3">
+                                                        <p className="text-xs text-gray-400 mb-2">Attached Images ({study.images.length})</p>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {study.images.map((img, imgIdx) => (
+                                                                <div key={imgIdx} className="relative group">
+                                                                    <img 
+                                                                        src={`http://localhost:5000${img.url}`} 
+                                                                        alt={img.originalName}
+                                                                        className="w-20 h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
+                                                                        onClick={() => window.open(`http://localhost:5000${img.url}`, '_blank')}
+                                                                    />
+                                                                    <button 
+                                                                        type="button"
+                                                                        onClick={() => removeImageFromRadiology(idx, imgIdx)}
+                                                                        className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hidden group-hover:block"
+                                                                    >
+                                                                        <XMarkIcon className="h-3 w-3 text-white" />
+                                                                    </button>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
+                                    </div>
+                                    
+                                    {/* Add New Radiology Study */}
+                                    <div className="bg-white/5 rounded-lg p-4">
+                                        <h4 className="font-semibold text-white mb-3">Add New Imaging Study</h4>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                            <select 
+                                                value={formData.radiologyInput.studyType} 
+                                                onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, studyType: e.target.value } }))}
+                                                className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white"
+                                            >
+                                                <option value="">Select Study Type</option>
+                                                <option value="X-Ray">X-Ray</option>
+                                                <option value="CT Scan">CT Scan</option>
+                                                <option value="MRI">MRI</option>
+                                                <option value="Ultrasound">Ultrasound</option>
+                                                <option value="Mammogram">Mammogram</option>
+                                                <option value="PET Scan">PET Scan</option>
+                                                <option value="Fluoroscopy">Fluoroscopy</option>
+                                                <option value="Other">Other</option>
+                                            </select>
+                                            
+                                            <input 
+                                                type="text" 
+                                                placeholder="Body Part (e.g., Chest, Knee, Brain)" 
+                                                value={formData.radiologyInput.bodyPart || ''} 
+                                                onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, bodyPart: e.target.value } }))}
+                                                className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white"
+                                            />
+                                        </div>
+                                        
+                                        <textarea 
+                                            placeholder="Findings" 
+                                            value={formData.radiologyInput.findings || ''} 
+                                            onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, findings: e.target.value } }))}
+                                            rows={2} 
+                                            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white mb-3"
+                                        />
+                                        
+                                        <textarea 
+                                            placeholder="Impression / Conclusion" 
+                                            value={formData.radiologyInput.impression || ''} 
+                                            onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, impression: e.target.value } }))}
+                                            rows={2} 
+                                            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white mb-3"
+                                        />
+                                        
+                                        {/* Image Upload */}
+                                        <div className="mb-3">
+                                            <label className="block text-sm text-gray-400 mb-2">Upload Images (X-ray, CT, MRI, etc.)</label>
+                                            <div className="border-2 border-dashed border-white/30 rounded-lg p-4 text-center hover:border-purple-500 transition cursor-pointer"
+                                                 onClick={() => document.getElementById('imageUpload').click()}>
+                                                <CameraIcon className="h-8 w-8 mx-auto text-gray-500 mb-2" />
+                                                <p className="text-sm text-gray-400">Click to upload or drag and drop</p>
+                                                <p className="text-xs text-gray-500 mt-1">JPG, PNG, DICOM up to 20MB each</p>
+                                            </div>
+                                            <input 
+                                                type="file" 
+                                                id="imageUpload"
+                                                multiple
+                                                accept="image/jpeg,image/png,image/jpg,image/dicom,application/dicom"
+                                                className="hidden"
+                                                onChange={handleImageUpload}
+                                            />
+                                            
+                                            {/* Preview uploaded images */}
+                                            {formData.radiologyInput.previewImages && formData.radiologyInput.previewImages.length > 0 && (
+                                                <div className="flex flex-wrap gap-2 mt-3">
+                                                    {formData.radiologyInput.previewImages.map((img, idx) => (
+                                                        <div key={idx} className="relative">
+                                                            <img src={img.preview} alt="Preview" className="w-16 h-16 object-cover rounded-lg" />
+                                                            <button 
+                                                                type="button"
+                                                                onClick={() => removePreviewImage(idx)}
+                                                                className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
+                                                            >
+                                                                <XMarkIcon className="h-3 w-3 text-white" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                        
+                                        <button 
+                                            type="button" 
+                                            onClick={addRadiologyWithImages}
+                                            disabled={uploadingImages}
+                                            className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg transition-all disabled:opacity-50"
+                                        >
+                                            {uploadingImages ? 'Uploading...' : 'Add Study'}
+                                        </button>
                                     </div>
                                 </div>
 

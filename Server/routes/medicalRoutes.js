@@ -4,6 +4,9 @@ const MedicalRecord = require("../models/MedicalRecord");
 const Patient = require("../models/Patient");
 const { protect } = require("../middleware/auth");
 const { hasPermission, isApproved } = require("../middleware/rbac");
+const { uploadMedicalImages } = require("../middleware/upload");
+const fs = require("fs");
+const path = require("path");
 
 // All routes require authentication and approval
 router.use(protect, isApproved);
@@ -40,10 +43,9 @@ async function syncCurrentVitals(patientId) {
 
 // ============ MEDICAL RECORD MANAGEMENT ============
 
-// POST create medical record - OPTIMIZED (no email)
+// POST create medical record
 router.post("/", hasPermission("create:records"), async (req, res) => {
     try {
-        // Check if patient exists
         const patient = await Patient.findById(req.body.patientId);
         if (!patient) {
             return res.status(404).json({ error: "Patient not found" });
@@ -55,7 +57,7 @@ router.post("/", hasPermission("create:records"), async (req, res) => {
         });
         await record.save();
         
-        // Run sync in background (non-blocking)
+        // Run sync in background
         setImmediate(() => {
             syncCurrentVitals(req.body.patientId).catch(console.error);
         });
@@ -113,32 +115,6 @@ router.get("/patient/:patientId/vitals-history", hasPermission("view:records"), 
     }
 });
 
-// GET latest vital signs for a patient
-router.get("/patient/:patientId/latest-vitals", hasPermission("view:records"), async (req, res) => {
-    try {
-        const latestRecord = await MedicalRecord.findOne(
-            { 
-                patientId: req.params.patientId,
-                $or: [
-                    { 'vitalSigns.temperature': { $exists: true, $ne: null } },
-                    { 'vitalSigns.bloodPressure.systolic': { $exists: true, $ne: null } },
-                    { 'vitalSigns.heartRate': { $exists: true, $ne: null } }
-                ]
-            },
-            { vitalSigns: 1, visitDate: 1, visitType: 1 }
-        ).sort({ visitDate: -1 });
-        
-        res.json({
-            vitalSigns: latestRecord?.vitalSigns || null,
-            recordedAt: latestRecord?.visitDate || null,
-            visitType: latestRecord?.visitType || null
-        });
-    } catch (error) {
-        console.error("Error fetching latest vitals:", error);
-        res.status(500).json({ error: error.message });
-    }
-});
-
 // GET recent records
 router.get("/recent", hasPermission("view:records"), async (req, res) => {
     try {
@@ -175,23 +151,32 @@ router.get("/:id", hasPermission("view:records"), async (req, res) => {
 // PATCH update record
 router.patch("/:id", hasPermission("edit:records"), async (req, res) => {
     try {
-        const record = await MedicalRecord.findByIdAndUpdate(
-            req.params.id,
-            { ...req.body, updatedBy: req.user._id },
-            { new: true, runValidators: true }
-        ).populate("patientId", "firstName lastName");
-        
+        const record = await MedicalRecord.findById(req.params.id);
         if (!record) {
             return res.status(404).json({ error: "Record not found" });
         }
         
-        // Auto-sync current vitals after update (background)
+        // Update only the fields that are provided
+        Object.keys(req.body).forEach(key => {
+            if (req.body[key] !== undefined) {
+                record[key] = req.body[key];
+            }
+        });
+        record.updatedBy = req.user._id;
+        
+        await record.save();
+        
+        const populatedRecord = await MedicalRecord.findById(record._id)
+            .populate("patientId", "firstName lastName");
+        
+        // Run sync in background
         setImmediate(() => {
-            syncCurrentVitals(record.patientId._id || record.patientId).catch(console.error);
+            syncCurrentVitals(record.patientId).catch(console.error);
         });
         
-        res.json(record);
+        res.json(populatedRecord);
     } catch (error) {
+        console.error("Error updating medical record:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -204,7 +189,7 @@ router.delete("/:id", hasPermission("delete:records"), async (req, res) => {
             return res.status(404).json({ error: "Record not found" });
         }
         
-        // Re-sync current vitals with the next latest record after deletion (background)
+        // Run sync in background
         setImmediate(() => {
             syncCurrentVitals(record.patientId).catch(console.error);
         });
@@ -213,6 +198,47 @@ router.delete("/:id", hasPermission("delete:records"), async (req, res) => {
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
+});
+
+// ============ IMAGE UPLOAD ENDPOINT ============
+
+router.post("/upload-images", (req, res) => {
+    uploadMedicalImages(req, res, async (err) => {
+        if (err) {
+            console.error("Upload error:", err);
+            return res.status(400).json({ error: err.message });
+        }
+        
+        try {
+            const uploadedImages = [];
+            
+            if (req.files && req.files.length > 0) {
+                for (const file of req.files) {
+                    const relativePath = file.path.replace(/\\/g, '/');
+                    
+                    uploadedImages.push({
+                        filename: file.filename,
+                        originalName: file.originalname,
+                        path: file.path,
+                        url: `/${relativePath}`,
+                        fileSize: file.size,
+                        mimeType: file.mimetype,
+                        uploadedAt: new Date(),
+                        uploadedBy: req.user._id
+                    });
+                }
+            }
+            
+            res.json({ 
+                success: true, 
+                images: uploadedImages,
+                message: `${uploadedImages.length} image(s) uploaded successfully`
+            });
+        } catch (error) {
+            console.error("Error processing upload:", error);
+            res.status(500).json({ error: error.message });
+        }
+    });
 });
 
 // ============ STATISTICS ENDPOINTS ============
@@ -271,7 +297,7 @@ router.get("/stats/by-province", hasPermission("view:analytics"), async (req, re
     }
 });
 
-// GET monthly trends (only complete months)
+// GET monthly trends
 router.get("/stats/monthly-trends", hasPermission("view:analytics"), async (req, res) => {
     try {
         const currentDate = new Date();

@@ -9,7 +9,8 @@ const createUploadDirs = () => {
         "./uploads/documents/national-id",
         "./uploads/documents/employment-letters",
         "./uploads/documents/licenses",
-        "./uploads/photos"
+        "./uploads/photos",
+        "./uploads/medical-images"  // Added for medical images
     ];
     
     dirs.forEach(dir => {
@@ -23,10 +24,9 @@ const createUploadDirs = () => {
 // Run this when the file loads
 createUploadDirs();
 
-// Configure storage settings
+// ============ DOCUMENT UPLOAD (for user registration) ============
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // Route files to different folders based on field name
         if (file.fieldname === "nationalId") {
             cb(null, "./uploads/documents/national-id/");
         } else if (file.fieldname === "employmentLetter") {
@@ -40,7 +40,6 @@ const storage = multer.diskStorage({
         }
     },
     filename: (req, file, cb) => {
-        // Create unique filename: timestamp-fieldname-random.ext
         const timestamp = Date.now();
         const random = Math.round(Math.random() * 10000);
         const fieldname = file.fieldname;
@@ -50,7 +49,6 @@ const storage = multer.diskStorage({
     }
 });
 
-// File filter - only allow specific file types
 const fileFilter = (req, file, cb) => {
     const allowedTypes = {
         nationalId: ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'],
@@ -68,17 +66,15 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Create multer upload instance with limits
 const upload = multer({
     storage: storage,
     limits: {
-        fileSize: 5 * 1024 * 1024, // 5MB per file
-        files: 4 // Maximum 4 files per request
+        fileSize: 5 * 1024 * 1024,
+        files: 4
     },
     fileFilter: fileFilter
 });
 
-// Middleware for handling multiple document uploads
 const uploadDocuments = upload.fields([
     { name: "nationalId", maxCount: 1 },
     { name: "employmentLetter", maxCount: 1 },
@@ -86,7 +82,54 @@ const uploadDocuments = upload.fields([
     { name: "profilePhoto", maxCount: 1 }
 ]);
 
-// Error handler for multer errors
+// ============ MEDICAL IMAGE UPLOAD (for radiology) ============
+const medicalImageStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const patientId = req.body.patientId;
+        const timestamp = Date.now();
+        
+        const uploadPath = `./uploads/medical-images/${patientId}/${timestamp}`;
+        
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
+        
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        const timestamp = Date.now();
+        const random = Math.round(Math.random() * 10000);
+        const ext = path.extname(file.originalname);
+        const studyType = req.body.studyType || 'radiology';
+        const sanitizedStudyType = studyType.replace(/[^a-zA-Z0-9]/g, '_');
+        
+        cb(null, `${timestamp}-${sanitizedStudyType}-${random}${ext}`);
+    }
+});
+
+const medicalImageFilter = (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/dicom', 'application/dicom'];
+    const allowedExtensions = ['.jpg', '.jpeg', '.png', '.dcm', '.dicom'];
+    
+    const ext = path.extname(file.originalname).toLowerCase();
+    
+    if (allowedTypes.includes(file.mimetype) || allowedExtensions.includes(ext)) {
+        cb(null, true);
+    } else {
+        cb(new Error(`Invalid file type for medical image. Allowed: JPG, PNG, DICOM`), false);
+    }
+};
+
+const uploadMedicalImages = multer({
+    storage: medicalImageStorage,
+    limits: {
+        fileSize: 20 * 1024 * 1024,
+        files: 10
+    },
+    fileFilter: medicalImageFilter
+}).array('images', 10);
+
+// ============ ERROR HANDLER ============
 const handleUploadError = (err, req, res, next) => {
     if (err instanceof multer.MulterError) {
         if (err.code === 'LIMIT_FILE_SIZE') {
@@ -120,5 +163,6 @@ const handleUploadError = (err, req, res, next) => {
 
 module.exports = {
     uploadDocuments,
-    handleUploadError
+    handleUploadError,
+    uploadMedicalImages
 };

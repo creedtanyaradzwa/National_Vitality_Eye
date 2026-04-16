@@ -10,13 +10,11 @@ require("dotenv").config();
 const authRoutes = require("./routes/authRoutes");
 const patientRoutes = require("./routes/patientRoutes");
 const medicalRoutes = require("./routes/medicalRoutes");
+const patientPortalRoutes = require("./routes/patientPortalRoutes"); // ADD THIS LINE
 const { router: realTimeAIRoutes, setAIInstance } = require("./routes/realTimeAIRoutes");
 const ContinuousLearner = require("./ai/continuousLearner");
 const AlertEmitter = require("./ai/alertEmitter");
 const MedicalRecord = require("./models/MedicalRecord");
-const patientPortalRoutes = require("./routes/patientPortalRoutes");
-
-// ... imports ...
 
 const app = express();
 const server = http.createServer(app);
@@ -44,11 +42,9 @@ app.use("/api/auth", authRoutes);
 app.use("/patients", patientRoutes);
 app.use("/medical-records", medicalRoutes);
 app.use("/ai", realTimeAIRoutes);
-app.use("/api/patient", patientPortalRoutes);
+app.use("/api/patient", patientPortalRoutes); // ADD THIS LINE - Patient Portal Routes
 
 // ============ PUBLIC ENDPOINTS ============
-// Add this temporary test endpoint
-
 app.get("/medical-records", async (req, res) => {
     try {
         const MedicalRecord = require("./models/MedicalRecord");
@@ -125,9 +121,8 @@ mongoose.connect(process.env.MONGO_URI)
     });
 
 // Graceful shutdown
-process.on('SIGINT', async () => {
+process.on('SIGINT', () => {
     console.log('\n🛑 Shutting down...');
     if (io) io.close();
-    await mongoose.connection.close();
-    process.exit(0);
+    mongoose.connection.close(() => process.exit(0));
 });
