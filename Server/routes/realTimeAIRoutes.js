@@ -38,9 +38,9 @@ router.get("/status", hasPermission("view:analytics"), async (req, res) => {
     });
 });
 
-// ============ DISEASE PREDICTION ============
+// ============ DISEASE PREDICTION - ENHANCED ============
 
-// POST predict disease (enhanced with clinical data)
+// POST predict disease (ENHANCED with Vital Signs, Chronic Conditions, Family History)
 router.post("/predict", hasPermission("use:ai_predictor"), async (req, res) => {
     try {
         const { symptoms, province, patientId } = req.body;
@@ -57,36 +57,81 @@ router.post("/predict", hasPermission("use:ai_predictor"), async (req, res) => {
         let patientAge = null;
         let patientGender = null;
         let patientRiskFactors = [];
+        let patientVitals = {};
+        let patientChronicConditions = [];
+        let patientFamilyHistory = {};
         
-        // If patientId provided, get clinical data
+        // If patientId provided, get ALL clinical data for enhanced prediction
         if (patientId) {
             const patient = await Patient.findById(patientId);
             if (patient) {
+                // Basic demographics
                 patientAge = patient.age;
                 patientGender = patient.gender;
                 patientRiskFactors = patient.clinicalProfile?.riskFactors?.map(rf => rf.factor) || [];
+                
+                // NEW: Get vital signs from clinical profile
+                patientVitals = {
+                    temperature: patient.clinicalProfile?.vitalSigns?.temperature,
+                    heartRate: patient.clinicalProfile?.vitalSigns?.heartRate,
+                    systolicBP: patient.clinicalProfile?.vitalSigns?.bloodPressure?.systolic,
+                    diastolicBP: patient.clinicalProfile?.vitalSigns?.bloodPressure?.diastolic,
+                    oxygenSaturation: patient.clinicalProfile?.vitalSigns?.oxygenSaturation,
+                    respiratoryRate: patient.clinicalProfile?.vitalSigns?.respiratoryRate,
+                    bmi: patient.clinicalProfile?.vitalSigns?.bmi
+                };
+                
+                // NEW: Get chronic conditions
+                patientChronicConditions = patient.clinicalProfile?.chronicConditions?.map(c => c.condition) || [];
+                
+                // NEW: Get family history
+                patientFamilyHistory = {
+                    mother: patient.clinicalProfile?.familyHistory?.mother || [],
+                    father: patient.clinicalProfile?.familyHistory?.father || [],
+                    siblings: patient.clinicalProfile?.familyHistory?.siblings || []
+                };
+                
+                console.log(`🔍 Enhanced AI Prediction for patient ${patient.firstName} ${patient.lastName}:`, {
+                    age: patientAge,
+                    gender: patientGender,
+                    chronicConditions: patientChronicConditions.length,
+                    familyHistoryConditions: [...patientFamilyHistory.mother, ...patientFamilyHistory.father, ...patientFamilyHistory.siblings].length,
+                    vitalsPresent: !!patientVitals.temperature
+                });
             }
         }
         
+        // Call the enhanced predictDisease with ALL parameters
         const predictions = realTimeAI.predictDisease(
             symptoms, 
             province || "Harare", 
             month,
             patientAge,
             patientGender,
-            patientRiskFactors
+            patientRiskFactors,
+            patientVitals,           // NEW
+            patientChronicConditions, // NEW
+            patientFamilyHistory      // NEW
         );
         
         res.json({
             timestamp: new Date(),
             symptoms,
             province: province || "Harare",
-            patientData: patientId ? { age: patientAge, gender: patientGender } : null,
+            patientData: patientId ? { 
+                age: patientAge, 
+                gender: patientGender,
+                vitals: patientVitals,
+                chronicConditions: patientChronicConditions,
+                familyHistory: patientFamilyHistory
+            } : null,
             ...predictions,
-            aiModel: "EnhancedClinicalAI v2.0",
-            learningMode: "Real-time"
+            aiModel: "EnhancedClinicalAI v3.0",
+            learningMode: "Real-time",
+            enhancedFeatures: ["Vital Signs", "Chronic Conditions", "Family History"]
         });
     } catch (error) {
+        console.error("Prediction error:", error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -107,9 +152,9 @@ router.get("/alerts", hasPermission("view:analytics"), async (req, res) => {
     });
 });
 
-// ============ PATIENT RISK ASSESSMENT ============
+// ============ PATIENT RISK ASSESSMENT - ENHANCED ==========
 
-// GET patient risk assessment (enhanced with clinical data)
+// GET patient risk assessment (ENHANCED with clinical data)
 router.get("/risk/:patientId", hasPermission("view:analytics"), async (req, res) => {
     try {
         const patient = await Patient.findById(req.params.patientId);
@@ -125,6 +170,7 @@ router.get("/risk/:patientId", hasPermission("view:analytics"), async (req, res)
             return res.status(503).json({ error: "AI initializing" });
         }
         
+        // Enhanced risk assessment with all clinical data
         const risk = realTimeAI.assessPatientRisk(patient, medicalRecords);
         
         res.json({
@@ -132,6 +178,12 @@ router.get("/risk/:patientId", hasPermission("view:analytics"), async (req, res)
             patientName: `${patient.firstName} ${patient.lastName}`,
             age: patient.age,
             gender: patient.gender,
+            chronicConditionsCount: patient.clinicalProfile?.chronicConditions?.length || 0,
+            familyHistoryCount: [
+                ...(patient.clinicalProfile?.familyHistory?.mother || []),
+                ...(patient.clinicalProfile?.familyHistory?.father || []),
+                ...(patient.clinicalProfile?.familyHistory?.siblings || [])
+            ].length,
             ...risk,
             analysisTime: new Date()
         });
@@ -140,7 +192,7 @@ router.get("/risk/:patientId", hasPermission("view:analytics"), async (req, res)
     }
 });
 
-// ============ DISEASE TRENDS ============
+// ============ DISEASE TRENDS ==========
 
 // GET disease trends
 router.get("/trends/:disease", hasPermission("view:analytics"), async (req, res) => {
@@ -172,12 +224,27 @@ router.get("/trends/:disease", hasPermission("view:analytics"), async (req, res)
                 .map(([s, c]) => [s, Math.round((c / pattern.count) * 100) + '%'])
                 .slice(0, 5)
         ),
+        // NEW: Expected vital signs for this disease
+        expectedVitalSigns: {
+            temperature: pattern.vitalSignsAverages?.temperature?.avg,
+            heartRate: pattern.vitalSignsAverages?.heartRate?.avg,
+            bloodPressure: {
+                systolic: pattern.vitalSignsAverages?.systolicBP?.avg,
+                diastolic: pattern.vitalSignsAverages?.diastolicBP?.avg
+            },
+            oxygenSaturation: pattern.vitalSignsAverages?.oxygenSaturation?.avg
+        },
+        // NEW: Common chronic conditions associated
+        commonChronicConditions: Array.from(pattern.chronicConditions?.entries() || [])
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5)
+            .map(([condition, count]) => ({ condition, prevalence: Math.round((count / pattern.count) * 100) })),
         lastSeen: pattern.lastSeen,
         averageAge: Math.round(pattern.avgAge)
     });
 });
 
-// ============ AI STATISTICS ============
+// ============ AI STATISTICS ==========
 
 // GET AI stats
 router.get("/stats", hasPermission("view:analytics"), async (req, res) => {
@@ -192,14 +259,16 @@ router.get("/stats", hasPermission("view:analytics"), async (req, res) => {
             diseasesTracked: diseases.length,
             provincesTracked: 10,
             totalPatients: totalPatients,
-            timestamp: new Date()
+            timestamp: new Date(),
+            aiModel: "EnhancedClinicalAI v3.0",
+            features: ["Vital Signs", "Chronic Conditions", "Family History", "Symptom Analysis", "Geographic Tracking"]
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// ============ ADMIN AI CONTROLS ============
+// ============ ADMIN AI CONTROLS ==========
 
 // POST refresh AI
 router.post("/refresh", hasPermission("admin"), async (req, res) => {
@@ -220,7 +289,8 @@ router.post("/refresh", hasPermission("admin"), async (req, res) => {
         
         res.json({
             message: "AI refreshed with latest data",
-            stats: realTimeAI.getStats()
+            stats: realTimeAI.getStats(),
+            enhancedFeatures: ["Vital Signs", "Chronic Conditions", "Family History"]
         });
     } catch (error) {
         res.status(500).json({ error: error.message });

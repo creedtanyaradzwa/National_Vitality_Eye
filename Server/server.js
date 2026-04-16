@@ -10,7 +10,8 @@ require("dotenv").config();
 const authRoutes = require("./routes/authRoutes");
 const patientRoutes = require("./routes/patientRoutes");
 const medicalRoutes = require("./routes/medicalRoutes");
-const patientPortalRoutes = require("./routes/patientPortalRoutes"); // ADD THIS LINE
+const patientPortalRoutes = require("./routes/patientPortalRoutes");
+const aiFeaturesRoutes = require("./routes/aiFeaturesRoutes");
 const { router: realTimeAIRoutes, setAIInstance } = require("./routes/realTimeAIRoutes");
 const ContinuousLearner = require("./ai/continuousLearner");
 const AlertEmitter = require("./ai/alertEmitter");
@@ -42,7 +43,8 @@ app.use("/api/auth", authRoutes);
 app.use("/patients", patientRoutes);
 app.use("/medical-records", medicalRoutes);
 app.use("/ai", realTimeAIRoutes);
-app.use("/api/patient", patientPortalRoutes); // ADD THIS LINE - Patient Portal Routes
+app.use("/api/patient", patientPortalRoutes);
+app.use("/api/ai-features", aiFeaturesRoutes);
 
 // ============ PUBLIC ENDPOINTS ============
 app.get("/medical-records", async (req, res) => {
@@ -74,6 +76,9 @@ app.get("/", (req, res) => {
 });
 
 // ============ AI INITIALIZATION ============
+let realTimeAI = null;
+let alertEmitter = null;
+
 async function initializeAI() {
     try {
         console.log("\n🧠 Initializing Enhanced Clinical AI...");
@@ -94,7 +99,16 @@ async function initializeAI() {
         
         console.log(`📊 Tracking ${ai.diseasePatterns.size} diseases`);
         
+        // Store references
+        realTimeAI = ai;
+        alertEmitter = emitter;
+        
+        // Set in the routes module
         setAIInstance(ai, emitter);
+        
+        // Make available to other routes via app.locals
+        app.locals.aiInstance = ai;
+        app.locals.alertEmitter = emitter;
         
         return ai;
     } catch (error) {
