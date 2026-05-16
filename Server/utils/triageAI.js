@@ -3,8 +3,10 @@
  * Based on NEWS2 (National Early Warning Score) and High-Risk Symptom Analysis
  */
 
+const { normaliseSymptoms, toAIKey } = require('./normalise');
+
 const HIGH_RISK_SYMPTOMS = [
-    "chest pain", "shortness of breath", "severe bleeding", "unconscious", 
+    "chest pain", "shortness of breath", "severe bleeding", "loss of consciousness",
     "seizure", "stroke", "poisoning", "anaphylaxis", "major trauma",
     "difficulty breathing", "choking", "head injury"
 ];
@@ -60,15 +62,17 @@ const calculateNEWS2 = (vitals) => {
 
 const analyzeSymptoms = (symptoms) => {
     if (!symptoms || !Array.isArray(symptoms)) return { risk: 0, flags: [] };
-    
+
+    // Normalise before matching so "CHEST PAIN", "chest-pain", "chest  pain" all match
+    const normalised = normaliseSymptoms(symptoms).map(s => toAIKey(s));
+
     const flags = [];
     let risk = 0;
 
-    symptoms.forEach(s => {
-        const lowerS = s.toLowerCase();
-        if (HIGH_RISK_SYMPTOMS.some(riskS => lowerS.includes(riskS))) {
+    normalised.forEach((s, idx) => {
+        if (HIGH_RISK_SYMPTOMS.some(riskS => s.includes(riskS) || riskS.includes(s))) {
             risk += 5;
-            flags.push(`High-risk symptom: ${s}`);
+            flags.push(`High-risk symptom: ${symptoms[idx]}`);
         }
     });
 

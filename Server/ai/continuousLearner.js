@@ -2,6 +2,16 @@
 // Includes: Disease Prediction, Risk Assessment, Anomaly Detection, Patient Similarity, Confidence Calibration
 // All edge cases handled, no division by zero, percentages capped at 100%
 
+const {
+    normaliseDisease,
+    normaliseSymptom,
+    normaliseSymptoms,
+    normaliseProvince,
+    normaliseCondition,
+    toAIKey,
+    baseNormalise
+} = require('../utils/normalise');
+
 class ContinuousLearner {
     constructor() {
         // Core data structures
@@ -119,13 +129,14 @@ class ContinuousLearner {
             console.warn("⚠️ Invalid record passed to AI");
             return null;
         }
-        
-        const disease = record.disease;
-        const symptoms = record.symptoms || [];
-        const province = record.province || "Unknown";
-        const month = new Date(record.visitDate).getMonth();
-        const year = new Date(record.visitDate).getFullYear();
-        const vitals = record.vitalSigns || {};
+
+        // ── Normalise all text fields before storing ──────────────────────
+        const disease  = toAIKey(normaliseDisease(record.disease));
+        const symptoms = normaliseSymptoms(record.symptoms || []).map(s => toAIKey(s));
+        const province = toAIKey(normaliseProvince(record.province || "Unknown"));
+        const month    = new Date(record.visitDate).getMonth();
+        const year     = new Date(record.visitDate).getFullYear();
+        const vitals   = record.vitalSigns || {};
         
         // Initialize disease pattern if not exists
         if (!this.diseasePatterns.has(disease)) {
@@ -253,7 +264,7 @@ class ContinuousLearner {
             if (patientProfile.clinicalProfile?.chronicConditions) {
                 patientProfile.clinicalProfile.chronicConditions.forEach(condition => {
                     if (condition && condition.condition) {
-                        const conditionName = condition.condition;
+                        const conditionName = toAIKey(normaliseCondition(condition.condition));
                         const current = pattern.chronicConditions.get(conditionName) || 0;
                         pattern.chronicConditions.set(conditionName, current + 1);
                         
@@ -277,13 +288,14 @@ class ContinuousLearner {
                 ].filter(c => c);
                 
                 allFamilyConditions.forEach(condition => {
-                    const current = pattern.familyHistory.get(condition) || 0;
-                    pattern.familyHistory.set(condition, current + 1);
+                    const normCondition = toAIKey(normaliseCondition(condition));
+                    const current = pattern.familyHistory.get(normCondition) || 0;
+                    pattern.familyHistory.set(normCondition, current + 1);
                     
-                    if (!this.familyHistoryCorrelations.has(condition)) {
-                        this.familyHistoryCorrelations.set(condition, new Map());
+                    if (!this.familyHistoryCorrelations.has(normCondition)) {
+                        this.familyHistoryCorrelations.set(normCondition, new Map());
                     }
-                    const familyMap = this.familyHistoryCorrelations.get(condition);
+                    const familyMap = this.familyHistoryCorrelations.get(normCondition);
                     const diseaseCurrent = familyMap.get(disease) || 0;
                     familyMap.set(disease, diseaseCurrent + 1);
                 });
@@ -403,10 +415,16 @@ class ContinuousLearner {
         
         const predictions = [];
         
-        // Safety checks
-        const validSymptoms = (symptoms || []).filter(s => s);
-        const validProvince = province || "Harare";
-        const validMonth = (typeof month === 'number' && month >= 0 && month < 12) ? month : new Date().getMonth();
+        // ── Normalise all inputs before matching ──────────────────────────
+        const validSymptoms = normaliseSymptoms(symptoms || []).map(s => toAIKey(s));
+        const validProvince = toAIKey(normaliseProvince(province || "Harare"));
+        const validMonth    = (typeof month === 'number' && month >= 0 && month < 12) ? month : new Date().getMonth();
+        const normConditions = (patientChronicConditions || []).map(c => toAIKey(normaliseCondition(c)));
+        const normFamilyAll  = [
+            ...(patientFamilyHistory?.mother   || []),
+            ...(patientFamilyHistory?.father   || []),
+            ...(patientFamilyHistory?.siblings || [])
+        ].filter(c => c).map(c => toAIKey(normaliseCondition(c)));
         
         this.diseasePatterns.forEach((pattern, disease) => {
             if (pattern.count === 0) return;
@@ -551,11 +569,11 @@ class ContinuousLearner {
             // 8. Chronic conditions correlation (8% weight)
             const chronicWeight = 8;
             let chronicScore = 0;
-            if (patientChronicConditions && patientChronicConditions.length > 0) {
-                patientChronicConditions.forEach(condition => {
+            if (normConditions && normConditions.length > 0) {
+                normConditions.forEach(condition => {
                     if (condition) {
                         const conditionCount = pattern.chronicConditions.get(condition) || 0;
-                        chronicScore += this.safePercentage(conditionCount, pattern.count, chronicWeight / patientChronicConditions.length);
+                        chronicScore += this.safePercentage(conditionCount, pattern.count, chronicWeight / normConditions.length);
                         if (conditionCount > 0) {
                             reasons.push(`${condition} history (${Math.round((conditionCount / pattern.count) * 100)}% correlation)`);
                         }
@@ -569,16 +587,10 @@ class ContinuousLearner {
             // 9. Family history correlation (8% weight)
             const familyWeight = 8;
             let familyScore = 0;
-            const allFamilyConditions = [
-                ...(patientFamilyHistory?.mother || []),
-                ...(patientFamilyHistory?.father || []),
-                ...(patientFamilyHistory?.siblings || [])
-            ].filter(c => c);
-            
-            if (allFamilyConditions.length > 0) {
-                allFamilyConditions.forEach(condition => {
+            if (normFamilyAll.length > 0) {
+                normFamilyAll.forEach(condition => {
                     const familyCount = pattern.familyHistory.get(condition) || 0;
-                    familyScore += this.safePercentage(familyCount, pattern.count, familyWeight / allFamilyConditions.length);
+                    familyScore += this.safePercentage(familyCount, pattern.count, familyWeight / normFamilyAll.length);
                     if (familyCount > 0) {
                         reasons.push(`Family history: ${condition} (${Math.round((familyCount / pattern.count) * 100)}% correlation)`);
                     }

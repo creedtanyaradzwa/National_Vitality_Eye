@@ -4,6 +4,13 @@ const MedicalRecord = require("../models/MedicalRecord");
 const Patient = require("../models/Patient");
 const { protect } = require("../middleware/auth");
 const { hasPermission, isApproved } = require("../middleware/rbac");
+const {
+    normaliseSymptoms,
+    normaliseProvince,
+    normaliseDisease,
+    normaliseCondition,
+    toAIKey
+} = require("../utils/normalise");
 
 // All AI routes require authentication and approval
 router.use(protect, isApproved);
@@ -60,6 +67,10 @@ router.post("/predict", hasPermission("use:ai_predictor"), async (req, res) => {
         let patientVitals = {};
         let patientChronicConditions = [];
         let patientFamilyHistory = {};
+
+        // Normalise symptoms and province before prediction
+        const normalisedSymptoms = normaliseSymptoms(symptoms);
+        const normalisedProvince = normaliseProvince(province || "Harare");
         
         // If patientId provided, get ALL clinical data for enhanced prediction
         if (patientId) {
@@ -81,14 +92,16 @@ router.post("/predict", hasPermission("use:ai_predictor"), async (req, res) => {
                     bmi: patient.clinicalProfile?.vitalSigns?.bmi
                 };
                 
-                // NEW: Get chronic conditions
-                patientChronicConditions = patient.clinicalProfile?.chronicConditions?.map(c => c.condition) || [];
-                
-                // NEW: Get family history
+                // Chronic conditions — normalise before passing to AI
+                patientChronicConditions = (patient.clinicalProfile?.chronicConditions || [])
+                    .map(c => normaliseCondition(c.condition))
+                    .filter(Boolean);
+
+                // Family history — normalise
                 patientFamilyHistory = {
-                    mother: patient.clinicalProfile?.familyHistory?.mother || [],
-                    father: patient.clinicalProfile?.familyHistory?.father || [],
-                    siblings: patient.clinicalProfile?.familyHistory?.siblings || []
+                    mother:   (patient.clinicalProfile?.familyHistory?.mother   || []).map(c => normaliseCondition(c)),
+                    father:   (patient.clinicalProfile?.familyHistory?.father   || []).map(c => normaliseCondition(c)),
+                    siblings: (patient.clinicalProfile?.familyHistory?.siblings || []).map(c => normaliseCondition(c))
                 };
                 
                 // Log without patient name — use ID only for audit trail
@@ -102,17 +115,17 @@ router.post("/predict", hasPermission("use:ai_predictor"), async (req, res) => {
             }
         }
         
-        // Call the enhanced predictDisease with ALL parameters
+        // Call the enhanced predictDisease with normalised inputs
         const predictions = realTimeAI.predictDisease(
-            symptoms, 
-            province || "Harare", 
+            normalisedSymptoms,
+            normalisedProvince,
             month,
             patientAge,
             patientGender,
             patientRiskFactors,
-            patientVitals,           // NEW
-            patientChronicConditions, // NEW
-            patientFamilyHistory      // NEW
+            patientVitals,
+            patientChronicConditions,
+            patientFamilyHistory
         );
         
         res.json({

@@ -1,4 +1,11 @@
 const mongoose = require("mongoose");
+const {
+    normaliseDisease,
+    normaliseSymptoms,
+    normaliseHospital,
+    normaliseProvince,
+    normaliseCondition
+} = require("../utils/normalise");
 
 const medicalRecordSchema = new mongoose.Schema({
     // ============ PATIENT REFERENCE ============
@@ -229,5 +236,48 @@ const medicalRecordSchema = new mongoose.Schema({
     notes: String
     
 }, { timestamps: true });
+
+// ── Pre-save normalisation hook ───────────────────────────────────────────────
+// Ensures consistent casing/spacing for all free-text fields so that
+// "MALARIA", "malaria fever", "Malaria" all resolve to the same disease key
+// in analytics, AI, and search.
+medicalRecordSchema.pre('save', function (next) {
+    // Disease
+    if (this.disease) {
+        this.disease = normaliseDisease(this.disease);
+    }
+    if (this.primaryDiagnosis?.name) {
+        this.primaryDiagnosis.name = normaliseDisease(this.primaryDiagnosis.name);
+    }
+    if (this.secondaryDiagnoses?.length) {
+        this.secondaryDiagnoses = this.secondaryDiagnoses.map(d => ({
+            ...d,
+            name: d.name ? normaliseDisease(d.name) : d.name
+        }));
+    }
+
+    // Symptoms
+    if (this.symptoms?.length) {
+        this.symptoms = normaliseSymptoms(this.symptoms);
+    }
+    if (this.presentingComplaints?.length) {
+        this.presentingComplaints = this.presentingComplaints.map(c => ({
+            ...c,
+            symptom: c.symptom ? normaliseSymptoms([c.symptom])[0] || c.symptom : c.symptom
+        }));
+    }
+
+    // Hospital
+    if (this.hospital) {
+        this.hospital = normaliseHospital(this.hospital);
+    }
+
+    // Province — keep within the enum; normalise handles abbreviations
+    if (this.province) {
+        this.province = normaliseProvince(this.province);
+    }
+
+    next();
+});
 
 module.exports = mongoose.model("MedicalRecord", medicalRecordSchema);
