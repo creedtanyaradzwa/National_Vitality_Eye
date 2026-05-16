@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getPatients, getPatientRecords, createMedicalRecord, updateMedicalRecord, deleteMedicalRecord } from '../services/api';
+import { getPatients, getPatientRecords, createMedicalRecord, updateMedicalRecord, deleteMedicalRecord, getHospitalStaff } from '../services/api';
 import { useAuth } from '../context/useAuth';
 import { useDataRefresh } from '../context/useDataRefresh';
 import { 
@@ -19,13 +19,21 @@ import {
     ExclamationTriangleIcon,
     ChartBarIcon,
     CameraIcon,
-    ArrowPathIcon
+    ArrowPathIcon,
+    UserPlusIcon,
+    UserMinusIcon,
+    ChevronDownIcon,
+    ChevronUpIcon,
+    MapPinIcon,
+    ClockIcon,
+    IdentificationIcon,
+    ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 const MedicalRecords = () => {
     const navigate = useNavigate();
-    const { hasPermission } = useAuth();
+    const { hasPermission, user: currentUser } = useAuth();
     const { refreshData } = useDataRefresh();
     const canCreate = hasPermission('create:records');
     const canEdit = hasPermission('edit:records');
@@ -34,6 +42,7 @@ const MedicalRecords = () => {
     const [patients, setPatients] = useState([]);
     const [selectedPatient, setSelectedPatient] = useState(null);
     const [records, setRecords] = useState([]);
+    const [staffMembers, setStaffMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [editingRecord, setEditingRecord] = useState(null);
@@ -58,7 +67,7 @@ const MedicalRecords = () => {
         dischargeInstructions: '',
         province: '',
         notes: '',
-        // Physical Exam
+        taggedUsers: [],
         physicalExam: {
             general: '',
             cardiovascular: '',
@@ -69,10 +78,8 @@ const MedicalRecords = () => {
         },
         differentialDiagnosis: [],
         differentialInput: '',
-        // Lab Tests
         labTests: [],
         labTestInput: { testName: '', result: '', referenceRange: '', abnormal: false },
-        // Radiology
         radiology: [],
         radiologyInput: { 
             studyType: '', 
@@ -81,7 +88,6 @@ const MedicalRecords = () => {
             impression: '',
             previewImages: []
         },
-        // Vital Signs
         vitalSigns: {
             temperature: '',
             bloodPressureSystolic: '',
@@ -109,6 +115,18 @@ const MedicalRecords = () => {
         };
         loadPatients();
     }, []);
+
+    useEffect(() => {
+        const loadStaff = async () => {
+            try {
+                const response = await getHospitalStaff();
+                setStaffMembers(response.data);
+            } catch (error) {
+                console.error("Error loading staff:", error);
+            }
+        };
+        if (currentUser) loadStaff();
+    }, [currentUser]);
 
     useEffect(() => {
         const loadRecords = async () => {
@@ -152,8 +170,8 @@ const MedicalRecords = () => {
         setEditingRecord(null);
         setFormData({
             patientId: selectedPatient._id,
-            hospital: '',
-            doctorName: '',
+            hospital: currentUser?.hospitalName || '',
+            doctorName: `${currentUser?.firstName} ${currentUser?.lastName}`,
             visitDate: new Date().toISOString().split('T')[0],
             visitType: 'Outpatient',
             symptoms: [],
@@ -165,8 +183,9 @@ const MedicalRecords = () => {
             treatmentPlan: '',
             disposition: 'Discharged',
             dischargeInstructions: '',
-            province: selectedPatient.province || '',
+            province: selectedPatient.province || currentUser?.province || '',
             notes: '',
+            taggedUsers: [],
             physicalExam: {
                 general: '',
                 cardiovascular: '',
@@ -213,7 +232,7 @@ const MedicalRecords = () => {
             visitType: record.visitType || 'Outpatient',
             symptoms: record.symptoms || [],
             symptomInput: '',
-            primaryDiagnosis: record.primaryDiagnosis?.name || record.diagnosis || '',
+            primaryDiagnosis: record.primaryDiagnosis?.name || record.disease || '',
             disease: record.disease || '',
             prescribedMedications: record.prescribedMedications || [],
             medicationInput: '',
@@ -222,6 +241,7 @@ const MedicalRecords = () => {
             dischargeInstructions: record.dischargeInstructions || '',
             province: record.province || selectedPatient?.province || '',
             notes: record.notes || '',
+            taggedUsers: record.taggedUsers?.map(u => u._id || u) || [],
             physicalExam: record.physicalExam || {
                 general: '',
                 cardiovascular: '',
@@ -272,188 +292,16 @@ const MedicalRecords = () => {
         }
     };
 
-    // Image upload handler
-    const handleImageUpload = (e) => {
-        const files = Array.from(e.target.files);
-        const previewImages = files.map(file => ({
-            file: file,
-            preview: URL.createObjectURL(file),
-            name: file.name
-        }));
-        
-        setFormData(prev => ({
-            ...prev,
-            radiologyInput: {
-                ...prev.radiologyInput,
-                previewImages: [...(prev.radiologyInput.previewImages || []), ...previewImages]
-            }
-        }));
-    };
-
-    // Remove preview image
-    const removePreviewImage = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            radiologyInput: {
-                ...prev.radiologyInput,
-                previewImages: prev.radiologyInput.previewImages.filter((_, i) => i !== index)
-            }
-        }));
-    };
-
-    // Remove image from saved radiology study
-    const removeImageFromRadiology = (studyIndex, imageIndex) => {
-        setFormData(prev => ({
-            ...prev,
-            radiology: prev.radiology.map((study, idx) => {
-                if (idx === studyIndex) {
-                    return {
-                        ...study,
-                        images: study.images.filter((_, i) => i !== imageIndex)
-                    };
-                }
-                return study;
-            })
-        }));
-    };
-
-    // Add radiology study with images
-    const addRadiologyWithImages = async () => {
-        if (!formData.radiologyInput.studyType) {
-            toast.error('Please select a study type');
-            return;
-        }
-        
-        const newStudy = {
-            studyType: formData.radiologyInput.studyType,
-            bodyPart: formData.radiologyInput.bodyPart,
-            findings: formData.radiologyInput.findings,
-            impression: formData.radiologyInput.impression,
-            images: [],
-            reportDate: new Date()
-        };
-        
-        // Upload images if any
-        if (formData.radiologyInput.previewImages && formData.radiologyInput.previewImages.length > 0) {
-            setUploadingImages(true);
-            const uploadFormData = new FormData();
-            uploadFormData.append('patientId', selectedPatient._id);
-            uploadFormData.append('studyType', formData.radiologyInput.studyType);
-            
-            formData.radiologyInput.previewImages.forEach(img => {
-                uploadFormData.append('images', img.file);
-            });
-            
-            try {
-                const token = localStorage.getItem('token');
-                const uploadRes = await fetch('http://localhost:5000/medical-records/upload-images', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: uploadFormData
-                });
-                
-                const uploadedImages = await uploadRes.json();
-                if (uploadedImages.images) {
-                    newStudy.images = uploadedImages.images;
-                    toast.success(`${uploadedImages.images.length} image(s) uploaded`);
-                }
-            } catch (error) {
-                console.error('Image upload failed:', error);
-                toast.error('Failed to upload images');
-            } finally {
-                setUploadingImages(false);
-            }
-        }
-        
-        setFormData(prev => ({
-            ...prev,
-            radiology: [...prev.radiology, newStudy],
-            radiologyInput: { 
-                studyType: '', 
-                bodyPart: '', 
-                findings: '', 
-                impression: '', 
-                previewImages: [] 
-            }
-        }));
-    };
-
-    const addSymptom = () => {
-        if (formData.symptomInput.trim()) {
-            setFormData(prev => ({
+    const toggleTaggedUser = (userId) => {
+        setFormData(prev => {
+            const isTagged = prev.taggedUsers.includes(userId);
+            return {
                 ...prev,
-                symptoms: [...prev.symptoms, prev.symptomInput.trim()],
-                symptomInput: ''
-            }));
-        }
-    };
-
-    const removeSymptom = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            symptoms: prev.symptoms.filter((_, i) => i !== index)
-        }));
-    };
-
-    const addMedication = () => {
-        if (formData.medicationInput.trim()) {
-            setFormData(prev => ({
-                ...prev,
-                prescribedMedications: [...prev.prescribedMedications, formData.medicationInput.trim()],
-                medicationInput: ''
-            }));
-        }
-    };
-
-    const removeMedication = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            prescribedMedications: prev.prescribedMedications.filter((_, i) => i !== index)
-        }));
-    };
-
-    const addDifferentialDiagnosis = () => {
-        if (formData.differentialInput.trim()) {
-            setFormData(prev => ({
-                ...prev,
-                differentialDiagnosis: [...prev.differentialDiagnosis, prev.differentialInput.trim()],
-                differentialInput: ''
-            }));
-        }
-    };
-
-    const removeDifferentialDiagnosis = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            differentialDiagnosis: prev.differentialDiagnosis.filter((_, i) => i !== index)
-        }));
-    };
-
-    const addLabTest = () => {
-        if (formData.labTestInput.testName) {
-            setFormData(prev => ({
-                ...prev,
-                labTests: [...prev.labTests, { ...formData.labTestInput, orderedDate: new Date() }],
-                labTestInput: { testName: '', result: '', referenceRange: '', abnormal: false }
-            }));
-        }
-    };
-
-    const removeLabTest = (index) => {
-        setFormData(prev => ({
-            ...prev,
-            labTests: prev.labTests.filter((_, i) => i !== index)
-        }));
-    };
-
-    const calculateBMI = (weight, height) => {
-        if (weight && height && height > 0) {
-            const heightInMeters = height / 100;
-            return (weight / (heightInMeters * heightInMeters)).toFixed(1);
-        }
-        return '';
+                taggedUsers: isTagged 
+                    ? prev.taggedUsers.filter(id => id !== userId)
+                    : [...prev.taggedUsers, userId]
+            };
+        });
     };
 
     const handleVitalChange = (field, value) => {
@@ -470,11 +318,12 @@ const MedicalRecords = () => {
         setFormData(prev => ({ ...prev, vitalSigns: newVitals }));
     };
 
-    const handlePhysicalExamChange = (field, value) => {
-        setFormData(prev => ({
-            ...prev,
-            physicalExam: { ...prev.physicalExam, [field]: value }
-        }));
+    const calculateBMI = (weight, height) => {
+        if (weight && height && height > 0) {
+            const heightInMeters = height / 100;
+            return (weight / (heightInMeters * heightInMeters)).toFixed(1);
+        }
+        return '';
     };
 
     const handleSubmit = async (e) => {
@@ -497,6 +346,7 @@ const MedicalRecords = () => {
             dischargeInstructions: formData.dischargeInstructions,
             province: formData.province,
             notes: formData.notes,
+            taggedUsers: formData.taggedUsers,
             physicalExam: formData.physicalExam,
             differentialDiagnosis: formData.differentialDiagnosis,
             investigations: {
@@ -523,13 +373,12 @@ const MedicalRecords = () => {
             if (editingRecord) {
                 await updateMedicalRecord(editingRecord._id, recordData);
                 toast.success('Medical record updated successfully');
-                refreshData();
             } else {
                 await createMedicalRecord(recordData);
                 toast.success('Medical record created successfully');
-                refreshData();
             }
             
+            refreshData();
             setShowModal(false);
             const response = await getPatientRecords(selectedPatient._id);
             setRecords(response.data);
@@ -538,43 +387,13 @@ const MedicalRecords = () => {
         }
     };
 
-    const getVisitTypeBadge = (type) => {
-        const colors = {
-            Emergency: 'bg-red-500/20 text-red-400 border-red-500/30',
-            Outpatient: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-            Inpatient: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
-            'Follow-up': 'bg-green-500/20 text-green-400 border-green-500/30',
-            Consultation: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
-        };
-        return colors[type] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    };
-
-    const getDispositionBadge = (type) => {
-        const colors = {
-            Discharged: 'bg-green-500/20 text-green-400 border-green-500/30',
-            Admitted: 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
-            Transferred: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-            'Left Against Medical Advice': 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-            Deceased: 'bg-red-500/20 text-red-400 border-red-500/30'
-        };
-        return colors[type] || 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-    };
-
-    const visitTypes = ['Emergency', 'Outpatient', 'Inpatient', 'Follow-up', 'Consultation'];
-    const dispositions = ['Discharged', 'Admitted', 'Transferred', 'Left Against Medical Advice', 'Deceased'];
-    const provinces = [
-        'Harare', 'Bulawayo', 'Manicaland', 'Mashonaland Central',
-        'Mashonaland East', 'Mashonaland West', 'Masvingo',
-        'Matabeleland North', 'Matabeleland South', 'Midlands'
-    ];
-
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center bg-brand-dark-950">
                 <div className="relative">
-                    <div className="w-16 h-16 border-4 border-purple-500/20 rounded-full animate-spin border-t-purple-500"></div>
+                    <div className="w-16 h-16 border-4 border-cyber-blue/20 rounded-full animate-spin border-t-cyber-blue"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <DocumentTextIcon className="h-6 w-6 text-purple-400 animate-pulse" />
+                        <ClipboardDocumentListIcon className="h-6 w-6 text-cyber-blue animate-pulse" />
                     </div>
                 </div>
             </div>
@@ -582,781 +401,306 @@ const MedicalRecords = () => {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8">
-            {/* Header */}
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] mb-8">
-                <div className="rounded-2xl bg-slate-900/80 backdrop-blur-xl p-6">
-                    <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                            <DocumentTextIcon className="h-6 w-6 text-white" />
-                        </div>
+        <div className="min-h-screen bg-brand-dark-950 pb-20">
+            {/* Header Section */}
+            <div className="bg-brand-dark-900/50 border-b border-white/5 py-12 mb-8">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
                         <div>
-                            <h1 className="text-3xl font-bold text-white">Medical Records</h1>
-                            <p className="text-gray-400">Complete patient medical history with vitals, exams, and investigations</p>
+                            <div className="flex items-center space-x-4 mb-2">
+                                <div className="p-3 rounded-2xl bg-brand-dark-800 border border-cyber-blue/30 shadow-[0_0_20px_rgba(0,242,255,0.1)]">
+                                    <ClipboardDocumentListIcon className="h-8 w-8 text-cyber-blue" />
+                                </div>
+                                <h1 className="text-4xl font-bold text-white tracking-tight">Clinical Records</h1>
+                            </div>
+                            <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 ml-16">
+                                Precision Healthcare Node v3.0
+                            </p>
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="w-full md:w-auto flex items-center space-x-3">
+                            <div className="relative flex-1 md:w-96 group">
+                                <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-cyber-blue transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder="IDENTIFY PATIENT (ID/NAME)"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 font-mono text-sm focus:outline-none focus:border-cyber-blue/50 focus:ring-4 focus:ring-cyber-blue/5 transition-all duration-500"
+                                />
+                            </div>
+                            <button
+                                onClick={handleSearch}
+                                className="px-8 py-4 rounded-2xl bg-white text-brand-dark-950 font-bold text-xs uppercase tracking-widest hover:bg-cyber-blue transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                            >
+                                Scan
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Patient Search Section */}
-            <div className="rounded-xl bg-white/5 border border-white/10 p-6 mb-6">
-                <h2 className="text-xl font-semibold text-white mb-4">Select Patient</h2>
-                <div className="flex gap-2">
-                    <div className="flex-1">
-                        <input
-                            type="text"
-                            placeholder="Search by National ID or Name"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                            className="w-full px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-all duration-300"
-                        />
+            <div className="max-w-7xl mx-auto px-4">
+                {!selectedPatient ? (
+                    <div className="glass-card-modern p-24 text-center border border-white/5 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-cyber-blue/5 blur-[100px] pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyber-purple/5 blur-[100px] pointer-events-none" />
+                        
+                        <div className="w-24 h-24 rounded-3xl bg-brand-dark-800 border border-white/5 flex items-center justify-center mx-auto mb-8 shadow-2xl group">
+                            <UserIcon className="h-10 w-10 text-gray-700 group-hover:text-cyber-blue transition-colors duration-500" />
+                        </div>
+                        <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">INITIALIZE SESSION</h2>
+                        <p className="text-gray-500 max-lg mx-auto leading-relaxed text-sm font-medium">
+                            Enter a valid patient identifier in the terminal above to decrypt and access clinical histories, biometric data, and diagnostic records.
+                        </p>
                     </div>
-                    <button
-                        onClick={handleSearch}
-                        className="px-5 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center space-x-2"
-                    >
-                        <MagnifyingGlassIcon className="h-5 w-5" />
-                        <span>Search</span>
-                    </button>
-                </div>
-
-                {selectedPatient && (
-                    <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30">
-                        <div className="flex justify-between items-center flex-wrap gap-4">
-                            <div>
-                                <p className="text-sm text-purple-400">Selected Patient</p>
-                                <p className="font-semibold text-white text-lg">{selectedPatient.firstName} {selectedPatient.lastName}</p>
-                                <p className="text-sm text-gray-400">National ID: {selectedPatient.nationalId}</p>
-                                <p className="text-sm text-gray-400">Province: {selectedPatient.province}</p>
-                            </div>
-                            <div className="flex space-x-3">
-                                <button
-                                    onClick={() => navigate(`/patients/${selectedPatient._id}/vitals-trend`)}
-                                    className="relative px-5 py-2.5 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-lg hover:shadow-blue-500/25 flex items-center space-x-2"
-                                >
-                                    <ChartBarIcon className="h-5 w-5" />
-                                    <span>View Vitals Trend</span>
-                                </button>
-                                {canCreate && (
+                ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
+                        {/* Patient Summary Card */}
+                        <div className="lg:col-span-1">
+                            <div className="glass-card-modern border border-white/5 overflow-hidden sticky top-28">
+                                <div className="bg-gradient-to-br from-cyber-blue/10 via-brand-dark-900 to-transparent p-8 border-b border-white/5">
+                                    <div className="text-center mb-8">
+                                        <div className="relative w-20 h-20 mx-auto mb-6">
+                                            <div className="absolute inset-0 rounded-3xl bg-cyber-blue/20 blur-xl animate-pulse" />
+                                            <div className="relative w-20 h-20 rounded-3xl bg-brand-dark-950 border border-cyber-blue/30 flex items-center justify-center text-2xl font-bold text-cyber-blue shadow-2xl">
+                                                {selectedPatient.firstName[0]}{selectedPatient.lastName[0]}
+                                            </div>
+                                        </div>
+                                        <h3 className="text-xl font-bold text-white tracking-tight mb-1">
+                                            {selectedPatient.firstName} {selectedPatient.lastName}
+                                        </h3>
+                                        <div className="flex items-center justify-center space-x-2">
+                                            <ShieldCheckIcon className="h-3 w-3 text-cyber-green" />
+                                            <p className="text-[10px] uppercase tracking-widest font-bold text-gray-500">Verified Citizen</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-3">
+                                        {[
+                                            { label: 'Identifier', value: selectedPatient.nationalId, icon: IdentificationIcon },
+                                            { label: 'Sector', value: selectedPatient.province, icon: MapPinIcon },
+                                            { label: 'Origin', value: new Date(selectedPatient.dateOfBirth).toLocaleDateString(), icon: ClockIcon }
+                                        ].map((item, idx) => (
+                                            <div key={idx} className="p-4 rounded-2xl bg-brand-dark-950/50 border border-white/5 flex items-center space-x-4">
+                                                <item.icon className="h-4 w-4 text-gray-600" />
+                                                <div>
+                                                    <p className="text-[8px] uppercase tracking-[0.2em] font-bold text-gray-700 mb-0.5">{item.label}</p>
+                                                    <p className="text-xs text-gray-300 font-bold tracking-wide">{item.value}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                <div className="p-6 bg-brand-dark-900/50">
                                     <button
                                         onClick={handleAddRecord}
-                                        className="relative px-5 py-2.5 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg hover:shadow-purple-500/25 flex items-center space-x-2"
+                                        disabled={!canCreate}
+                                        className="btn-primary-modern w-full py-4 uppercase tracking-[0.2em] text-[10px] font-bold flex items-center justify-center disabled:opacity-20"
                                     >
-                                        <PlusIcon className="h-5 w-5" />
-                                        <span>Add Medical Record</span>
+                                        <PlusIcon className="h-4 w-4 mr-2" />
+                                        Create Record
                                     </button>
-                                )}
+                                    
+                                    <button
+                                        onClick={() => navigate(`/patients/${selectedPatient._id}/vitals-trend`)}
+                                        className="w-full mt-3 py-4 rounded-xl bg-brand-dark-800 border border-white/5 text-gray-400 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center justify-center hover:text-white hover:bg-brand-dark-700 transition-all duration-300"
+                                    >
+                                        <ChartBarIcon className="h-4 w-4 mr-2" />
+                                        Biometric Trends
+                                    </button>
+                                </div>
                             </div>
+                        </div>
+
+                        {/* Records List */}
+                        <div className="lg:col-span-3">
+                            <div className="flex items-center justify-between mb-8">
+                                <h2 className="text-2xl font-bold text-white tracking-tight flex items-center">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-cyber-purple mr-4 animate-pulse" />
+                                    Temporal Timeline
+                                </h2>
+                                <div className="flex items-center space-x-4">
+                                    <span className="px-4 py-1.5 rounded-xl bg-brand-dark-900 border border-white/5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                        {records.length} ENCRYPTED ENTRIES
+                                    </span>
+                                </div>
+                            </div>
+
+                            {records.length === 0 ? (
+                                <div className="glass-card-modern p-20 text-center border border-white/5">
+                                    <DocumentTextIcon className="h-12 w-12 mx-auto mb-6 text-brand-dark-800" />
+                                    <p className="text-gray-600 font-bold uppercase tracking-widest text-xs">No clinical history detected</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {records.map((record) => (
+                                        <div 
+                                            key={record._id} 
+                                            className={`glass-card-modern border transition-all duration-500 overflow-hidden ${
+                                                expandedRecord === record._id 
+                                                    ? 'border-cyber-blue/30 bg-brand-dark-900/80' 
+                                                    : 'border-white/5 hover:border-white/10'
+                                            }`}
+                                        >
+                                            <div 
+                                                className="p-8 cursor-pointer relative group"
+                                                onClick={() => setExpandedRecord(expandedRecord === record._id ? null : record._id)}
+                                            >
+                                                <div className="absolute top-0 left-0 w-1 h-full bg-cyber-blue opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                
+                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                                                    <div className="flex items-center space-x-6">
+                                                        <div className="w-16 h-16 rounded-2xl bg-brand-dark-950 border border-white/5 flex flex-col items-center justify-center shadow-xl">
+                                                            <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">
+                                                                {new Date(record.visitDate).toLocaleString('default', { month: 'short' })}
+                                                            </span>
+                                                            <span className="text-2xl font-bold text-white leading-none tracking-tighter">
+                                                                {new Date(record.visitDate).getDate()}
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <div className="flex items-center space-x-3 mb-2">
+                                                                <h3 className="text-xl font-bold text-white tracking-tight">
+                                                                    {record.primaryDiagnosis?.name || record.disease || 'General Diagnostic'}
+                                                                </h3>
+                                                                <span className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-lg border ${
+                                                                    record.visitType === 'Emergency' 
+                                                                        ? 'bg-red-500/10 border-red-500/20 text-red-500' 
+                                                                        : 'bg-cyber-blue/10 border-cyber-blue/20 text-cyber-blue'
+                                                                }`}>
+                                                                    {record.visitType}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center space-x-4">
+                                                                <div className="flex items-center text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+                                                                    <BuildingOfficeIcon className="h-3 w-3 mr-2 text-gray-700" />
+                                                                    {record.hospital}
+                                                                </div>
+                                                                <div className="w-1 h-1 rounded-full bg-brand-dark-800" />
+                                                                <div className="flex items-center text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+                                                                    <ClockIcon className="h-3 w-3 mr-2 text-gray-700" />
+                                                                    {new Date(record.visitDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center space-x-8">
+                                                        <div className="hidden md:flex flex-col items-end">
+                                                            <p className="text-[8px] uppercase tracking-widest font-bold text-gray-700 mb-1">Attending Officer</p>
+                                                            <div className="flex items-center space-x-2">
+                                                                <UserIcon className="h-3 w-3 text-cyber-purple" />
+                                                                <span className="text-xs font-bold text-gray-300">Dr. {record.doctorName || 'Unknown'}</span>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <div className="flex items-center space-x-3">
+                                                            {record.taggedUsers?.length > 0 && (
+                                                                <div className="px-3 py-1.5 rounded-xl bg-brand-dark-950 border border-white/5 flex items-center space-x-2">
+                                                                    <UserPlusIcon className="h-3.5 w-3.5 text-cyber-blue" />
+                                                                    <span className="text-[10px] font-bold text-cyber-blue">{record.taggedUsers.length}</span>
+                                                                </div>
+                                                            )}
+                                                            <div className={`p-2 rounded-xl bg-brand-dark-950 border border-white/5 transition-transform duration-500 ${expandedRecord === record._id ? 'rotate-180' : ''}`}>
+                                                                <ChevronDownIcon className="h-4 w-4 text-gray-600" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Expandable Details Area */}
+                                            {expandedRecord === record._id && (
+                                                <div className="px-8 pb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+                                                    <div className="h-px w-full bg-white/5 mb-8" />
+                                                    
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                        {/* Symptoms & Diagnosis */}
+                                                        <div className="space-y-6">
+                                                            <div>
+                                                                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyber-blue mb-4 flex items-center">
+                                                                    <BeakerIcon className="h-4 w-4 mr-3" />
+                                                                    Clinical Presentation
+                                                                </h4>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {record.symptoms?.map((s, i) => (
+                                                                        <span key={i} className="px-3 py-1.5 rounded-xl bg-brand-dark-950 border border-white/5 text-[11px] text-gray-400 font-medium">
+                                                                            {s}
+                                                                        </span>
+                                                                    )) || <span className="text-xs text-gray-600 italic">No symptoms recorded</span>}
+                                                                </div>
+                                                            </div>
+                                                            
+                                                            <div>
+                                                                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyber-purple mb-4 flex items-center">
+                                                                    <DocumentTextIcon className="h-4 w-4 mr-3" />
+                                                                    Differential Profile
+                                                                </h4>
+                                                                <div className="flex flex-wrap gap-2">
+                                                                    {record.differentialDiagnosis?.map((d, i) => (
+                                                                        <span key={i} className="px-3 py-1.5 rounded-xl bg-cyber-purple/10 border border-cyber-purple/20 text-[11px] text-cyber-purple font-bold">
+                                                                            {d}
+                                                                        </span>
+                                                                    )) || <span className="text-xs text-gray-600 italic">No differentials documented</span>}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Vital Signs Grid */}
+                                                        <div className="md:col-span-2">
+                                                            <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyber-green mb-4 flex items-center">
+                                                                <HeartIcon className="h-4 w-4 mr-3" />
+                                                                Biometric Telemetry
+                                                            </h4>
+                                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                                                {[
+                                                                    { label: 'TEMP', value: `${record.vitalSigns?.temperature}°C`, status: 'NOMINAL' },
+                                                                    { label: 'BP', value: `${record.vitalSigns?.bloodPressure?.systolic}/${record.vitalSigns?.bloodPressure?.diastolic}`, status: 'NOMINAL' },
+                                                                    { label: 'HR', value: `${record.vitalSigns?.heartRate} BPM`, status: 'STABLE' },
+                                                                    { label: 'SPO2', value: `${record.vitalSigns?.oxygenSaturation}%`, status: 'NOMINAL' }
+                                                                ].map((v, i) => (
+                                                                    <div key={i} className="p-4 rounded-2xl bg-brand-dark-950 border border-white/5 hover:border-cyber-green/30 transition-colors group">
+                                                                        <p className="text-[8px] font-bold text-gray-700 uppercase tracking-widest mb-1 group-hover:text-cyber-green transition-colors">{v.label}</p>
+                                                                        <p className="text-lg font-bold text-white tracking-tighter mb-2">{v.value}</p>
+                                                                        <div className="flex items-center space-x-1.5">
+                                                                            <div className="w-1 h-1 rounded-full bg-cyber-green" />
+                                                                            <span className="text-[7px] font-bold text-cyber-green uppercase tracking-widest">{v.status}</span>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Action Controls */}
+                                                    <div className="mt-10 pt-8 border-t border-white/5 flex justify-end space-x-4">
+                                                        <button 
+                                                            onClick={() => handleEditRecord(record)}
+                                                            className="px-6 py-2.5 rounded-xl bg-brand-dark-800 border border-white/5 text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:text-white hover:bg-brand-dark-700 transition-all"
+                                                        >
+                                                            Modify Entry
+                                                        </button>
+                                                        <button 
+                                                            onClick={() => handleDeleteRecord(record)}
+                                                            className="px-6 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold text-[10px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
+                                                        >
+                                                            Purge
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
             </div>
-
-            {/* Medical Records List */}
-            {selectedPatient && (
-                <div className="space-y-4">
-                    <div className="flex justify-between items-center">
-                        <h2 className="text-xl font-semibold text-white">Medical History</h2>
-                        <p className="text-sm text-gray-400">{records.length} records found</p>
-                    </div>
-                    
-                    {records.length === 0 ? (
-                        <div className="rounded-xl bg-white/5 border border-white/10 p-12 text-center">
-                            <DocumentTextIcon className="h-12 w-12 mx-auto mb-3 text-gray-600" />
-                            <p className="text-gray-400">No medical records found for this patient</p>
-                            <p className="text-sm text-gray-500 mt-1">Click "Add Medical Record" to create one</p>
-                        </div>
-                    ) : (
-                        records.map((record) => {
-                            const isExpanded = expandedRecord === record._id;
-                            return (
-                                <div key={record._id} className="rounded-xl bg-white/5 border border-white/10 overflow-hidden hover:border-purple-500/30 transition-all duration-300">
-                                    {/* Card Header */}
-                                    <div className="p-5 bg-gradient-to-r from-white/5 to-transparent border-b border-white/10">
-                                        <div className="flex justify-between items-start">
-                                            <div className="flex-1">
-                                                <div className="flex items-center space-x-3 mb-3 flex-wrap gap-2">
-                                                    <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${getVisitTypeBadge(record.visitType)}`}>
-                                                        {record.visitType}
-                                                    </span>
-                                                    <span className={`px-2 py-1 rounded-lg text-xs font-medium border ${getDispositionBadge(record.disposition)}`}>
-                                                        {record.disposition}
-                                                    </span>
-                                                </div>
-                                                <div className="flex flex-wrap gap-4 text-sm text-gray-400">
-                                                    <div className="flex items-center space-x-1">
-                                                        <CalendarIcon className="h-4 w-4 text-purple-400" />
-                                                        <span>{new Date(record.visitDate).toLocaleDateString()}</span>
-                                                    </div>
-                                                    <div className="flex items-center space-x-1">
-                                                        <BuildingOfficeIcon className="h-4 w-4 text-purple-400" />
-                                                        <span>{record.hospital || 'N/A'}</span>
-                                                    </div>
-                                                    <div className="flex items-center space-x-1">
-                                                        <UserIcon className="h-4 w-4 text-purple-400" />
-                                                        <span>Dr. {record.doctorName || 'Unknown'}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex space-x-2">
-                                                {canEdit && (
-                                                    <button
-                                                        onClick={() => handleEditRecord(record)}
-                                                        className="p-2 rounded-lg text-blue-400 hover:bg-blue-500/20 transition-all duration-300"
-                                                        title="Edit Record"
-                                                    >
-                                                        <PencilIcon className="h-5 w-5" />
-                                                    </button>
-                                                )}
-                                                {canDelete && (
-                                                    <button
-                                                        onClick={() => handleDeleteRecord(record)}
-                                                        className="p-2 rounded-lg text-red-400 hover:bg-red-500/20 transition-all duration-300"
-                                                        title="Delete Record"
-                                                    >
-                                                        <TrashIcon className="h-5 w-5" />
-                                                    </button>
-                                                )}
-                                                <button
-                                                    onClick={() => setExpandedRecord(isExpanded ? null : record._id)}
-                                                    className="p-2 rounded-lg text-gray-400 hover:bg-white/10 transition-all duration-300"
-                                                >
-                                                    {isExpanded ? '▲' : '▼'}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Always Visible Content */}
-                                    <div className="p-5">
-                                        <div className="mb-4">
-                                            <div className="flex items-center space-x-2 mb-2">
-                                                <BeakerIcon className="h-4 w-4 text-purple-400" />
-                                                <h3 className="font-semibold text-white">Primary Diagnosis</h3>
-                                            </div>
-                                            <p className="text-gray-300 ml-6">{record.primaryDiagnosis?.name || record.diagnosis || 'N/A'}</p>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-4 pt-4 border-t border-white/10">
-                                            {record.symptoms && record.symptoms.length > 0 && (
-                                                <div className="text-center">
-                                                    <p className="text-xs text-gray-500">Symptoms</p>
-                                                    <p className="text-sm text-white font-semibold">{record.symptoms.length}</p>
-                                                </div>
-                                            )}
-                                            {record.prescribedMedications && record.prescribedMedications.length > 0 && (
-                                                <div className="text-center">
-                                                    <p className="text-xs text-gray-500">Medications</p>
-                                                    <p className="text-sm text-white font-semibold">{record.prescribedMedications.length}</p>
-                                                </div>
-                                            )}
-                                            {record.vitalSigns?.temperature && (
-                                                <div className="text-center">
-                                                    <p className="text-xs text-gray-500">Temp</p>
-                                                    <p className="text-sm text-white font-semibold">{record.vitalSigns.temperature}°C</p>
-                                                </div>
-                                            )}
-                                            {record.vitalSigns?.bloodPressure?.systolic && (
-                                                <div className="text-center">
-                                                    <p className="text-xs text-gray-500">BP</p>
-                                                    <p className="text-sm text-white font-semibold">{record.vitalSigns.bloodPressure.systolic}/{record.vitalSigns.bloodPressure.diastolic}</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {/* Expanded Content */}
-                                    {isExpanded && (
-                                        <div className="p-5 pt-0 border-t border-white/10 space-y-4">
-                                            {/* Symptoms */}
-                                            {record.symptoms && record.symptoms.length > 0 && (
-                                                <div>
-                                                    <h4 className="font-semibold text-purple-400 mb-2 flex items-center">
-                                                        <ClipboardDocumentListIcon className="h-4 w-4 mr-2" />
-                                                        Symptoms
-                                                    </h4>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {record.symptoms.map((symptom, idx) => (
-                                                            <span key={idx} className="px-3 py-1.5 rounded-lg bg-white/10 text-gray-300 text-sm">
-                                                                {symptom}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Differential Diagnosis */}
-                                            {record.differentialDiagnosis && record.differentialDiagnosis.length > 0 && (
-                                                <div>
-                                                    <h4 className="font-semibold text-yellow-400 mb-2 flex items-center">
-                                                        <ExclamationTriangleIcon className="h-4 w-4 mr-2" />
-                                                        Differential Diagnosis
-                                                    </h4>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {record.differentialDiagnosis.map((diag, idx) => (
-                                                            <span key={idx} className="px-3 py-1.5 rounded-lg bg-yellow-500/20 text-yellow-400 text-sm">
-                                                                {diag}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Physical Examination */}
-                                            {record.physicalExam && Object.values(record.physicalExam).some(v => v) && (
-                                                <div>
-                                                    <h4 className="font-semibold text-purple-400 mb-3 flex items-center">
-                                                        <HeartIcon className="h-4 w-4 mr-2" />
-                                                        Physical Examination
-                                                    </h4>
-                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                        {record.physicalExam.general && (
-                                                            <div className="bg-white/5 rounded-lg p-2">
-                                                                <p className="text-xs text-gray-500">General</p>
-                                                                <p className="text-sm text-gray-300">{record.physicalExam.general}</p>
-                                                            </div>
-                                                        )}
-                                                        {record.physicalExam.cardiovascular && (
-                                                            <div className="bg-white/5 rounded-lg p-2">
-                                                                <p className="text-xs text-gray-500">Cardiovascular</p>
-                                                                <p className="text-sm text-gray-300">{record.physicalExam.cardiovascular}</p>
-                                                            </div>
-                                                        )}
-                                                        {record.physicalExam.respiratory && (
-                                                            <div className="bg-white/5 rounded-lg p-2">
-                                                                <p className="text-xs text-gray-500">Respiratory</p>
-                                                                <p className="text-sm text-gray-300">{record.physicalExam.respiratory}</p>
-                                                            </div>
-                                                        )}
-                                                        {record.physicalExam.abdominal && (
-                                                            <div className="bg-white/5 rounded-lg p-2">
-                                                                <p className="text-xs text-gray-500">Abdominal</p>
-                                                                <p className="text-sm text-gray-300">{record.physicalExam.abdominal}</p>
-                                                            </div>
-                                                        )}
-                                                        {record.physicalExam.neurological && (
-                                                            <div className="bg-white/5 rounded-lg p-2">
-                                                                <p className="text-xs text-gray-500">Neurological</p>
-                                                                <p className="text-sm text-gray-300">{record.physicalExam.neurological}</p>
-                                                            </div>
-                                                        )}
-                                                        {record.physicalExam.musculoskeletal && (
-                                                            <div className="bg-white/5 rounded-lg p-2">
-                                                                <p className="text-xs text-gray-500">Musculoskeletal</p>
-                                                                <p className="text-sm text-gray-300">{record.physicalExam.musculoskeletal}</p>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Lab Tests */}
-                                            {record.investigations?.labTests && record.investigations.labTests.length > 0 && (
-                                                <div>
-                                                    <h4 className="font-semibold text-purple-400 mb-3 flex items-center">
-                                                        <BeakerIcon className="h-4 w-4 mr-2" />
-                                                        Laboratory Tests
-                                                    </h4>
-                                                    <div className="space-y-2">
-                                                        {record.investigations.labTests.map((test, idx) => (
-                                                            <div key={idx} className="bg-white/5 rounded-lg p-3">
-                                                                <div className="flex justify-between">
-                                                                    <div>
-                                                                        <p className="font-semibold text-white">{test.testName}</p>
-                                                                        <p className="text-sm text-gray-400">Result: {test.result}</p>
-                                                                        {test.referenceRange && <p className="text-xs text-gray-500">Reference: {test.referenceRange}</p>}
-                                                                    </div>
-                                                                    <p className="text-xs text-gray-500">{new Date(test.orderedDate).toLocaleDateString()}</p>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Radiology with Images */}
-                                            {record.investigations?.radiology && record.investigations.radiology.length > 0 && (
-                                                <div>
-                                                    <h4 className="font-semibold text-purple-400 mb-3 flex items-center">
-                                                        <CameraIcon className="h-4 w-4 mr-2" />
-                                                        Radiology / Imaging
-                                                    </h4>
-                                                    <div className="space-y-3">
-                                                        {record.investigations.radiology.map((study, idx) => (
-                                                            <div key={idx} className="bg-white/5 rounded-lg p-3">
-                                                                <div className="flex justify-between items-start">
-                                                                    <div>
-                                                                        <p className="font-semibold text-white">{study.studyType}</p>
-                                                                        {study.bodyPart && <p className="text-sm text-gray-400">Body Part: {study.bodyPart}</p>}
-                                                                        <p className="text-sm text-gray-400">Findings: {study.findings}</p>
-                                                                        {study.impression && <p className="text-sm text-gray-500">Impression: {study.impression}</p>}
-                                                                    </div>
-                                                                    <p className="text-xs text-gray-500">{new Date(study.reportDate).toLocaleDateString()}</p>
-                                                                </div>
-                                                                
-                                                                {/* Display Images */}
-                                                                {study.images && study.images.length > 0 && (
-                                                                    <div className="mt-3">
-                                                                        <p className="text-xs text-gray-400 mb-2">Attached Images ({study.images.length})</p>
-                                                                        <div className="flex flex-wrap gap-2">
-                                                                            {study.images.map((img, imgIdx) => (
-                                                                                <img 
-                                                                                    key={imgIdx}
-                                                                                    src={`http://localhost:5000${img.url}`} 
-                                                                                    alt={img.originalName}
-                                                                                    className="w-20 h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
-                                                                                    onClick={() => window.open(`http://localhost:5000${img.url}`, '_blank')}
-                                                                                />
-                                                                            ))}
-                                                                        </div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Medications */}
-                                            {record.prescribedMedications && record.prescribedMedications.length > 0 && (
-                                                <div>
-                                                    <h4 className="font-semibold text-purple-400 mb-2">Prescribed Medications</h4>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {record.prescribedMedications.map((med, idx) => (
-                                                            <span key={idx} className="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-400 text-sm">
-                                                                {med}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Treatment Plan */}
-                                            {record.treatmentPlan?.plan && (
-                                                <div>
-                                                    <h4 className="font-semibold text-purple-400 mb-2">Treatment Plan</h4>
-                                                    <p className="text-gray-300">{record.treatmentPlan.plan}</p>
-                                                </div>
-                                            )}
-
-                                            {/* Discharge Instructions */}
-                                            {record.dischargeInstructions && (
-                                                <div className="mt-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                                                    <p className="font-semibold text-blue-400 text-sm">Discharge Instructions</p>
-                                                    <p className="text-blue-300 text-sm">{record.dischargeInstructions}</p>
-                                                </div>
-                                            )}
-
-                                            {/* Notes */}
-                                            {record.notes && (
-                                                <div>
-                                                    <h4 className="font-semibold text-purple-400 mb-2">Additional Notes</h4>
-                                                    <p className="text-gray-300 text-sm">{record.notes}</p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })
-                    )}
-                </div>
-            )}
-
-            {/* Add/Edit Modal */}
-            {showModal && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 overflow-y-auto py-8">
-                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-5xl mx-4">
-                        <div className="rounded-2xl bg-slate-900/95 backdrop-blur-xl max-h-[90vh] overflow-y-auto">
-                            <div className="p-6 border-b border-white/10 sticky top-0 bg-slate-900/95">
-                                <h2 className="text-2xl font-bold text-white">
-                                    {editingRecord ? 'Edit Medical Record' : 'Add Medical Record'}
-                                </h2>
-                                <p className="text-gray-400 mt-1">
-                                    Patient: {selectedPatient?.firstName} {selectedPatient?.lastName}
-                                </p>
-                            </div>
-                            
-                            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                                {/* Basic Info */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">Hospital *</label>
-                                        <input type="text" value={formData.hospital} onChange={(e) => setFormData(prev => ({ ...prev, hospital: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" required />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">Doctor Name</label>
-                                        <input type="text" value={formData.doctorName} onChange={(e) => setFormData(prev => ({ ...prev, doctorName: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">Visit Date *</label>
-                                        <input type="date" value={formData.visitDate} onChange={(e) => setFormData(prev => ({ ...prev, visitDate: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" required />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">Visit Type</label>
-                                        <select value={formData.visitType} onChange={(e) => setFormData(prev => ({ ...prev, visitType: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
-                                            {visitTypes.map(type => <option key={type} value={type}>{type}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Vital Signs */}
-                                <div className="border-t border-white/10 pt-4">
-                                    <h3 className="text-lg font-semibold text-purple-400 mb-3">Vital Signs</h3>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Temperature (°C)</label>
-                                            <input type="number" step="0.1" value={formData.vitalSigns.temperature} onChange={(e) => handleVitalChange('temperature', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Heart Rate (bpm)</label>
-                                            <input type="number" value={formData.vitalSigns.heartRate} onChange={(e) => handleVitalChange('heartRate', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Systolic BP (mmHg)</label>
-                                            <input type="number" value={formData.vitalSigns.bloodPressureSystolic} onChange={(e) => handleVitalChange('bloodPressureSystolic', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Diastolic BP (mmHg)</label>
-                                            <input type="number" value={formData.vitalSigns.bloodPressureDiastolic} onChange={(e) => handleVitalChange('bloodPressureDiastolic', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Weight (kg)</label>
-                                            <input type="number" step="0.1" value={formData.vitalSigns.weight} onChange={(e) => handleVitalChange('weight', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Height (cm)</label>
-                                            <input type="number" step="0.1" value={formData.vitalSigns.height} onChange={(e) => handleVitalChange('height', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">BMI (auto-calculated)</label>
-                                            <input type="text" value={formData.vitalSigns.bmi} disabled className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-gray-400" />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Pain Score (0-10)</label>
-                                            <input type="number" min="0" max="10" value={formData.vitalSigns.painScore} onChange={(e) => handleVitalChange('painScore', e.target.value)} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Symptoms */}
-                                <div className="border-t border-white/10 pt-4">
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Symptoms</label>
-                                    <div className="flex gap-2 mb-2">
-                                        <input type="text" value={formData.symptomInput} onChange={(e) => setFormData(prev => ({ ...prev, symptomInput: e.target.value }))} onKeyPress={(e) => e.key === 'Enter' && addSymptom()} className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Enter a symptom" />
-                                        <button type="button" onClick={addSymptom} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Add</button>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {formData.symptoms.map((symptom, idx) => (
-                                            <span key={idx} className="px-2 py-1 rounded-lg bg-white/10 text-gray-300 text-sm flex items-center space-x-1">
-                                                <span>{symptom}</span>
-                                                <button type="button" onClick={() => removeSymptom(idx)} className="text-red-400 ml-1">×</button>
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Diagnosis */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">Primary Diagnosis *</label>
-                                        <input type="text" value={formData.primaryDiagnosis} onChange={(e) => setFormData(prev => ({ ...prev, primaryDiagnosis: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" required />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">Disease Category</label>
-                                        <input type="text" value={formData.disease} onChange={(e) => setFormData(prev => ({ ...prev, disease: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                    </div>
-                                </div>
-
-                                {/* Differential Diagnosis */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2 flex items-center">
-                                        <ExclamationTriangleIcon className="h-4 w-4 mr-1 text-yellow-400" />
-                                        Differential Diagnosis
-                                    </label>
-                                    <div className="flex gap-2 mb-2">
-                                        <input type="text" value={formData.differentialInput} onChange={(e) => setFormData(prev => ({ ...prev, differentialInput: e.target.value }))} onKeyPress={(e) => e.key === 'Enter' && addDifferentialDiagnosis()} className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Enter differential diagnosis" />
-                                        <button type="button" onClick={addDifferentialDiagnosis} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Add</button>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {formData.differentialDiagnosis.map((diag, idx) => (
-                                            <span key={idx} className="px-2 py-1 rounded-lg bg-yellow-500/20 text-yellow-400 text-sm flex items-center space-x-1">
-                                                <span>{diag}</span>
-                                                <button type="button" onClick={() => removeDifferentialDiagnosis(idx)} className="text-red-400 ml-1">×</button>
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Physical Examination */}
-                                <div>
-                                    <h3 className="text-lg font-semibold text-purple-400 mb-3">Physical Examination</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">General Appearance</label>
-                                            <textarea value={formData.physicalExam.general} onChange={(e) => handlePhysicalExamChange('general', e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="General appearance..." />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Cardiovascular</label>
-                                            <textarea value={formData.physicalExam.cardiovascular} onChange={(e) => handlePhysicalExamChange('cardiovascular', e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Heart sounds, murmurs..." />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Respiratory</label>
-                                            <textarea value={formData.physicalExam.respiratory} onChange={(e) => handlePhysicalExamChange('respiratory', e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Breath sounds..." />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Abdominal</label>
-                                            <textarea value={formData.physicalExam.abdominal} onChange={(e) => handlePhysicalExamChange('abdominal', e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Tenderness, masses..." />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Neurological</label>
-                                            <textarea value={formData.physicalExam.neurological} onChange={(e) => handlePhysicalExamChange('neurological', e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="CNS, reflexes..." />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Musculoskeletal</label>
-                                            <textarea value={formData.physicalExam.musculoskeletal} onChange={(e) => handlePhysicalExamChange('musculoskeletal', e.target.value)} rows={2} className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Joints, range of motion..." />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Lab Tests */}
-                                <div>
-                                    <h3 className="text-lg font-semibold text-purple-400 mb-3 flex items-center">
-                                        <BeakerIcon className="h-4 w-4 mr-2" />
-                                        Laboratory Tests
-                                    </h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-2">
-                                        <input type="text" placeholder="Test Name" value={formData.labTestInput.testName} onChange={(e) => setFormData(prev => ({ ...prev, labTestInput: { ...prev.labTestInput, testName: e.target.value } }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                        <input type="text" placeholder="Result" value={formData.labTestInput.result} onChange={(e) => setFormData(prev => ({ ...prev, labTestInput: { ...prev.labTestInput, result: e.target.value } }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                        <input type="text" placeholder="Reference Range" value={formData.labTestInput.referenceRange} onChange={(e) => setFormData(prev => ({ ...prev, labTestInput: { ...prev.labTestInput, referenceRange: e.target.value } }))} className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                        <button type="button" onClick={addLabTest} className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg transition-all">Add Test</button>
-                                    </div>
-                                    <div className="space-y-2 mt-2">
-                                        {formData.labTests.map((test, idx) => (
-                                            <div key={idx} className="bg-white/5 rounded-lg p-3 flex justify-between items-center">
-                                                <div>
-                                                    <p className="font-semibold text-white">{test.testName}</p>
-                                                    <p className="text-sm text-gray-400">Result: {test.result} {test.referenceRange && `(Ref: ${test.referenceRange})`}</p>
-                                                </div>
-                                                <button type="button" onClick={() => removeLabTest(idx)} className="text-red-400 text-sm">Remove</button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Radiology with Image Upload */}
-                                <div className="border-t border-white/10 pt-4">
-                                    <h3 className="text-lg font-semibold text-purple-400 mb-3 flex items-center">
-                                        <CameraIcon className="h-5 w-5 mr-2" />
-                                        Radiology / Imaging
-                                    </h3>
-                                    
-                                    {/* Radiology List */}
-                                    <div className="space-y-3 mb-4">
-                                        {formData.radiology.map((study, idx) => (
-                                            <div key={idx} className="bg-white/5 rounded-lg p-4 border border-white/10">
-                                                <div className="flex justify-between items-start mb-2">
-                                                    <div>
-                                                        <p className="font-semibold text-white">{study.studyType}</p>
-                                                        {study.bodyPart && <p className="text-sm text-gray-400">Body Part: {study.bodyPart}</p>}
-                                                        <p className="text-sm text-gray-400">Findings: {study.findings}</p>
-                                                        {study.impression && <p className="text-sm text-gray-500">Impression: {study.impression}</p>}
-                                                    </div>
-                                                    <button type="button" onClick={() => {
-                                                        setFormData(prev => ({
-                                                            ...prev,
-                                                            radiology: prev.radiology.filter((_, i) => i !== idx)
-                                                        }));
-                                                    }} className="text-red-400 text-sm">Remove</button>
-                                                </div>
-                                                
-                                                {/* Display Images */}
-                                                {study.images && study.images.length > 0 && (
-                                                    <div className="mt-3">
-                                                        <p className="text-xs text-gray-400 mb-2">Attached Images ({study.images.length})</p>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {study.images.map((img, imgIdx) => (
-                                                                <div key={imgIdx} className="relative group">
-                                                                    <img 
-                                                                        src={`http://localhost:5000${img.url}`} 
-                                                                        alt={img.originalName}
-                                                                        className="w-20 h-20 object-cover rounded-lg cursor-pointer hover:opacity-80 transition"
-                                                                        onClick={() => window.open(`http://localhost:5000${img.url}`, '_blank')}
-                                                                    />
-                                                                    <button 
-                                                                        type="button"
-                                                                        onClick={() => removeImageFromRadiology(idx, imgIdx)}
-                                                                        className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1 hidden group-hover:block"
-                                                                    >
-                                                                        <XMarkIcon className="h-3 w-3 text-white" />
-                                                                    </button>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    
-                                    {/* Add New Radiology Study */}
-                                    <div className="bg-white/5 rounded-lg p-4">
-                                        <h4 className="font-semibold text-white mb-3">Add New Imaging Study</h4>
-                                        
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                                            <select 
-                                                value={formData.radiologyInput.studyType} 
-                                                onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, studyType: e.target.value } }))}
-                                                className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white"
-                                            >
-                                                <option value="">Select Study Type</option>
-                                                <option value="X-Ray">X-Ray</option>
-                                                <option value="CT Scan">CT Scan</option>
-                                                <option value="MRI">MRI</option>
-                                                <option value="Ultrasound">Ultrasound</option>
-                                                <option value="Mammogram">Mammogram</option>
-                                                <option value="PET Scan">PET Scan</option>
-                                                <option value="Fluoroscopy">Fluoroscopy</option>
-                                                <option value="Other">Other</option>
-                                            </select>
-                                            
-                                            <input 
-                                                type="text" 
-                                                placeholder="Body Part (e.g., Chest, Knee, Brain)" 
-                                                value={formData.radiologyInput.bodyPart || ''} 
-                                                onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, bodyPart: e.target.value } }))}
-                                                className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white"
-                                            />
-                                        </div>
-                                        
-                                        <textarea 
-                                            placeholder="Findings" 
-                                            value={formData.radiologyInput.findings || ''} 
-                                            onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, findings: e.target.value } }))}
-                                            rows={2} 
-                                            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white mb-3"
-                                        />
-                                        
-                                        <textarea 
-                                            placeholder="Impression / Conclusion" 
-                                            value={formData.radiologyInput.impression || ''} 
-                                            onChange={(e) => setFormData(prev => ({ ...prev, radiologyInput: { ...prev.radiologyInput, impression: e.target.value } }))}
-                                            rows={2} 
-                                            className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white mb-3"
-                                        />
-                                        
-                                        {/* Image Upload */}
-                                        <div className="mb-3">
-                                            <label className="block text-sm text-gray-400 mb-2">Upload Images (X-ray, CT, MRI, etc.)</label>
-                                            <div className="border-2 border-dashed border-white/30 rounded-lg p-4 text-center hover:border-purple-500 transition cursor-pointer"
-                                                 onClick={() => document.getElementById('imageUpload').click()}>
-                                                <CameraIcon className="h-8 w-8 mx-auto text-gray-500 mb-2" />
-                                                <p className="text-sm text-gray-400">Click to upload or drag and drop</p>
-                                                <p className="text-xs text-gray-500 mt-1">JPG, PNG, DICOM up to 20MB each</p>
-                                            </div>
-                                            <input 
-                                                type="file" 
-                                                id="imageUpload"
-                                                multiple
-                                                accept="image/jpeg,image/png,image/jpg,image/dicom,application/dicom"
-                                                className="hidden"
-                                                onChange={handleImageUpload}
-                                            />
-                                            
-                                            {/* Preview uploaded images */}
-                                            {formData.radiologyInput.previewImages && formData.radiologyInput.previewImages.length > 0 && (
-                                                <div className="flex flex-wrap gap-2 mt-3">
-                                                    {formData.radiologyInput.previewImages.map((img, idx) => (
-                                                        <div key={idx} className="relative">
-                                                            <img src={img.preview} alt="Preview" className="w-16 h-16 object-cover rounded-lg" />
-                                                            <button 
-                                                                type="button"
-                                                                onClick={() => removePreviewImage(idx)}
-                                                                className="absolute -top-2 -right-2 bg-red-500 rounded-full p-1"
-                                                            >
-                                                                <XMarkIcon className="h-3 w-3 text-white" />
-                                                            </button>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                        
-                                        <button 
-                                            type="button" 
-                                            onClick={addRadiologyWithImages}
-                                            disabled={uploadingImages}
-                                            className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg transition-all disabled:opacity-50"
-                                        >
-                                            {uploadingImages ? 'Uploading...' : 'Add Study'}
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {/* Medications */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">Prescribed Medications</label>
-                                    <div className="flex gap-2 mb-2">
-                                        <input type="text" value={formData.medicationInput} onChange={(e) => setFormData(prev => ({ ...prev, medicationInput: e.target.value }))} onKeyPress={(e) => e.key === 'Enter' && addMedication()} className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Enter medication" />
-                                        <button type="button" onClick={addMedication} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Add</button>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {formData.prescribedMedications.map((med, idx) => (
-                                            <span key={idx} className="px-2 py-1 rounded-lg bg-purple-500/20 text-purple-400 text-sm flex items-center space-x-1">
-                                                <span>{med}</span>
-                                                <button type="button" onClick={() => removeMedication(idx)} className="text-red-400 ml-1">×</button>
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {/* Treatment Plan */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-1">Treatment Plan</label>
-                                    <textarea value={formData.treatmentPlan} onChange={(e) => setFormData(prev => ({ ...prev, treatmentPlan: e.target.value }))} rows={3} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" placeholder="Describe the treatment plan..." />
-                                </div>
-
-                                {/* Disposition & Province */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">Disposition</label>
-                                        <select value={formData.disposition} onChange={(e) => setFormData(prev => ({ ...prev, disposition: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
-                                            {dispositions.map(disp => <option key={disp} value={disp}>{disp}</option>)}
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">Province</label>
-                                        <select value={formData.province} onChange={(e) => setFormData(prev => ({ ...prev, province: e.target.value }))} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white">
-                                            {provinces.map(p => <option key={p} value={p}>{p}</option>)}
-                                        </select>
-                                    </div>
-                                </div>
-
-                                {/* Discharge Instructions */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-1">Discharge Instructions</label>
-                                    <textarea value={formData.dischargeInstructions} onChange={(e) => setFormData(prev => ({ ...prev, dischargeInstructions: e.target.value }))} rows={2} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                </div>
-
-                                {/* Notes */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-1">Additional Notes</label>
-                                    <textarea value={formData.notes} onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))} rows={2} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white" />
-                                </div>
-
-                                {/* Form Buttons */}
-                                <div className="flex justify-end space-x-3 pt-4 border-t border-white/10 sticky bottom-0 bg-slate-900/95 py-4">
-                                    <button type="button" onClick={() => setShowModal(false)} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20">Cancel</button>
-                                    <button type="submit" className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg">
-                                        {editingRecord ? 'Update' : 'Create'} Medical Record
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 };

@@ -2,106 +2,122 @@ import React from 'react';
 import { 
     ExclamationTriangleIcon, 
     CheckCircleIcon,
-    BellAlertIcon,
-    XMarkIcon
+    BellAlertIcon
 } from '@heroicons/react/24/solid';
+import { MapPinIcon } from '@heroicons/react/24/outline';
 
-const RecentAlerts = ({ alerts }) => {
+const RecentAlerts = ({ alerts, selectedDisease }) => {
+    // Filter alerts by selected disease if one is chosen
+    const filteredAlerts = selectedDisease
+        ? (alerts || []).filter(a =>
+            !a.disease ||
+            a.disease.toLowerCase() === selectedDisease.toLowerCase()
+          )
+        : (alerts || []);
+
     const getSeverityStyles = (severity) => {
-        switch(severity) {
-            case 'CRITICAL': 
+        switch (severity) {
+            case 'CRITICAL':
                 return {
-                    bg: 'bg-gradient-to-r from-red-500/20 to-red-600/10',
+                    bg: 'bg-red-500/10',
                     border: 'border-l-red-500',
                     text: 'text-red-400',
-                    icon: 'text-red-500',
-                    glow: 'shadow-red-500/20'
+                    icon: 'text-red-500'
                 };
-            case 'HIGH': 
+            case 'HIGH':
                 return {
-                    bg: 'bg-gradient-to-r from-orange-500/20 to-orange-600/10',
+                    bg: 'bg-orange-500/10',
                     border: 'border-l-orange-500',
                     text: 'text-orange-400',
-                    icon: 'text-orange-500',
-                    glow: 'shadow-orange-500/20'
+                    icon: 'text-orange-500'
                 };
-            case 'MEDIUM': 
+            case 'MEDIUM':
                 return {
-                    bg: 'bg-gradient-to-r from-yellow-500/20 to-yellow-600/10',
+                    bg: 'bg-yellow-500/10',
                     border: 'border-l-yellow-500',
                     text: 'text-yellow-400',
-                    icon: 'text-yellow-500',
-                    glow: 'shadow-yellow-500/20'
+                    icon: 'text-yellow-500'
                 };
-            default: 
+            default:
                 return {
-                    bg: 'bg-gradient-to-r from-blue-500/20 to-blue-600/10',
-                    border: 'border-l-blue-500',
-                    text: 'text-blue-400',
-                    icon: 'text-blue-500',
-                    glow: 'shadow-blue-500/20'
+                    bg: 'bg-cyber-blue/10',
+                    border: 'border-l-cyber-blue',
+                    text: 'text-cyber-blue',
+                    icon: 'text-cyber-blue'
                 };
         }
     };
 
-    if (alerts.length === 0) {
+    if (filteredAlerts.length === 0) {
         return (
-            <div className="neon-card p-6 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 flex items-center justify-center">
-                    <CheckCircleIcon className="h-8 w-8 text-emerald-400" />
+            <div className="glass-card-modern p-8 text-center border border-white/5">
+                <div className="w-16 h-16 mx-auto mb-5 rounded-2xl bg-brand-dark-800 flex items-center justify-center border border-cyber-green/30 shadow-[0_0_30px_rgba(57,255,20,0.08)]">
+                    <CheckCircleIcon className="h-8 w-8 text-cyber-green" />
                 </div>
-                <h3 className="text-lg font-semibold text-white mb-2">All Systems Normal</h3>
-                <p className="text-gray-400 text-sm">No active outbreaks detected</p>
+                <h3 className="text-lg font-bold text-white mb-1 tracking-tight">All Clear</h3>
+                <p className="text-gray-500 text-xs font-medium">
+                    {selectedDisease
+                        ? `No active alerts for ${selectedDisease}`
+                        : 'No active outbreaks detected in any region'}
+                </p>
             </div>
         );
     }
 
     return (
-        <div className="neon-card overflow-hidden">
-            <div className="p-5 border-b border-white/10 bg-gradient-to-r from-purple-500/5 to-transparent">
+        <div className="glass-card-modern border border-white/5">
+            <div className="p-5 border-b border-white/5 bg-brand-dark-900/50">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-                            <BellAlertIcon className="h-5 w-5 text-red-400" />
+                        <div className="w-10 h-10 rounded-xl bg-brand-dark-800 border border-red-500/30 flex items-center justify-center">
+                            <BellAlertIcon className="h-5 w-5 text-red-500" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-white">Active Alerts</h2>
-                            <p className="text-xs text-gray-400">{alerts.length} active outbreak{alerts.length !== 1 ? 's' : ''}</p>
+                            <h2 className="text-base font-bold text-white tracking-tight">Active Alerts</h2>
+                            <p className="text-[10px] uppercase tracking-widest font-bold text-gray-500">
+                                {filteredAlerts.length} threat{filteredAlerts.length !== 1 ? 's' : ''}
+                                {selectedDisease && <span className="text-purple-400 ml-1">· {selectedDisease}</span>}
+                            </p>
                         </div>
                     </div>
                     <div className="relative">
                         <div className="absolute inset-0 rounded-full bg-red-500/20 animate-ping" />
-                        <div className="relative w-3 h-3 rounded-full bg-red-500" />
+                        <div className="relative w-2 h-2 rounded-full bg-red-500" />
                     </div>
                 </div>
             </div>
-            
-            <div className="divide-y divide-white/5 max-h-96 overflow-y-auto">
-                {alerts.map((alert, index) => {
+
+            <div className="divide-y divide-white/5 max-h-[420px] overflow-y-auto">
+                {filteredAlerts.map((alert, index) => {
                     const styles = getSeverityStyles(alert.severity);
                     return (
-                        <div key={index} className={`p-4 transition-all duration-300 hover:${styles.bg} ${styles.border} border-l-4`}>
+                        <div
+                            key={index}
+                            className={`p-4 transition-all duration-300 hover:bg-white/[0.02] ${styles.border} border-l-4`}
+                        >
                             <div className="flex items-start space-x-3">
-                                <div className={`mt-1 p-1 rounded-lg ${styles.bg}`}>
+                                <div className={`mt-0.5 p-1.5 rounded-lg ${styles.bg} flex-shrink-0`}>
                                     <ExclamationTriangleIcon className={`h-4 w-4 ${styles.icon}`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between mb-1">
-                                        <h3 className="font-semibold text-white text-sm">
+                                    <div className="flex items-center justify-between mb-1.5 gap-2">
+                                        <h3 className="font-bold text-white text-xs tracking-tight truncate">
                                             {alert.disease}
                                         </h3>
-                                        <span className={`text-xs px-2 py-0.5 rounded-full ${styles.bg} ${styles.text}`}>
+                                        <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md border border-white/5 flex-shrink-0 ${styles.bg} ${styles.text}`}>
                                             {alert.severity}
                                         </span>
                                     </div>
-                                    <p className="text-gray-300 text-xs mb-2 line-clamp-2">{alert.message}</p>
-                                    <div className="flex items-center space-x-3 text-xs text-gray-500">
-                                        <span className="flex items-center space-x-1">
-                                            <span>📍</span>
+                                    <p className="text-gray-400 text-[11px] mb-2 leading-relaxed line-clamp-2">
+                                        {alert.message}
+                                    </p>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                                            <MapPinIcon className="h-3 w-3 text-gray-600" />
                                             <span>{alert.province}</span>
-                                        </span>
-                                        <span>
-                                            {new Date(alert.timestamp).toLocaleTimeString()}
+                                        </div>
+                                        <span className="text-[10px] font-mono text-gray-600">
+                                            {new Date(alert.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </span>
                                     </div>
                                 </div>

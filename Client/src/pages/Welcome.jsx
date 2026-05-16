@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   ArrowRightIcon, 
   ShieldCheckIcon, 
@@ -15,7 +15,10 @@ import {
   CpuChipIcon,
   LockClosedIcon,
   GlobeAltIcon,
-  ChatBubbleLeftRightIcon
+  ChatBubbleLeftRightIcon,
+  CommandLineIcon,
+  CircleStackIcon,
+  MicrophoneIcon
 } from '@heroicons/react/24/outline';
 
 const Welcome = () => {
@@ -35,81 +38,86 @@ const Welcome = () => {
       icon: BeakerIcon,
       title: 'AI Disease Predictor',
       description: 'Advanced AI that predicts diseases from symptoms with 85%+ accuracy',
-      gradient: 'from-purple-500 to-pink-500'
+      color: 'text-cyber-blue',
+      glow: 'shadow-cyber-blue/20'
     },
     {
       icon: BoltIcon,
       title: 'Real-time Outbreak Alerts',
       description: 'Instant notifications when disease outbreaks are detected across Zimbabwe',
-      gradient: 'from-pink-500 to-orange-500'
+      color: 'text-cyber-purple',
+      glow: 'shadow-cyber-purple/20'
     },
     {
       icon: CloudArrowUpIcon,
       title: 'Offline-First Architecture',
       description: 'Works seamlessly even without internet connection in remote areas',
-      gradient: 'from-blue-500 to-cyan-500'
+      color: 'text-cyber-green',
+      glow: 'shadow-cyber-green/20'
     },
     {
       icon: MapIcon,
       title: 'Interactive Disease Map',
       description: 'Visualize disease distribution across all 10 provinces of Zimbabwe',
-      gradient: 'from-emerald-500 to-teal-500'
+      color: 'text-cyber-pink',
+      glow: 'shadow-cyber-pink/20'
     },
     {
       icon: ChartBarIcon,
       title: 'Advanced Analytics',
       description: 'Comprehensive insights and predictive trends for public health decisions',
-      gradient: 'from-orange-500 to-red-500'
+      color: 'text-cyber-blue',
+      glow: 'shadow-cyber-blue/20'
     },
     {
       icon: ShieldCheckIcon,
       title: 'Enterprise Security',
       description: 'Role-based access with military-grade encryption and audit trails',
-      gradient: 'from-indigo-500 to-purple-500'
+      color: 'text-cyber-purple',
+      glow: 'shadow-cyber-purple/20'
     },
   ];
 
   const stats = [
-    { value: '10+', label: 'Provinces Covered', icon: MapIcon, gradient: 'from-emerald-500 to-teal-500' },
-    { value: '99.9%', label: 'Uptime Guaranteed', icon: BoltIcon, gradient: 'from-blue-500 to-cyan-500' },
-    { value: '24/7', label: 'Real-time Monitoring', icon: ChartBarIcon, gradient: 'from-purple-500 to-pink-500' },
-    { value: '256-bit', label: 'Bank-level Encryption', icon: LockClosedIcon, gradient: 'from-indigo-500 to-purple-500' },
+    { value: '10+', label: 'Provinces Covered', icon: MapIcon, color: 'text-cyber-blue' },
+    { value: '99.9%', label: 'Uptime Guaranteed', icon: BoltIcon, color: 'text-cyber-green' },
+    { value: '24/7', label: 'Real-time Monitoring', icon: ChartBarIcon, color: 'text-cyber-purple' },
+    { value: '256-bit', label: 'Military Encryption', icon: LockClosedIcon, color: 'text-cyber-pink' },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-brand-dark-950 text-gray-200 selection:bg-cyber-blue/30 selection:text-white">
       {/* Navigation Bar */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${
-        scrolled ? 'bg-slate-900/95 backdrop-blur-xl border-b border-white/10 shadow-2xl' : 'bg-transparent'
+        scrolled 
+          ? 'bg-brand-dark-900/90 backdrop-blur-xl border-b border-white/5 shadow-[0_10px_40px_rgba(0,0,0,0.5)]' 
+          : 'bg-transparent'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 group">
               <div className="relative">
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 blur-lg opacity-50 animate-pulse"></div>
-                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                  <ShieldCheckIcon className="h-5 w-5 text-white" />
+                <div className="absolute inset-0 rounded-xl bg-cyber-blue blur-lg opacity-40 group-hover:opacity-60 transition-opacity duration-500"></div>
+                <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-brand-dark-800 to-brand-dark-950 border border-cyber-blue/30 flex items-center justify-center">
+                  <ShieldCheckIcon className="h-6 w-6 text-cyber-blue" />
                 </div>
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-                National Vitality Eye
+              <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-white to-cyber-blue bg-clip-text text-transparent">
+                VITALITY<span className="text-cyber-blue">EYE</span>
               </span>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
               <button
                 onClick={() => navigate('/login')}
-                className="text-gray-300 hover:text-white transition-all duration-300 px-4 py-2 rounded-xl hover:bg-white/10"
+                className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-400 hover:text-white transition-all duration-300"
               >
-                Login
+                Access Portal
               </button>
               <button
                 onClick={() => navigate('/register')}
-                className="relative px-5 py-2 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg hover:shadow-purple-500/25 group"
+                className="btn-primary-modern py-2.5 px-6 text-[10px] uppercase tracking-[0.2em] font-bold"
               >
-                <span className="flex items-center">
-                  Get Started
-                  <ArrowRightIcon className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </span>
+                Initialize Node
               </button>
             </div>
           </div>
@@ -118,63 +126,69 @@ const Welcome = () => {
 
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-        <div className="absolute inset-0">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse"></div>
-          <div className="absolute bottom-20 right-10 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-pulse delay-1000"></div>
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse delay-2000"></div>
+        {/* Futuristic Background Decorations */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-[10%] left-[-5%] w-[40%] h-[40%] bg-cyber-purple/10 blur-[120px] rounded-full animate-pulse" />
+          <div className="absolute bottom-[-5%] right-[-5%] w-[40%] h-[40%] bg-cyber-blue/10 blur-[120px] rounded-full animate-pulse delay-700" />
+          
+          {/* Grid Pattern */}
+          <div className="absolute inset-0 opacity-[0.03]" 
+               style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
         </div>
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="animate-float">
-            <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-8 border border-white/20">
-              <CpuChipIcon className="h-4 w-4 text-purple-400 animate-pulse" />
-              <span className="text-sm text-gray-300">AI-Powered • Offline-First • Real-time</span>
-            </div>
+          <div className="inline-flex items-center space-x-3 bg-brand-dark-900/50 backdrop-blur-md border border-white/5 rounded-full px-5 py-2 mb-10 shadow-2xl">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-green opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyber-green"></span>
+            </span>
+            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400">Clinical Intelligence Node v3.0</span>
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-bold mb-6">
-            <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent animate-gradient">
-              National Vitality Eye
+          <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tighter">
+            <span className="text-white">NATIONAL</span><br/>
+            <span className="bg-gradient-to-r from-cyber-blue via-white to-cyber-purple bg-clip-text text-transparent">
+              VITALITY EYE
             </span>
           </h1>
-          <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto mb-8">
-            Zimbabwe's first AI-powered national health system. Predict diseases, detect outbreaks, and manage patient care — even without internet.
+          
+          <p className="text-lg md:text-xl text-gray-500 max-w-2xl mx-auto mb-12 font-medium leading-relaxed uppercase tracking-wide">
+            Zimbabwe's Decentralized AI Health Infrastructure. <br/>
+            <span className="text-gray-400">Predict. Analyze. Protect.</span>
           </p>
           
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-6">
             <button
               onClick={() => navigate('/register')}
-              className="relative px-8 py-4 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg hover:shadow-purple-500/25 group text-lg"
+              className="btn-primary-modern px-10 py-5 text-xs uppercase tracking-[0.3em] font-bold group"
             >
               <span className="flex items-center">
-                Start Free Trial
-                <SparklesIcon className="h-5 w-5 ml-2 group-hover:rotate-12 transition-transform" />
+                Initiate Registration
+                <CommandLineIcon className="h-5 w-5 ml-3 group-hover:translate-x-1 transition-transform" />
               </span>
             </button>
             <button
               onClick={() => {
                 document.getElementById('features').scrollIntoView({ behavior: 'smooth' });
               }}
-              className="px-8 py-4 rounded-xl font-semibold text-white transition-all duration-300 bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/20 group text-lg"
+              className="px-10 py-5 rounded-2xl bg-brand-dark-900 border border-white/5 text-white font-bold text-xs uppercase tracking-[0.3em] hover:bg-brand-dark-800 transition-all duration-300 backdrop-blur-xl group shadow-2xl"
             >
               <span className="flex items-center">
-                Explore Features
-                <ArrowRightIcon className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                System Specs
+                <ArrowRightIcon className="h-4 w-4 ml-3 group-hover:translate-x-1 transition-transform opacity-50" />
               </span>
             </button>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-20">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-24">
             {stats.map((stat, idx) => (
-              <div key={idx} className="group relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] hover:scale-105 transition-all duration-500">
-                <div className="rounded-2xl bg-slate-900/80 backdrop-blur-xl p-5 text-center">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-r ${stat.gradient} flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform`}>
-                    <stat.icon className="h-6 w-6 text-white" />
-                  </div>
-                  <p className="text-2xl font-bold text-white">{stat.value}</p>
-                  <p className="text-sm text-gray-400">{stat.label}</p>
+              <div key={idx} className="glass-card-modern p-6 text-center border border-white/5 group">
+                <div className={`w-10 h-10 rounded-xl bg-brand-dark-950 border border-white/5 flex items-center justify-center mx-auto mb-4 group-hover:border-cyber-blue/30 transition-all duration-500 shadow-2xl`}>
+                  <stat.icon className={`h-5 w-5 ${stat.color}`} />
                 </div>
+                <p className="text-2xl font-bold text-white tracking-tighter mb-1">{stat.value}</p>
+                <p className="text-[8px] uppercase tracking-[0.2em] font-bold text-gray-600">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -182,140 +196,66 @@ const Welcome = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-24 relative">
+      <section id="features" className="py-32 relative bg-brand-dark-900/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="inline-flex items-center space-x-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 mb-4">
-              <SparklesIcon className="h-4 w-4 text-purple-400" />
-              <span className="text-sm text-gray-300">Revolutionary Technology</span>
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
+            <div className="max-w-2xl text-left">
+              <div className="flex items-center space-x-3 mb-6">
+                <div className="w-1.5 h-1.5 rounded-full bg-cyber-purple animate-pulse" />
+                <span className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500">Core Modules</span>
+              </div>
+              <h2 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
+                REVOLUTIONARY <br/>
+                <span className="text-cyber-purple">HEALTH INTELLIGENCE</span>
+              </h2>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent mb-4">
-              Revolutionary Features
-            </h2>
-            <p className="text-gray-400 max-w-2xl mx-auto">
-              Everything you need to manage national health efficiently with cutting-edge AI technology
+            <p className="text-gray-500 font-medium text-sm max-w-sm text-left border-l border-white/10 pl-8">
+              Everything required for national health governance, powered by decentralized clinical logic and real-time biometric telemetry.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, idx) => (
-              <div key={idx} className="group relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] hover:scale-105 transition-all duration-500 cursor-pointer" onClick={() => navigate('/register')}>
-                <div className="rounded-2xl bg-slate-900/80 backdrop-blur-xl p-6 h-full">
-                  <div className={`w-14 h-14 rounded-xl bg-gradient-to-r ${feature.gradient} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                    <feature.icon className="h-7 w-7 text-white" />
+              <div key={idx} className="stat-card group hover:scale-[1.02] transition-all duration-500 cursor-default">
+                <div className="relative z-10">
+                  <div className={`w-14 h-14 rounded-2xl bg-brand-dark-950 border border-white/5 flex items-center justify-center mb-8 shadow-2xl group-hover:border-cyber-blue/20 transition-colors`}>
+                    <feature.icon className={`h-7 w-7 ${feature.color}`} />
                   </div>
-                  <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
-                  <p className="text-gray-400">{feature.description}</p>
+                  <h3 className="text-xl font-bold text-white mb-4 tracking-tight uppercase tracking-[0.1em]">{feature.title}</h3>
+                  <p className="text-gray-500 text-sm font-medium leading-relaxed">{feature.description}</p>
+                  
+                  <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
+                    <span className="text-[9px] font-bold text-gray-700 uppercase tracking-widest">Protocol 0{idx + 1}</span>
+                    <div className="w-1 h-1 rounded-full bg-brand-dark-800" />
+                  </div>
                 </div>
+                
+                {/* Scanline Effect */}
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/[0.01] to-transparent h-1/2 w-full -translate-y-full group-hover:animate-[scan_3s_linear_infinite]" />
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* AI Demo Section */}
-      <section className="py-24 bg-white/5">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <div className="inline-flex items-center space-x-2 bg-purple-500/20 rounded-full px-4 py-2 mb-4">
-                <CpuChipIcon className="h-4 w-4 text-purple-400" />
-                <span className="text-sm text-purple-400">AI in Action</span>
-              </div>
-              <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                See AI in Action
-              </h2>
-              <p className="text-gray-400 mb-6">
-                Watch how our AI predicts diseases from symptoms in real-time, learns from every patient interaction, and gets smarter over time.
-              </p>
-              <ul className="space-y-3 mb-8">
-                {[
-                  '85%+ prediction accuracy',
-                  'Real-time outbreak detection',
-                  'Continuous learning from every record',
-                  'Patient risk assessment',
-                  'Treatment success prediction'
-                ].map((item, idx) => (
-                  <li key={idx} className="flex items-center space-x-3">
-                    <div className="w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center">
-                      <CheckCircleIcon className="h-4 w-4 text-green-400" />
-                    </div>
-                    <span className="text-gray-300">{item}</span>
-                  </li>
-                ))}
-              </ul>
-              <button
-                onClick={() => navigate('/register')}
-                className="relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg hover:shadow-purple-500/25 group"
-              >
-                <span className="flex items-center">
-                  Try AI Predictor Now
-                  <ArrowRightIcon className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </button>
-            </div>
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px]">
-              <div className="rounded-2xl bg-slate-900/80 backdrop-blur-xl p-6">
-                <div className="flex items-center space-x-3 mb-4">
-                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-gray-500 text-sm ml-2">AI Terminal</span>
-                  <CpuChipIcon className="h-4 w-4 text-purple-400 ml-auto animate-pulse" />
-                </div>
-                <div className="space-y-2 font-mono text-sm">
-                  <p className="text-purple-400"> Analyzing symptoms: fever, headache, chills...</p>
-                  <p className="text-blue-400"> Matching with 1,247 similar cases</p>
-                  <p className="text-pink-400"> Province prevalence: Harare (72% match)</p>
-                  <p className="text-white font-bold mt-3"> Prediction: Malaria (87.5% confidence)</p>
-                  <div className="mt-2 pt-2 border-t border-white/10">
-                    <p className="text-yellow-400 animate-pulse"> Risk assessment: MODERATE (42 points)</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-24">
-        <div className="max-w-5xl mx-auto text-center px-4">
-          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px]">
-            <div className="rounded-2xl bg-slate-900/80 backdrop-blur-xl p-12">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-6">
-                <SparklesIcon className="h-8 w-8 text-white" />
-              </div>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Ready to Transform Healthcare?
-              </h2>
-              <p className="text-gray-400 mb-8 max-w-2xl mx-auto">
-                Join the revolution in national health management. Experience the future of healthcare today.
-              </p>
-              <button
-                onClick={() => navigate('/register')}
-                className="relative px-8 py-4 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg hover:shadow-purple-500/25 group text-lg"
-              >
-                <span className="flex items-center">
-                  Get Started Now
-                  <ArrowRightIcon className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
-      <footer className="border-t border-white/10 py-8">
+      <footer className="py-12 border-t border-white/5 bg-brand-dark-950">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <ShieldCheckIcon className="h-5 w-5 text-purple-400" />
-            <span className="text-gray-400 text-sm">National Vitality Eye</span>
+          <div className="flex flex-col md:flex-row justify-between items-center gap-8">
+            <div className="flex items-center space-x-3">
+              <ShieldCheckIcon className="h-5 w-5 text-gray-700" />
+              <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-700">© 2026 Clinical Intelligence Node</span>
+            </div>
+            <div className="flex space-x-8">
+              {['Security', 'Privacy', 'Compliance', 'API'].map((link) => (
+                <a key={link} href="#" className="text-[10px] uppercase tracking-[0.2em] font-bold text-gray-700 hover:text-cyber-blue transition-colors">{link}</a>
+              ))}
+            </div>
+            <div className="px-4 py-1.5 rounded-full bg-brand-dark-900 border border-white/5 flex items-center space-x-3">
+              <span className="w-1 h-1 rounded-full bg-cyber-green animate-pulse" />
+              <span className="text-[9px] uppercase tracking-widest font-bold text-gray-600">All Systems Operational</span>
+            </div>
           </div>
-          <p className="text-gray-500 text-sm">
-            © 2024 National Vitality Eye. All rights reserved. | AI-Powered Healthcare Intelligence
-          </p>
         </div>
       </footer>
     </div>

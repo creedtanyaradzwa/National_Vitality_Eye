@@ -7,6 +7,20 @@ export default {
   theme: {
     extend: {
       colors: {
+        'brand-dark': {
+          950: '#030303',
+          900: '#0a0a0b',
+          850: '#111113',
+          800: '#18181b',
+          700: '#27272a',
+          600: '#3f3f46',
+        },
+        cyber: {
+          blue: '#00f2ff',
+          purple: '#bc13fe',
+          pink: '#ff00ff',
+          green: '#39ff14',
+        },
         primary: {
           50: '#eef2ff',
           100: '#e0e7ff',

@@ -1,0 +1,12 @@
+PS C:\Users\user1\OneDrive\Desktop\The_Academic_Eye\server> node generate-hash.js
+Password: SuperAdmin@2026
+Hash: $2a$12$iOeG.NE4HEuYmpqAFWWiQOXlGsiLxyvkm2uGQc.wIRgwxZIVQfrOu
+Verification: ✅ Works!
+
+
+
+69e65aef1a11377a482ee3ed    combined science
+
+69e65ad51a11377a482ee3e1     engllishlanguage
+
+69e65aae1a11377a482ee3d5     mathematics

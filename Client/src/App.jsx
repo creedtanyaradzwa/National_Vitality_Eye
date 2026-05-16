@@ -29,14 +29,24 @@ import PatientVitals from './pages/PatientPortal/Vitals';
 import PatientForgotPassword from './pages/PatientPortal/ForgotPassword';
 import PatientResetPassword from './pages/PatientPortal/ResetPassword';
 import PatientVerify from './pages/PatientPortal/Verify';
+// Patient Portal — AI Features
+import AIHealthSummary from './pages/PatientPortal/AIHealthSummary';
+import AIVitalsInsights from './pages/PatientPortal/AIVitalsInsights';
+import AIReminders from './pages/PatientPortal/AIReminders';
+import AISymptomChecker from './pages/PatientPortal/AISymptomChecker';
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated, loading } = useAuth();
     
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-400"></div>
+            <div className="flex justify-center items-center h-screen bg-brand-dark-950">
+                <div className="relative">
+                    <div className="w-16 h-16 border-4 border-cyber-blue/20 rounded-full animate-spin border-t-cyber-blue"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-2 h-2 bg-cyber-blue rounded-full animate-pulse"></div>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -46,12 +56,12 @@ const ProtectedRoute = ({ children }) => {
     }
     
     return (
-        <>
+        <div className="bg-brand-dark-950 min-h-screen">
             <Navbar />
-            <div className="min-h-screen bg-gradient-to-br from-primary-950 via-primary-900 to-secondary-900">
+            <div className="pt-16">
                 {children}
             </div>
-        </>
+        </div>
     );
 };
 
@@ -105,6 +115,27 @@ function AppRoutes() {
                     <PatientVitals />
                 </PatientProtectedRoute>
             } />
+            {/* AI Feature Routes */}
+            <Route path="/patient/ai/health-summary" element={
+                <PatientProtectedRoute>
+                    <AIHealthSummary />
+                </PatientProtectedRoute>
+            } />
+            <Route path="/patient/ai/vitals-insights" element={
+                <PatientProtectedRoute>
+                    <AIVitalsInsights />
+                </PatientProtectedRoute>
+            } />
+            <Route path="/patient/ai/reminders" element={
+                <PatientProtectedRoute>
+                    <AIReminders />
+                </PatientProtectedRoute>
+            } />
+            <Route path="/patient/ai/symptom-checker" element={
+                <PatientProtectedRoute>
+                    <AISymptomChecker />
+                </PatientProtectedRoute>
+            } />
             
             {/* Admin/Doctor Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
@@ -133,11 +164,12 @@ function App() {
                             toastOptions={{
                                 duration: 4000,
                                 style: {
-                                    background: 'linear-gradient(135deg, #1E1B4B, #312E81)',
+                                    background: '#0a0a0b',
                                     color: '#fff',
-                                    border: '1px solid rgba(79, 70, 229, 0.3)',
-                                    borderRadius: '12px',
-                                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                                    border: '1px solid rgba(0, 242, 255, 0.2)',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 10px 40px -5px rgba(0, 0, 0, 0.5)',
+                                    backdropFilter: 'blur(20px)',
                                 },
                             }}
                         />

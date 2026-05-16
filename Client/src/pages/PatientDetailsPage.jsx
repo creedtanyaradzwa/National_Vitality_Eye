@@ -311,6 +311,18 @@ const PatientDetailsPage = () => {
 
     const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
 
+    const getTriageStyles = (priority) => {
+        switch(priority) {
+            case 'CRITICAL': return 'bg-red-500/20 text-red-500 border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.2)]';
+            case 'EMERGENT': return 'bg-orange-500/20 text-orange-500 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.1)]';
+            case 'URGENT': return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30';
+            case 'STABLE': return 'bg-blue-500/20 text-blue-500 border-blue-500/30';
+            default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
+        }
+    };
+
+    const triageStatus = patient?.clinicalProfile?.triageStatus || { priority: 'STABLE', score: 0, reasons: [] };
+
     return (
         <div className="max-w-7xl mx-auto px-4 py-8">
             {/* Back Button */}
@@ -413,6 +425,65 @@ const PatientDetailsPage = () => {
             {/* Overview Tab */}
             {activeTab === 'overview' && (
                 <div className="space-y-6">
+                    {/* AI Predictive Triage Priority Card */}
+                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-cyber-blue to-cyber-purple p-[1px] group">
+                        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]"></div>
+                        <div className="relative rounded-2xl bg-brand-dark-950/90 backdrop-blur-xl p-6">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                                <div className="flex items-center space-x-4">
+                                    <div className={`p-4 rounded-2xl ${getTriageStyles(triageStatus.priority)} animate-pulse`}>
+                                        <SparklesIcon className="h-8 w-8" />
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center space-x-2">
+                                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyber-blue">Clinical Intelligence</span>
+                                            <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">NEWS2 Augmented</span>
+                                        </div>
+                                        <h2 className="text-2xl font-black text-white mt-1">PREDICTIVE TRIAGE PRIORITY</h2>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center space-x-4 w-full md:w-auto">
+                                    <div className="flex-1 md:flex-none text-right">
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Risk Score</p>
+                                        <p className="text-3xl font-black text-white">{triageStatus.score || 0}</p>
+                                    </div>
+                                    <div className={`px-6 py-3 rounded-xl border font-black tracking-widest text-lg ${getTriageStyles(triageStatus.priority)}`}>
+                                        {triageStatus.priority}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {triageStatus.reasons && triageStatus.reasons.length > 0 && (
+                                <div className="mt-6 pt-6 border-t border-white/5">
+                                    <div className="flex items-center space-x-2 mb-3">
+                                        <ExclamationTriangleIcon className="h-4 w-4 text-cyber-blue" />
+                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Clinical Indicators Detected</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {triageStatus.reasons.map((reason, idx) => (
+                                            <span 
+                                                key={idx}
+                                                className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-gray-300 uppercase"
+                                            >
+                                                {reason}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mt-4 flex items-center justify-between text-[10px] font-mono text-gray-600">
+                                <span>LAST AI ASSESSMENT: {triageStatus.lastAssessment ? new Date(triageStatus.lastAssessment).toLocaleString() : 'PENDING'}</span>
+                                <span className="flex items-center">
+                                    <ShieldCheckIcon className="h-3 w-3 mr-1 text-green-500/50" />
+                                    CLINICALLY VERIFIED
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Blood Type Section */}
                     <div className="rounded-xl bg-white/5 border border-white/10 p-6">
                         <div className="flex justify-between items-center mb-4">

@@ -206,11 +206,15 @@ const medicalRecordSchema = new mongoose.Schema({
     isTelemedicine: { type: Boolean, default: false },
     consultationLink: String,
     
-    // ============ AUDIT FIELDS ============
+    // ============ AUDIT & ACCESS FIELDS ============
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"
     },
+    taggedUsers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+    }],
     updatedBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User"

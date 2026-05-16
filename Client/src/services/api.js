@@ -54,11 +54,18 @@ export const getPatientRecords = (patientId) => API.get(`/medical-records/patien
 export const createMedicalRecord = (data) => API.post('/medical-records', data);
 export const updateMedicalRecord = (id, data) => API.patch(`/medical-records/${id}`, data);
 export const deleteMedicalRecord = (id) => API.delete(`/medical-records/${id}`);
+export const getHospitalStaff = () => API.get('/medical-records/staff');
 
 // ============ STATISTICS ============
 export const getTopDiseases = () => API.get('/medical-records/stats/top-diseases');
-// GET province statistics with optional period filter
-export const getProvinceStats = (period = 'all') => API.get(`/medical-records/stats/by-province?period=${period}`);
+// GET province statistics with optional period and disease filter
+export const getProvinceStats = (period = 'all', disease = '') => {
+    const params = new URLSearchParams({ period });
+    if (disease && disease !== 'All Diseases') params.append('disease', disease);
+    return API.get(`/medical-records/stats/by-province?${params.toString()}`);
+};
+// GET deep analytics for a specific disease
+export const getDiseaseAnalytics = (disease) => API.get(`/medical-records/stats/disease-analytics/${encodeURIComponent(disease)}`);
 export const getMonthlyTrends = () => API.get('/medical-records/stats/monthly-trends');
 
 // ============ AI ============
@@ -67,7 +74,10 @@ export const predictDisease = (data) => API.post('/ai/predict', data);
 export const getAlerts = () => API.get('/ai/alerts');
 export const getPatientRisk = (patientId) => API.get(`/ai/risk/${patientId}`);
 export const getDiseaseTrends = (disease) => API.get(`/ai/trends/${disease}`);
+export const getDiseaseInsights = (disease) => API.get(`/ai/disease-insights/${disease}`);
 export const getAIStats = () => API.get('/ai/stats');
+export const getPatientTriage = (patientId) => API.get(`/ai/patient-triage/${patientId}`);
+export const predictTriage = (data) => API.post('/ai/predict-triage', data);
 export const refreshAI = () => API.post('/ai/refresh');
 export const getPatientCount = () => API.get('/patients/stats/count');
 // Register new user with documents

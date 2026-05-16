@@ -4,8 +4,12 @@
 
 @layer base {
   body {
-    @apply bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen;
+    @apply bg-brand-dark-950 text-gray-200 min-h-screen selection:bg-cyber-blue/30 selection:text-white;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-image: 
+      radial-gradient(circle at 0% 0%, rgba(188, 19, 254, 0.05) 0%, transparent 40%),
+      radial-gradient(circle at 100% 100%, rgba(0, 242, 255, 0.05) 0%, transparent 40%);
+    background-attachment: fixed;
   }
 
   html {
@@ -14,88 +18,68 @@
 }
 
 @layer components {
-  /* ========== MODERN GLASS CARDS ========== */
+  /* ========== FUTURISTIC DARK THEME ========== */
   
-  /* Premium Glass Card - Futuristic */
+  /* Deep Black Glass Card */
   .glass-card-modern {
     @apply relative overflow-hidden rounded-2xl;
-    background: rgba(15, 25, 35, 0.6);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    background: rgba(10, 10, 11, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     transition: all 0.4s cubic-bezier(0.2, 0.9, 0.4, 1.1);
   }
   
   .glass-card-modern:hover {
-    transform: translateY(-4px);
-    border-color: rgba(99, 102, 241, 0.4);
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    @apply -translate-y-1;
+    background: rgba(15, 15, 16, 0.8);
+    border-color: rgba(0, 242, 255, 0.2);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 242, 255, 0.05);
   }
   
-  /* Gradient Border Card */
+  /* Futuristic Gradient Border */
   .gradient-border-card {
     @apply relative rounded-2xl p-[1px] overflow-hidden;
-    background: linear-gradient(135deg, #4F46E5, #7C3AED, #EC4899);
+    background: linear-gradient(135deg, rgba(188, 19, 254, 0.5), rgba(0, 242, 255, 0.5));
   }
   
   .gradient-border-card > div {
     @apply rounded-2xl h-full w-full;
-    background: rgba(15, 25, 35, 0.8);
-    backdrop-filter: blur(12px);
+    background: #0a0a0b;
+    backdrop-filter: blur(20px);
   }
   
-  /* Neon Glow Card */
-  .neon-card {
-    @apply relative rounded-2xl overflow-hidden;
-    background: rgba(10, 20, 30, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(79, 70, 229, 0.3);
-    transition: all 0.3s ease;
-  }
-  
-  .neon-card::before {
-    content: '';
-    @apply absolute inset-0 opacity-0 transition-opacity duration-500;
-    background: radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.15), transparent 70%);
-    pointer-events: none;
-  }
-  
-  .neon-card:hover::before {
-    @apply opacity-100;
-  }
-  
-  .neon-card:hover {
-    border-color: rgba(79, 70, 229, 0.6);
-    box-shadow: 0 0 30px rgba(79, 70, 229, 0.2);
-  }
-  
-  /* Stats Card - Modern Dashboard */
+  /* Cyber Stats Card */
   .stat-card {
     @apply relative rounded-2xl p-6 overflow-hidden;
-    background: linear-gradient(135deg, rgba(30, 40, 50, 0.7) 0%, rgba(20, 30, 40, 0.5) 100%);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(17, 17, 19, 0.6);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.02);
     transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
   }
   
   .stat-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(99, 102, 241, 0.3);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    @apply -translate-y-1;
+    border-color: rgba(188, 19, 254, 0.2);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6), 0 0 15px rgba(188, 19, 254, 0.05);
   }
   
   .stat-icon {
     @apply rounded-xl flex items-center justify-center;
-    background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(124, 58, 237, 0.1));
-    border: 1px solid rgba(79, 70, 229, 0.2);
+    background: rgba(188, 19, 254, 0.1);
+    border: 1px solid rgba(188, 19, 254, 0.2);
   }
   
-  /* ========== MODERN BUTTONS ========== */
-  
+  /* Cyber Button */
   .btn-primary-modern {
     @apply relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300;
-    background: linear-gradient(135deg, #4F46E5, #7C3AED);
-    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+    background: linear-gradient(135deg, #bc13fe, #00f2ff);
+    box-shadow: 0 4px 15px rgba(188, 19, 254, 0.3);
+  }
+  
+  .btn-primary-modern:hover {
+    @apply scale-[1.02] brightness-110;
+    box-shadow: 0 8px 25px rgba(0, 242, 255, 0.4);
   }
   
   .btn-primary-modern::before {

@@ -60,7 +60,7 @@ const Navbar = () => {
             {/* Desktop Navbar */}
             <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${
                 scrolled 
-                    ? 'bg-slate-900/90 backdrop-blur-xl border-b border-white/10 shadow-2xl' 
+                    ? 'bg-brandDark-900/90 backdrop-blur-xl border-b border-white/5 shadow-[0_10px_40px_rgba(0,0,0,0.5)]' 
                     : 'bg-transparent'
             }`}>
                 <div className="max-w-7xl mx-auto px-4">
@@ -68,13 +68,13 @@ const Navbar = () => {
                         {/* Logo */}
                         <Link to="/dashboard" className="flex items-center space-x-3 group">
                             <div className="relative">
-                                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 blur-lg opacity-50 group-hover:opacity-75 transition-opacity duration-500" />
-                                <div className="relative w-9 h-9 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                                    <SparklesIcon className="h-5 w-5 text-white" />
+                                <div className="absolute inset-0 rounded-xl bg-cyber-blue blur-lg opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
+                                <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-brandDark-800 to-brandDark-950 border border-cyber-blue/30 flex items-center justify-center">
+                                    <SparklesIcon className="h-5 w-5 text-cyber-blue" />
                                 </div>
                             </div>
-                            <span className="text-xl font-bold bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent">
-                                VITALITY EYE
+                            <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-white to-cyber-blue bg-clip-text text-transparent">
+                                VITALITY<span className="text-cyber-blue">EYE</span>
                             </span>
                         </Link>
 
@@ -86,8 +86,8 @@ const Navbar = () => {
                                     to={link.path}
                                     className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-300 ${
                                         isActive(link.path)
-                                            ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30'
-                                            : 'text-gray-300 hover:text-white hover:bg-white/5'
+                                            ? 'bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/20 shadow-[0_0_15px_rgba(0,242,255,0.1)]'
+                                            : 'text-gray-400 hover:text-white hover:bg-white/5'
                                     }`}
                                 >
                                     <link.icon className="h-4 w-4" />
@@ -103,40 +103,40 @@ const Navbar = () => {
                                 to="/alerts" 
                                 className="relative p-2 rounded-xl hover:bg-white/5 transition-all duration-300 group"
                             >
-                                <BellIcon className="h-5 w-5 text-gray-400 group-hover:text-white" />
+                                <BellIcon className="h-5 w-5 text-gray-500 group-hover:text-white" />
                                 {activeAlerts.length > 0 && (
                                     <>
-                                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-red-500 to-pink-500 rounded-full text-xs text-white flex items-center justify-center animate-pulse">
+                                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-cyber-purple rounded-full text-[10px] text-white flex items-center justify-center font-bold">
                                             {activeAlerts.length}
                                         </span>
-                                        <span className="absolute inset-0 rounded-xl bg-red-500/20 animate-ping opacity-75" />
+                                        <span className="absolute inset-0 rounded-xl bg-cyber-purple/20 animate-ping opacity-75" />
                                     </>
                                 )}
                             </Link>
 
                             {/* Connection Status */}
-                            <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10">
-                                <div className={`relative w-2 h-2 rounded-full ${connected ? 'bg-emerald-400' : 'bg-red-400'}`}>
+                            <div className="hidden md:flex items-center space-x-2 px-3 py-1.5 rounded-full bg-brandDark-800 border border-white/5">
+                                <div className={`relative w-1.5 h-1.5 rounded-full ${connected ? 'bg-cyber-green' : 'bg-red-500'}`}>
                                     {connected && (
-                                        <div className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
+                                        <div className="absolute inset-0 rounded-full bg-cyber-green animate-ping opacity-75" />
                                     )}
                                 </div>
-                                <span className="text-xs text-gray-400">
+                                <span className="text-[10px] uppercase tracking-widest font-bold text-gray-500">
                                     {connected ? 'Live' : 'Offline'}
                                 </span>
                             </div>
 
                             {/* User Menu */}
-                            <div className="hidden md:flex items-center space-x-3">
+                            <div className="hidden md:flex items-center space-x-3 pl-4 border-l border-white/5">
                                 <div className="text-right">
                                     <p className="text-sm font-medium text-white">{user?.firstName} {user?.lastName}</p>
-                                    <p className="text-xs text-purple-400">{user?.role}</p>
+                                    <p className="text-[10px] uppercase tracking-wider text-cyber-purple font-bold opacity-80">{user?.role}</p>
                                 </div>
                                 <button
                                     onClick={handleLogout}
                                     className="p-2 rounded-xl hover:bg-red-500/10 transition-all duration-300 group"
                                 >
-                                    <ArrowRightOnRectangleIcon className="h-5 w-5 text-gray-400 group-hover:text-red-400" />
+                                    <ArrowRightOnRectangleIcon className="h-5 w-5 text-gray-500 group-hover:text-red-400" />
                                 </button>
                             </div>
 

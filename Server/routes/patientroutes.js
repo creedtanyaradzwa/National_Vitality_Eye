@@ -61,6 +61,11 @@ router.get("/national/:nationalId", hasPermission("view:patients"), async (req, 
 // GET patient by ID
 router.get("/:id", hasPermission("view:patients"), async (req, res) => {
     try {
+        // Patient can only see themselves
+        if (req.user.role === 'patient' && req.user._id.toString() !== req.params.id) {
+            return res.status(403).json({ error: "Access denied. You can only view your own profile." });
+        }
+        
         const patient = await Patient.findById(req.params.id);
         if (!patient) {
             return res.status(404).json({ error: "Patient not found" });
@@ -106,6 +111,11 @@ router.delete("/:id", hasPermission("delete:patients"), async (req, res) => {
 // GET patient's full clinical profile
 router.get("/:id/clinical-profile", hasPermission("view:patients"), async (req, res) => {
     try {
+        // Patient can only see themselves
+        if (req.user.role === 'patient' && req.user._id.toString() !== req.params.id) {
+            return res.status(403).json({ error: "Access denied. You can only view your own profile." });
+        }
+        
         const patient = await Patient.findById(req.params.id).select("clinicalProfile");
         if (!patient) {
             return res.status(404).json({ error: "Patient not found" });

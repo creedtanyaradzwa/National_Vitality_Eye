@@ -47,26 +47,6 @@ app.use("/api/patient", patientPortalRoutes);
 app.use("/api/ai-features", aiFeaturesRoutes);
 
 // ============ PUBLIC ENDPOINTS ============
-app.get("/medical-records", async (req, res) => {
-    try {
-        const MedicalRecord = require("./models/MedicalRecord");
-        const records = await MedicalRecord.find().limit(10);
-        res.json(records);
-    } catch (error) {
-        res.json([]);
-    }
-});
-
-app.get("/patients", async (req, res) => {
-    try {
-        const Patient = require("./models/Patient");
-        const patients = await Patient.find().limit(10);
-        res.json(patients);
-    } catch (error) {
-        res.json([]);
-    }
-});
-
 app.get("/health", (req, res) => {
     res.json({ status: "OK", timestamp: new Date() });
 });
@@ -83,8 +63,14 @@ async function initializeAI() {
     try {
         console.log("\n🧠 Initializing Enhanced Clinical AI...");
         
+        // Load ALL records — confidentiality only controls patient portal visibility,
+        // not what feeds the AI. The AI never receives patient names or IDs;
+        // it only reads clinical fields (disease, symptoms, vitals, province, disposition).
         const records = await MedicalRecord.find({})
-            .populate("patientId")
+            .select({
+                disease: 1, symptoms: 1, province: 1, visitDate: 1,
+                vitalSigns: 1, disposition: 1
+            })
             .limit(5000);
         
         console.log(`📊 Found ${records.length} medical records`);
@@ -118,7 +104,19 @@ async function initializeAI() {
 }
 
 // ============ DATABASE CONNECTION & SERVER START ============
-mongoose.connect(process.env.MONGO_URI)
+const mongoUri = process.env.MONGO_URI;
+if (!mongoUri) {
+    console.error("❌ Missing MONGO_URI. Create `Server/.env` (see `Server/.env.example`).");
+    process.exit(1);
+}
+
+const maskedMongoUri = mongoUri
+    .replace(/\/\/([^:]+):([^@]+)@/i, (m, user) => `//${user}:***@`);
+
+mongoose.connect(mongoUri, {
+    serverSelectionTimeoutMS: 10000,
+    connectTimeoutMS: 10000,
+})
     .then(() => {
         console.log("📦 MongoDB Connected");
         
@@ -130,7 +128,11 @@ mongoose.connect(process.env.MONGO_URI)
         });
     })
     .catch(err => {
-        console.error("❌ MongoDB Connection Error:", err);
+        console.error("❌ MongoDB Connection Error:", err?.message || err);
+        console.error(`   MONGO_URI: ${maskedMongoUri}`);
+        if (String(err?.message || "").toLowerCase().includes("authentication failed")) {
+            console.error("   Hint: verify Atlas DB user/password, URL-encode special characters, and ensure authSource/db name are correct.");
+        }
         process.exit(1);
     });
 

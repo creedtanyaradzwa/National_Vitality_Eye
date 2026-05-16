@@ -10,7 +10,11 @@ import {
     TrashIcon, 
     EyeIcon,
     UserGroupIcon,
-    XMarkIcon
+    XMarkIcon,
+    SparklesIcon,
+    ArrowPathIcon,
+    ShieldCheckIcon,
+    ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -172,19 +176,23 @@ const Patients = () => {
         setShowModal(true);
     };
 
-    const provinces = [
-        'Harare', 'Bulawayo', 'Manicaland', 'Mashonaland Central',
-        'Mashonaland East', 'Mashonaland West', 'Masvingo',
-        'Matabeleland North', 'Matabeleland South', 'Midlands'
-    ];
+    const getTriageStyles = (priority) => {
+        switch(priority) {
+            case 'CRITICAL': return 'bg-red-500/20 text-red-500 border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.2)]';
+            case 'EMERGENT': return 'bg-orange-500/20 text-orange-500 border-orange-500/30';
+            case 'URGENT': return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30';
+            case 'STABLE': return 'bg-cyber-green/20 text-cyber-green border-cyber-green/30';
+            default: return 'bg-gray-500/20 text-gray-500 border-gray-500/30';
+        }
+    };
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-64">
+            <div className="min-h-screen flex items-center justify-center bg-brand-dark-950">
                 <div className="relative">
-                    <div className="w-16 h-16 border-4 border-purple-500/20 rounded-full animate-spin border-t-purple-500"></div>
+                    <div className="w-16 h-16 border-4 border-cyber-blue/20 rounded-full animate-spin border-t-cyber-blue"></div>
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <UserGroupIcon className="h-6 w-6 text-purple-400 animate-pulse" />
+                        <UserGroupIcon className="h-6 w-6 text-cyber-blue animate-pulse" />
                     </div>
                 </div>
             </div>
@@ -192,120 +200,130 @@ const Patients = () => {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8">
-            {/* Header */}
-            <div className="mb-8">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <div className="flex items-center space-x-3 mb-2">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                                <UserGroupIcon className="h-5 w-5 text-white" />
+        <div className="min-h-screen bg-brand-dark-950 pb-20">
+            {/* Header Section */}
+            <div className="bg-brand-dark-900/50 border-b border-white/5 py-12 mb-8">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+                        <div>
+                            <div className="flex items-center space-x-4 mb-2">
+                                <div className="p-3 rounded-2xl bg-brand-dark-800 border border-cyber-blue/30 shadow-[0_0_20px_rgba(0,242,255,0.1)]">
+                                    <UserGroupIcon className="h-8 w-8 text-cyber-blue" />
+                                </div>
+                                <h1 className="text-4xl font-bold text-white tracking-tight">Citizen Registry</h1>
                             </div>
-                            <h1 className="text-3xl font-bold text-white">Patients</h1>
+                            <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 ml-16">
+                                National Health Database v3.0
+                            </p>
                         </div>
-                        <p className="text-gray-400">Manage patient records and medical history</p>
-                    </div>
-                    {canCreate && (
-                        <button
-                            onClick={handleAddNew}
-                            className="relative px-6 py-3 rounded-xl font-semibold text-white overflow-hidden transition-all duration-300 group bg-gradient-to-r from-purple-500 to-pink-500 hover:shadow-lg hover:shadow-purple-500/25 flex items-center space-x-2"
-                        >
-                            <PlusIcon className="h-5 w-5" />
-                            <span>Add Patient</span>
-                        </button>
-                    )}
-                </div>
-            </div>
 
-            {/* Search Bar */}
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] mb-6">
-                <div className="rounded-2xl bg-slate-900/80 backdrop-blur-xl p-4">
-                    <div className="flex gap-2">
-                        <div className="flex-1">
-                            <input
-                                type="text"
-                                placeholder="Search by National ID (e.g., 63-123456-A12)"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                className="w-full px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-all duration-300"
-                            />
+                        <div className="flex items-center space-x-4">
+                            <div className="relative group">
+                                <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-cyber-blue transition-colors" />
+                                <input
+                                    type="text"
+                                    placeholder="SEARCH NATIONAL ID..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 font-mono text-sm focus:outline-none focus:border-cyber-blue/50 focus:ring-4 focus:ring-cyber-blue/5 transition-all duration-500"
+                                />
+                            </div>
+                            {canCreate && (
+                                <button
+                                    onClick={handleAddNew}
+                                    className="btn-primary-modern px-8 py-4 uppercase tracking-[0.2em] text-[10px] font-bold flex items-center"
+                                >
+                                    <PlusIcon className="h-4 w-4 mr-2" />
+                                    Register Citizen
+                                </button>
+                            )}
                         </div>
-                        <button
-                            onClick={handleSearch}
-                            className="px-6 py-3 rounded-xl bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-all duration-300 flex items-center space-x-2"
-                        >
-                            <MagnifyingGlassIcon className="h-5 w-5" />
-                            <span>Search</span>
-                        </button>
                     </div>
                 </div>
             </div>
 
-            {/* Patients Table */}
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px]">
-                <div className="rounded-2xl bg-slate-900/80 backdrop-blur-xl overflow-hidden">
+            <div className="max-w-7xl mx-auto px-4">
+                <div className="glass-card-modern border border-white/5 overflow-hidden">
                     <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-white/10">
-                            <thead className="bg-white/5">
+                        <table className="min-w-full divide-y divide-white/5">
+                            <thead className="bg-brand-dark-900/50">
                                 <tr>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">National ID</th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Name</th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Gender</th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date of Birth</th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Province</th>
-                                    <th className="px-6 py-4 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Contact</th>
-                                    <th className="px-6 py-4 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">Actions</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Priority</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">National ID</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Name</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Sector (Province)</th>
+                                    <th className="px-8 py-5 text-left text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Contact</th>
+                                    <th className="px-8 py-5 text-right text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-white/10">
+                            <tbody className="divide-y divide-white/5 bg-transparent">
                                 {patients.length === 0 ? (
                                     <tr>
-                                        <td colSpan="7" className="px-6 py-12 text-center text-gray-400">
-                                            No patients found
+                                        <td colSpan="6" className="px-8 py-20 text-center">
+                                            <div className="flex flex-col items-center">
+                                                <UserGroupIcon className="h-12 w-12 text-brand-dark-800 mb-4" />
+                                                <p className="text-gray-600 font-bold uppercase tracking-widest text-xs">No records detected in local cache</p>
+                                            </div>
                                         </td>
                                     </tr>
                                 ) : (
                                     patients.map((patient) => (
-                                        <tr key={patient._id} className="hover:bg-white/5 transition-colors duration-300">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">
-                                                {patient.nationalId}
+                                        <tr key={patient._id} className="hover:bg-white/[0.02] transition-colors group">
+                                            <td className="px-8 py-5 whitespace-nowrap">
+                                                <span className={`inline-flex items-center px-3 py-1 rounded-lg border text-[9px] font-bold uppercase tracking-widest ${getTriageStyles(patient.clinicalProfile?.triageStatus?.priority)}`}>
+                                                    {patient.clinicalProfile?.triageStatus?.priority === 'CRITICAL' && (
+                                                        <span className="relative flex h-2 w-2 mr-2">
+                                                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                                        </span>
+                                                    )}
+                                                    {patient.clinicalProfile?.triageStatus?.priority || 'STABLE'}
+                                                </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                                                {patient.firstName} {patient.lastName}
+                                            <td className="px-8 py-5 whitespace-nowrap">
+                                                <span className="text-sm font-mono text-gray-400 group-hover:text-cyber-blue transition-colors">
+                                                    {patient.nationalId}
+                                                </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                                                {patient.gender}
+                                            <td className="px-8 py-5 whitespace-nowrap">
+                                                <div className="flex items-center">
+                                                    <div className="w-8 h-8 rounded-lg bg-brand-dark-800 border border-white/5 flex items-center justify-center text-[10px] font-bold text-gray-500 mr-3">
+                                                        {patient.firstName[0]}{patient.lastName[0]}
+                                                    </div>
+                                                    <span className="text-sm font-bold text-white tracking-tight">
+                                                        {patient.firstName} {patient.lastName}
+                                                    </span>
+                                                </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                                                {patient.dateOfBirth ? new Date(patient.dateOfBirth).toLocaleDateString() : 'N/A'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
+                                            <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-500 font-medium">
                                                 {patient.province}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">
-                                                {patient.contactInfo?.phone || 'N/A'}
+                                            <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-500 font-mono">
+                                                {patient.contactInfo?.phone || 'SECURE_NODE'}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                            <td className="px-8 py-5 whitespace-nowrap text-right">
                                                 <div className="flex justify-end space-x-2">
                                                     <button
                                                         onClick={() => navigate(`/patients/${patient._id}`)}
-                                                        className="p-2 rounded-lg text-purple-400 hover:bg-purple-500/20 transition-all duration-300"
-                                                        title="View Patient Details"
+                                                        className="p-2.5 rounded-xl bg-brand-dark-800 border border-white/5 text-gray-500 hover:text-cyber-blue hover:border-cyber-blue/30 transition-all duration-300"
+                                                        title="ACCESS_NODE"
                                                     >
                                                         <EyeIcon className="h-5 w-5" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleEdit(patient)}
                                                         disabled={!canEdit}
-                                                        className={`p-2 rounded-lg transition-all duration-300 ${canEdit ? 'text-blue-400 hover:bg-blue-500/20' : 'text-gray-600 cursor-not-allowed'}`}
+                                                        className="p-2.5 rounded-xl bg-brand-dark-800 border border-white/5 text-gray-500 hover:text-cyber-purple hover:border-cyber-purple/30 transition-all duration-300 disabled:opacity-10"
+                                                        title="MODIFY_ENTRY"
                                                     >
                                                         <PencilIcon className="h-5 w-5" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDelete(patient)}
                                                         disabled={!canDelete}
-                                                        className={`p-2 rounded-lg transition-all duration-300 ${canDelete ? 'text-red-400 hover:bg-red-500/20' : 'text-gray-600 cursor-not-allowed'}`}
+                                                        className="p-2.5 rounded-xl bg-brand-dark-800 border border-white/5 text-gray-500 hover:text-red-500 hover:border-red-500/30 transition-all duration-300 disabled:opacity-10"
+                                                        title="PURGE_RECORD"
                                                     >
                                                         <TrashIcon className="h-5 w-5" />
                                                     </button>
@@ -320,161 +338,148 @@ const Patients = () => {
                 </div>
             </div>
 
-            {/* Add/Edit Modal */}
+            {/* Registration Modal */}
             {showModal && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl">
-                            <div className="p-6 border-b border-white/10 sticky top-0 bg-slate-900/90">
-                                <div className="flex justify-between items-center">
-                                    <h2 className="text-2xl font-bold text-white">
-                                        {editingPatient ? 'Edit Patient' : 'Add New Patient'}
-                                    </h2>
-                                    <button
-                                        onClick={() => setShowModal(false)}
-                                        className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-all duration-300"
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-brand-dark-950/80 backdrop-blur-md" onClick={() => setShowModal(false)} />
+                    <div className="relative w-full max-w-2xl glass-card-modern border border-white/10 shadow-2xl animate-in zoom-in-95 duration-300">
+                        <div className="p-8 border-b border-white/5 bg-brand-dark-900/50 flex justify-between items-center">
+                            <div>
+                                <h2 className="text-2xl font-bold text-white tracking-tight flex items-center">
+                                    <ShieldCheckIcon className="h-6 w-6 mr-3 text-cyber-blue" />
+                                    {editingPatient ? 'MODIFY CITIZEN RECORD' : 'NEW CITIZEN REGISTRATION'}
+                                </h2>
+                                <p className="text-[10px] uppercase tracking-widest font-bold text-gray-500 mt-1">Biometric & Identity Initialization</p>
+                            </div>
+                            <button onClick={() => setShowModal(false)} className="p-2 rounded-xl hover:bg-white/5 transition-colors">
+                                <XMarkIcon className="h-6 w-6 text-gray-500" />
+                            </button>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit} className="p-8 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1">National Identifier</label>
+                                    <input
+                                        type="text"
+                                        name="nationalId"
+                                        value={formData.nationalId}
+                                        onChange={handleInputChange}
+                                        className="w-full px-5 py-3 rounded-xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-800 font-mono text-sm focus:outline-none focus:border-cyber-blue/50 transition-all"
+                                        placeholder="00-000000X00"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1">Province Sector</label>
+                                    <select
+                                        name="province"
+                                        value={formData.province}
+                                        onChange={handleInputChange}
+                                        className="w-full px-5 py-3 rounded-xl bg-brand-dark-950 border border-white/5 text-white focus:outline-none focus:border-cyber-blue/50 transition-all appearance-none"
                                     >
-                                        <XMarkIcon className="h-6 w-6" />
-                                    </button>
+                                        {[
+                                            'Harare', 'Bulawayo', 'Manicaland', 'Mashonaland Central',
+                                            'Mashonaland East', 'Mashonaland West', 'Masvingo',
+                                            'Matabeleland North', 'Matabeleland South', 'Midlands'
+                                        ].map(p => <option key={p} value={p}>{p}</option>)}
+                                    </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1">First Name</label>
+                                    <input
+                                        type="text"
+                                        name="firstName"
+                                        value={formData.firstName}
+                                        onChange={handleInputChange}
+                                        className="w-full px-5 py-3 rounded-xl bg-brand-dark-950 border border-white/5 text-white focus:outline-none focus:border-cyber-blue/50 transition-all"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1">Last Name</label>
+                                    <input
+                                        type="text"
+                                        name="lastName"
+                                        value={formData.lastName}
+                                        onChange={handleInputChange}
+                                        className="w-full px-5 py-3 rounded-xl bg-brand-dark-950 border border-white/5 text-white focus:outline-none focus:border-cyber-blue/50 transition-all"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1">Birth Date</label>
+                                    <input
+                                        type="date"
+                                        name="dateOfBirth"
+                                        value={formData.dateOfBirth}
+                                        onChange={handleInputChange}
+                                        className="w-full px-5 py-3 rounded-xl bg-brand-dark-950 border border-white/5 text-white focus:outline-none focus:border-cyber-blue/50 transition-all"
+                                        required
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1">Gender</label>
+                                    <div className="flex gap-4 p-1 bg-brand-dark-950 rounded-xl border border-white/5">
+                                        {['Male', 'Female', 'Other'].map(g => (
+                                            <button
+                                                key={g}
+                                                type="button"
+                                                onClick={() => setFormData(prev => ({ ...prev, gender: g }))}
+                                                className={`flex-1 py-2 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all ${formData.gender === g ? 'bg-cyber-blue text-brand-dark-950 shadow-lg shadow-cyber-blue/20' : 'text-gray-600 hover:text-white'}`}
+                                            >
+                                                {g}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
                             
-                            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">National ID *</label>
+                            <div className="mt-8 pt-8 border-t border-white/5">
+                                <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mb-6 flex items-center">
+                                    <CommandLineIcon className="h-4 w-4 mr-2" />
+                                    Communication Link
+                                </h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1">Secure Phone</label>
                                         <input
                                             type="text"
-                                            name="nationalId"
-                                            value={formData.nationalId}
+                                            name="contactInfo.phone"
+                                            value={formData.contactInfo.phone}
                                             onChange={handleInputChange}
-                                            placeholder="63-123456-A12"
-                                            className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-all duration-300"
-                                            required
-                                            disabled={!!editingPatient}
+                                            className="w-full px-5 py-3 rounded-xl bg-brand-dark-950 border border-white/5 text-white focus:outline-none focus:border-cyber-blue/50 transition-all font-mono"
                                         />
                                     </div>
-                                    
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">First Name *</label>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 ml-1">Encrypted Email</label>
                                         <input
-                                            type="text"
-                                            name="firstName"
-                                            value={formData.firstName}
+                                            type="email"
+                                            name="contactInfo.email"
+                                            value={formData.contactInfo.email}
                                             onChange={handleInputChange}
-                                            className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-all duration-300"
-                                            required
+                                            className="w-full px-5 py-3 rounded-xl bg-brand-dark-950 border border-white/5 text-white focus:outline-none focus:border-cyber-blue/50 transition-all font-mono"
                                         />
-                                    </div>
-                                    
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">Last Name *</label>
-                                        <input
-                                            type="text"
-                                            name="lastName"
-                                            value={formData.lastName}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-all duration-300"
-                                            required
-                                        />
-                                    </div>
-                                    
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">Date of Birth</label>
-                                        <input
-                                            type="date"
-                                            name="dateOfBirth"
-                                            value={formData.dateOfBirth}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500 transition-all duration-300"
-                                        />
-                                    </div>
-                                    
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">Gender</label>
-                                        <select
-                                            name="gender"
-                                            value={formData.gender}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500 transition-all duration-300"
-                                        >
-                                            <option value="Male">Male</option>
-                                            <option value="Female">Female</option>
-                                            <option value="Other">Other</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-300 mb-1">Province</label>
-                                        <select
-                                            name="province"
-                                            value={formData.province}
-                                            onChange={handleInputChange}
-                                            className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500 transition-all duration-300"
-                                        >
-                                            {provinces.map(p => (
-                                                <option key={p} value={p}>{p}</option>
-                                            ))}
-                                        </select>
                                     </div>
                                 </div>
-                                
-                                <div className="border-t border-white/10 pt-4 mt-2">
-                                    <h3 className="font-semibold text-white mb-3">Contact Information</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-300 mb-1">Phone</label>
-                                            <input
-                                                type="tel"
-                                                name="contactInfo.phone"
-                                                value={formData.contactInfo.phone}
-                                                onChange={handleInputChange}
-                                                placeholder="+263771234567"
-                                                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-all duration-300"
-                                            />
-                                        </div>
-                                        
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-300 mb-1">Email</label>
-                                            <input
-                                                type="email"
-                                                name="contactInfo.email"
-                                                value={formData.contactInfo.email}
-                                                onChange={handleInputChange}
-                                                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-all duration-300"
-                                            />
-                                        </div>
-                                        
-                                        <div className="md:col-span-2">
-                                            <label className="block text-sm font-medium text-gray-300 mb-1">Address</label>
-                                            <input
-                                                type="text"
-                                                name="contactInfo.address"
-                                                value={formData.contactInfo.address}
-                                                onChange={handleInputChange}
-                                                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-all duration-300"
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div className="flex justify-end space-x-3 pt-4 border-t border-white/10">
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowModal(false)}
-                                        className="px-4 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/5 transition-all duration-300"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300"
-                                    >
-                                        {editingPatient ? 'Update' : 'Create'} Patient
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
+                            </div>
+
+                            <div className="mt-10 flex justify-end gap-4">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowModal(false)}
+                                    className="px-8 py-4 rounded-2xl bg-brand-dark-900 border border-white/5 text-gray-500 font-bold text-[10px] uppercase tracking-widest hover:text-white hover:bg-brand-dark-800 transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn-primary-modern px-10 py-4 uppercase tracking-[0.2em] text-[10px] font-bold"
+                                >
+                                    {editingPatient ? 'Update Node' : 'Initialize Registration'}
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

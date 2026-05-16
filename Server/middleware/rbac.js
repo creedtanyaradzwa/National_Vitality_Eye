@@ -7,13 +7,12 @@ exports.hasPermission = (permission) => {
             return res.status(401).json({ error: "Authentication required" });
         }
         
-        // Admin has all permissions
-        if (req.user.role === "admin") {
-            return next();
-        }
-        
         // Define permissions for each role
         const rolePermissions = {
+            admin: [
+                "view:patients", "create:patients", "edit:patients", "delete:patients",
+                "view:records", "view:analytics", "manage:users", "view:users"
+            ],
             doctor: [
                 "view:patients", "create:patients", "edit:patients",
                 "view:records", "create:records", "edit:records",
@@ -30,6 +29,9 @@ exports.hasPermission = (permission) => {
             ],
             viewer: [
                 "view:patients", "view:records", "view:analytics"
+            ],
+            patient: [
+                "view:records", "view:patients"
             ],
             pending: []
         };

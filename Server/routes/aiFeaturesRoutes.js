@@ -4,9 +4,59 @@ const Patient = require("../models/Patient");
 const MedicalRecord = require("../models/MedicalRecord");
 const { protect } = require("../middleware/auth");
 const { hasPermission, isApproved } = require("../middleware/rbac");
+const { predictTriagePriority } = require("../utils/triageAI");
 
 // All routes require authentication
 router.use(protect, isApproved);
+
+// ============ PREDICTIVE TRIAGE ============
+
+router.post("/predict-triage", hasPermission("view:analytics"), async (req, res) => {
+    try {
+        const { vitals, symptoms } = req.body;
+        const triage = predictTriagePriority(vitals, symptoms);
+        res.json(triage);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.get("/patient-triage/:patientId", hasPermission("view:analytics"), async (req, res) => {
+    try {
+        const patient = await Patient.findById(req.params.patientId);
+        if (!patient) return res.status(404).json({ error: "Patient not found" });
+
+        // Get latest record
+        const latestRecord = await MedicalRecord.findOne({ patientId: req.params.patientId })
+            .sort({ visitDate: -1 });
+
+        if (!latestRecord) {
+            return res.json({ 
+                priority: "NON-URGENT", 
+                score: 0, 
+                reasons: ["No clinical records found"], 
+                color: "gray" 
+            });
+        }
+
+        const triage = predictTriagePriority(latestRecord.vitalSigns, latestRecord.symptoms);
+        
+        // Update patient record with latest assessment
+        await Patient.findByIdAndUpdate(req.params.patientId, {
+            'clinicalProfile.triageStatus': {
+                priority: triage.priority,
+                score: triage.score,
+                reasons: triage.reasons,
+                color: triage.color,
+                lastAssessment: new Date()
+            }
+        });
+
+        res.json(triage);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // ============ HELPER FUNCTIONS ============
 
@@ -274,7 +324,7 @@ router.post("/anomaly-detection/:patientId", hasPermission("view:analytics"), as
         
         res.json({
             patientId: req.params.patientId,
-            patientName: `${patient.firstName} ${patient.lastName}`,
+            // patientName intentionally omitted — caller already has patient context
             anomalies,
             anomalyCount: anomalies.length,
             anomalyScore: Math.min(anomalyScore, 100),
@@ -377,104 +427,94 @@ router.post("/similar-patients/:patientId", hasPermission("view:analytics"), asy
             if (diagnosisA && diagnosisB && diagnosisA === diagnosisB) {
                 totalScore += 15;
                 matchingFactors.push(`Same primary diagnosis (${diagnosisA})`);
-            } else if (diagnosisA && diagnosisB && this.calculateDiagnosisSimilarity) {
-                // Partial match for similar diagnoses
+            } else if (diagnosisA && diagnosisB && diagnosisA !== diagnosisB) {
+                // Partial match — don't expose the other patient's diagnosis
                 const partialScore = 8;
                 totalScore += partialScore;
                 matchingFactors.push(`Similar diagnosis profile`);
             }
             maxPossibleScore += 15;
-            
+
             // Calculate raw similarity score
             let rawScore = maxPossibleScore > 0 ? (totalScore / maxPossibleScore) * 100 : 0;
             rawScore = Math.min(Math.round(rawScore), 100);
-            
-            // Get outcome for weighting
+
+            // Get outcome for weighting — outcome is aggregate clinical data, not PII
             const latestRecord = await MedicalRecord.findOne({ patientId: otherPatient._id })
                 .sort({ visitDate: -1 });
             const outcome = latestRecord?.disposition || "Unknown";
-            
-            // Apply outcome weight
+
             const weight = outcomeWeight[outcome] || 0.5;
             const weightedScore = Math.round(rawScore * weight);
-            
-            if (weightedScore > 25) {  // Lower threshold to include more similar patients
+
+            if (weightedScore > 25) {
+                // ── PRIVACY: never expose the other patient's name, national ID,
+                //    or individual diagnosis. Only anonymised clinical attributes.
                 similarities.push({
-                    patient: {
-                        id: otherPatient._id,
-                        name: `${otherPatient.firstName} ${otherPatient.lastName}`,
-                        age: otherPatient.age,
-                        gender: otherPatient.gender,
-                        province: otherPatient.province
-                    },
+                    // No name, no nationalId, no individual diagnosis
+                    ageGroup: otherPatient.age < 18 ? "Pediatric" : otherPatient.age < 65 ? "Adult" : "Geriatric",
+                    gender: otherPatient.gender,
+                    province: otherPatient.province,
                     similarity: weightedScore,
                     rawSimilarity: rawScore,
-                    matchingFactors: matchingFactors.slice(0, 5),
-                    outcome: outcome,
+                    // Sanitise matching factors — remove any that contain real age numbers
+                    matchingFactors: matchingFactors
+                        .map(f => f.replace(/\(\d+ vs \d+\)/, "(similar age)"))
+                        .slice(0, 5),
+                    outcome,
                     outcomeWeight: weight,
-                    lastVisit: latestRecord?.visitDate || null,
-                    diagnosis: diagnosisB
+                    lastVisit: latestRecord?.visitDate || null
+                    // diagnosis intentionally omitted — cross-patient PII
                 });
             }
         }
-        
-        // Sort by weighted similarity score
+
         similarities.sort((a, b) => b.similarity - a.similarity);
         const topSimilar = similarities.slice(0, limit);
-        
-        // Calculate success rate with outcome weighting
+
         const successfulOutcomes = topSimilar.filter(p => p.outcome === "Discharged" || p.outcome === "Recovered");
-        const weightedSuccessRate = topSimilar.length > 0 
-            ? Math.round((successfulOutcomes.reduce((sum, p) => sum + p.outcomeWeight, 0) / topSimilar.reduce((sum, p) => sum + p.outcomeWeight, 0)) * 100)
+        const weightedSuccessRate = topSimilar.length > 0
+            ? Math.round(
+                (successfulOutcomes.reduce((sum, p) => sum + p.outcomeWeight, 0) /
+                 topSimilar.reduce((sum, p) => sum + p.outcomeWeight, 0)) * 100
+              )
             : 0;
-        
-        // Generate clinical insights
+
         let clinicalInsight = "";
         if (topSimilar.length > 0) {
-            if (weightedSuccessRate >= 80) {
-                clinicalInsight = "Similar patients have shown excellent outcomes. Current treatment approach is highly recommended.";
-            } else if (weightedSuccessRate >= 60) {
-                clinicalInsight = "Similar patients have shown good outcomes. Current treatment approach is likely effective.";
-            } else if (weightedSuccessRate >= 40) {
-                clinicalInsight = "Similar patients have shown mixed outcomes. Consider reviewing treatment approach.";
-            } else {
-                clinicalInsight = "Similar patients have shown poor outcomes. Alternative treatment approaches should be considered.";
-            }
+            if (weightedSuccessRate >= 80)      clinicalInsight = "Similar patients have shown excellent outcomes. Current treatment approach is highly recommended.";
+            else if (weightedSuccessRate >= 60) clinicalInsight = "Similar patients have shown good outcomes. Current treatment approach is likely effective.";
+            else if (weightedSuccessRate >= 40) clinicalInsight = "Similar patients have shown mixed outcomes. Consider reviewing treatment approach.";
+            else                                clinicalInsight = "Similar patients have shown poor outcomes. Alternative treatment approaches should be considered.";
         } else {
             clinicalInsight = "Insufficient similar patients for comparative analysis.";
         }
-        
-        // Extract common diagnoses among similar patients
-        const diagnosisCount = {};
+
+        // Aggregate outcome distribution — no individual patient data
+        const outcomeDistribution = {};
         topSimilar.forEach(p => {
-            if (p.diagnosis) {
-                diagnosisCount[p.diagnosis] = (diagnosisCount[p.diagnosis] || 0) + 1;
-            }
+            outcomeDistribution[p.outcome] = (outcomeDistribution[p.outcome] || 0) + 1;
         });
-        const commonDiagnoses = Object.entries(diagnosisCount)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 3)
-            .map(([diagnosis, count]) => ({ diagnosis, occurrences: count }));
-        
+
         res.json({
             patientId: req.params.patientId,
-            patientName: `${patient.firstName} ${patient.lastName}`,
+            // patientName intentionally omitted
             similarPatients: topSimilar,
             totalSimilarFound: similarities.length,
             summary: {
-                averageSimilarity: similarities.length > 0 
-                    ? Math.round(similarities.reduce((sum, p) => sum + p.similarity, 0) / similarities.length) 
+                averageSimilarity: similarities.length > 0
+                    ? Math.round(similarities.reduce((sum, p) => sum + p.similarity, 0) / similarities.length)
                     : 0,
                 successRateAmongSimilar: weightedSuccessRate,
-                totalPatientsAnalyzed: allPatients.length
+                totalPatientsAnalyzed: allPatients.length,
+                outcomeDistribution
             },
             clinicalInsight,
-            commonDiagnoses,
             searchCriteria: {
-                age: patient.age,
+                ageGroup: patient.age < 18 ? "Pediatric" : patient.age < 65 ? "Adult" : "Geriatric",
                 gender: patient.gender,
                 province: patient.province,
-                chronicConditions: patient.clinicalProfile?.chronicConditions?.map(c => c.condition) || []
+                chronicConditionCount: patient.clinicalProfile?.chronicConditions?.length || 0
             },
             timestamp: new Date()
         });

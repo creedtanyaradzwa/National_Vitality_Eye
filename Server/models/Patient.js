@@ -50,8 +50,18 @@ const patientSchema = new mongoose.Schema({
     
     // ============ CLINICAL PROFILE - SIMPLIFIED ============
     clinicalProfile: {
-        type: mongoose.Schema.Types.Mixed,
-        default: {}
+        vitalSigns: mongoose.Schema.Types.Mixed,
+        triageStatus: {
+            priority: { 
+                type: String, 
+                enum: ["CRITICAL", "EMERGENT", "URGENT", "STABLE", "NON-URGENT"], 
+                default: "STABLE" 
+            },
+            score: { type: Number, default: 0 },
+            reasons: [String],
+            color: String,
+            lastAssessment: Date
+        }
     },
     
     // ============ INSURANCE ============

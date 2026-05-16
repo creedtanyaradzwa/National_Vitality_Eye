@@ -4,83 +4,153 @@ import {
     DocumentTextIcon, 
     BeakerIcon,
     MapIcon,
-    ArrowTrendingUpIcon
+    ArrowTrendingUpIcon,
+    ArrowTrendingDownIcon,
+    HeartIcon,
+    ShieldExclamationIcon,
+    CheckCircleIcon,
+    FireIcon
 } from '@heroicons/react/24/outline';
 
-const StatsCards = ({ stats }) => {
-    const cards = [
+const StatsCards = ({ stats, diseaseStats, selectedDisease }) => {
+    const systemCards = [
         {
             title: 'Total Patients',
             value: stats.totalPatients || 0,
             icon: UserGroupIcon,
-            gradient: 'from-blue-500 to-cyan-500',
-            bgGradient: 'from-blue-500/10 to-cyan-500/5',
-            trend: '+12%',
-            trendUp: true
+            color: 'text-cyber-blue',
+            borderColor: 'border-cyber-blue/20',
+            glowColor: 'shadow-cyber-blue/10',
+            trend: null
         },
         {
             title: 'Total Cases',
             value: stats.totalCases || 0,
             icon: DocumentTextIcon,
-            gradient: 'from-emerald-500 to-teal-500',
-            bgGradient: 'from-emerald-500/10 to-teal-500/5',
-            trend: '+8%',
-            trendUp: true
+            color: 'text-cyber-green',
+            borderColor: 'border-cyber-green/20',
+            glowColor: 'shadow-cyber-green/10',
+            trend: null
         },
         {
             title: 'Diseases Tracked',
             value: stats.diseasesTracked || 0,
             icon: BeakerIcon,
-            gradient: 'from-purple-500 to-pink-500',
-            bgGradient: 'from-purple-500/10 to-pink-500/5',
-            trend: '+3',
-            trendUp: true
+            color: 'text-cyber-purple',
+            borderColor: 'border-cyber-purple/20',
+            glowColor: 'shadow-cyber-purple/10',
+            trend: null
         },
         {
             title: 'Active Provinces',
             value: stats.provincesActive || 0,
             icon: MapIcon,
-            gradient: 'from-orange-500 to-red-500',
-            bgGradient: 'from-orange-500/10 to-red-500/5',
-            trend: '10/10',
-            trendUp: true
+            color: 'text-cyber-pink',
+            borderColor: 'border-cyber-pink/20',
+            glowColor: 'shadow-cyber-pink/10',
+            trend: null
         }
     ];
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {cards.map((card, index) => (
-                <div key={index} className="stat-card group">
-                    {/* Animated Background Gradient */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${card.bgGradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
-                    
-                    <div className="relative z-10">
-                        <div className="flex items-center justify-between mb-4">
-                            <div className={`stat-icon w-12 h-12 bg-gradient-to-br ${card.gradient}`}>
-                                <card.icon className="h-6 w-6 text-white" />
+        <div className="space-y-6">
+            {/* System-wide cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {systemCards.map((card, index) => (
+                    <div key={index} className={`stat-card group hover:scale-[1.02] transition-transform duration-300 border ${card.borderColor}`}>
+                        <div className="relative z-10">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className={`w-10 h-10 rounded-xl bg-brand-dark-950 border border-white/5 flex items-center justify-center`}>
+                                    <card.icon className={`h-5 w-5 ${card.color}`} />
+                                </div>
                             </div>
-                            <div className="flex items-center space-x-1">
-                                <ArrowTrendingUpIcon className={`h-3 w-3 ${card.trendUp ? 'text-emerald-400' : 'text-red-400'}`} />
-                                <span className={`text-xs font-medium ${card.trendUp ? 'text-emerald-400' : 'text-red-400'}`}>
-                                    {card.trend}
-                                </span>
+                            <h3 className="text-3xl font-bold text-white tracking-tighter">
+                                {card.value.toLocaleString()}
+                            </h3>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-[0.2em] mt-1">
+                                {card.title}
+                            </p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            {/* Disease-specific stat cards — shown when a disease is selected */}
+            {selectedDisease && diseaseStats && (
+                <div className="rounded-2xl bg-brand-dark-900/60 border border-purple-500/20 p-5">
+                    <div className="flex items-center gap-2 mb-4">
+                        <FireIcon className="h-4 w-4 text-purple-400" />
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-purple-400">
+                            Disease Focus — {selectedDisease}
+                        </p>
+                        <span className={`ml-auto px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
+                            diseaseStats.riskLevel === 'CRITICAL' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                            diseaseStats.riskLevel === 'HIGH'     ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' :
+                            'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                        }`}>
+                            {diseaseStats.riskLevel} RISK
+                        </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                        {/* Total cases for this disease */}
+                        <div className="bg-brand-dark-800/60 rounded-xl p-3 border border-white/5">
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Cases</p>
+                            <p className="text-xl font-black text-white">{(diseaseStats.totalCases || 0).toLocaleString()}</p>
+                        </div>
+
+                        {/* Monthly growth */}
+                        <div className="bg-brand-dark-800/60 rounded-xl p-3 border border-white/5">
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Growth</p>
+                            <div className="flex items-center gap-1">
+                                {diseaseStats.growthRate > 0
+                                    ? <ArrowTrendingUpIcon className="h-3.5 w-3.5 text-red-400 flex-shrink-0" />
+                                    : <ArrowTrendingDownIcon className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />}
+                                <p className={`text-xl font-black ${diseaseStats.growthRate > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                                    {diseaseStats.growthRate > 0 ? '+' : ''}{diseaseStats.growthRate}%
+                                </p>
+                            </div>
+                            <p className="text-[9px] text-gray-600 mt-0.5">vs prev month</p>
+                        </div>
+
+                        {/* Recovery rate */}
+                        <div className="bg-brand-dark-800/60 rounded-xl p-3 border border-white/5">
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Recovery</p>
+                            <div className="flex items-center gap-1">
+                                <CheckCircleIcon className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />
+                                <p className="text-xl font-black text-green-400">{diseaseStats.recoveryRate}%</p>
                             </div>
                         </div>
-                        
-                        <h3 className="text-3xl font-bold text-white mb-1 tracking-tight">
-                            {card.value.toLocaleString()}
-                        </h3>
-                        <p className="text-gray-400 text-sm font-medium uppercase tracking-wide">
-                            {card.title}
-                        </p>
-                        
-                        {/* Decorative Line */}
-                        <div className="absolute bottom-4 right-4 w-16 h-16 opacity-10">
-                            <card.icon className="h-full w-full" />
+
+                        {/* Admission rate */}
+                        <div className="bg-brand-dark-800/60 rounded-xl p-3 border border-white/5">
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Admitted</p>
+                            <p className="text-xl font-black text-yellow-400">{diseaseStats.admissionRate}%</p>
+                        </div>
+
+                        {/* Mortality */}
+                        <div className="bg-brand-dark-800/60 rounded-xl p-3 border border-white/5">
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Mortality</p>
+                            <div className="flex items-center gap-1">
+                                {diseaseStats.mortalityRate > 5 && <ShieldExclamationIcon className="h-3.5 w-3.5 text-red-400 flex-shrink-0" />}
+                                <p className={`text-xl font-black ${diseaseStats.mortalityRate > 5 ? 'text-red-400' : 'text-gray-300'}`}>
+                                    {diseaseStats.mortalityRate}%
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Hotspot */}
+                        <div className="bg-brand-dark-800/60 rounded-xl p-3 border border-white/5">
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Hotspot</p>
+                            <div className="flex items-center gap-1">
+                                <MapIcon className="h-3.5 w-3.5 text-purple-400 flex-shrink-0" />
+                                <p className="text-sm font-black text-purple-400 uppercase truncate">{diseaseStats.hotspot}</p>
+                            </div>
+                            <p className="text-[9px] text-gray-600 mt-0.5">{diseaseStats.hotspotCases} cases</p>
                         </div>
                     </div>
                 </div>
-            ))}
+            )}
         </div>
     );
 };
