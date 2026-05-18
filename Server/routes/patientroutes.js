@@ -3,7 +3,7 @@ const router = express.Router();
 const Patient = require("../models/Patient");
 // const PatientUser = require("../models/PatientUser"); // REMOVED - model no longer exists
 const { protect } = require("../middleware/auth");
-const { hasPermission, isApproved } = require("../middleware/rbac");
+const { hasPermission, hasRole, isApproved } = require("../middleware/rbac");
 
 // All routes require authentication and approval
 router.use(protect, isApproved);
@@ -366,7 +366,7 @@ router.post("/:id/antenatal-visit", hasPermission("edit:patients"), async (req, 
 // ============ ADMIN PATIENT MANAGEMENT ============
 
 // GET all patients with portal account status (admin only)
-router.get("/admin/all", hasPermission("admin"), async (req, res) => {
+router.get("/admin/all", hasRole("admin"), async (req, res) => {
     try {
         const patients = await Patient.find()
             .select("-clinicalProfile") // Exclude large clinical data
@@ -396,7 +396,7 @@ router.get("/admin/all", hasPermission("admin"), async (req, res) => {
 });
 
 // GET single patient with portal details (admin only)
-router.get("/admin/:id", hasPermission("admin"), async (req, res) => {
+router.get("/admin/:id", hasRole("admin"), async (req, res) => {
     try {
         const patient = await Patient.findById(req.params.id)
             .select("-clinicalProfile");
@@ -427,7 +427,7 @@ router.get("/admin/:id", hasPermission("admin"), async (req, res) => {
 });
 
 // SUSPEND patient portal access (admin only)
-router.patch("/admin/:id/suspend-portal", hasPermission("admin"), async (req, res) => {
+router.patch("/admin/:id/suspend-portal", hasRole("admin"), async (req, res) => {
     try {
         const { reason, duration } = req.body;
         
@@ -464,7 +464,7 @@ router.patch("/admin/:id/suspend-portal", hasPermission("admin"), async (req, re
 });
 
 // REACTIVATE patient portal access (admin only)
-router.patch("/admin/:id/reactivate-portal", hasPermission("admin"), async (req, res) => {
+router.patch("/admin/:id/reactivate-portal", hasRole("admin"), async (req, res) => {
     try {
         const patient = await Patient.findById(req.params.id);
         if (!patient) {
@@ -492,7 +492,7 @@ router.patch("/admin/:id/reactivate-portal", hasPermission("admin"), async (req,
 });
 
 // DEACTIVATE patient completely (admin only)
-router.patch("/admin/:id/deactivate", hasPermission("admin"), async (req, res) => {
+router.patch("/admin/:id/deactivate", hasRole("admin"), async (req, res) => {
     try {
         const { reason } = req.body;
         
@@ -521,7 +521,7 @@ router.patch("/admin/:id/deactivate", hasPermission("admin"), async (req, res) =
 });
 
 // REACTIVATE patient (admin only)
-router.patch("/admin/:id/reactivate", hasPermission("admin"), async (req, res) => {
+router.patch("/admin/:id/reactivate", hasRole("admin"), async (req, res) => {
     try {
         const patient = await Patient.findById(req.params.id);
         if (!patient) {
@@ -542,7 +542,7 @@ router.patch("/admin/:id/reactivate", hasPermission("admin"), async (req, res) =
 });
 
 // GET patient access audit log (admin only)
-router.get("/admin/:id/audit", hasPermission("admin"), async (req, res) => {
+router.get("/admin/:id/audit", hasRole("admin"), async (req, res) => {
     try {
         const patient = await Patient.findById(req.params.id)
             .select("portalAccount.auditLog portalAccount.loginAttempts portalAccount.lockedUntil portalAccount.isActive portalAccount.suspensionReason deactivationReason");
