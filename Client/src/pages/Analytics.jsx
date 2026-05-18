@@ -1,4 +1,4 @@
-﻿﻿import React, { useState, useEffect, useCallback } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
     getTopDiseases,
     getProvinceStats,
@@ -7,9 +7,30 @@ import {
     getDiseaseTrends,
     getDiseaseInsights,
     getPatientCount,
-    getDiseaseAnalytics
+    getDiseaseAnalytics,
+    getGlobalSummary,
+    getAllDiseases,
+    getPrevalence
 } from '../services/api';
+import {
+    mergeDiseaseLists,
+    clampPercent,
+    buildMonthlyProjections,
+    aggregateMonthlyTotals,
+    buildChartSeriesWithProjections,
+    buildDistributionPieData,
+    buildStackedMonthlyChartData,
+    pickTopDiseases,
+    sortMonthlySeries,
+    generateOverviewInsight,
+    resolvePrimaryHotspots,
+    MONTH_LABELS,
+    TOP_DISEASE_LIMIT,
+    PROJECTION_HORIZON
+} from '../utils/analyticsHelpers';
 import { useAuth } from '../context/useAuth';
+
+const NO_DATA = 'Insufficient recorded data to display this metric.';
 import { useDataRefresh } from '../context/useDataRefresh';
 import {
     ChartBarIcon,
@@ -26,7 +47,10 @@ import {
     CheckCircleIcon,
     ExclamationTriangleIcon,
     FireIcon,
-    ClipboardDocumentListIcon
+    ClipboardDocumentListIcon,
+    MagnifyingGlassIcon,
+    BoltIcon,
+    GlobeAltIcon
 } from '@heroicons/react/24/outline';
 import {
     LineChart,
@@ -57,9 +81,12 @@ const Analytics = () => {
     const canViewAnalytics = hasPermission('view:analytics');
     
     const [topDiseases, setTopDiseases] = useState([]);
+    const [systemDiseases, setSystemDiseases] = useState([]);
     const [provinceStats, setProvinceStats] = useState([]);
     const [monthlyTrends, setMonthlyTrends] = useState([]);
     const [aiStats, setAiStats] = useState(null);
+    const [summaryStats, setSummaryStats] = useState(null);
+    const [prevalenceStats, setPrevalenceStats] = useState({ activeBurden: 0, growthRate: 0, topDiseaseShare: 0 });
     const [selectedDisease, setSelectedDisease] = useState('');
     const [diseaseTrends, setDiseaseTrends] = useState([]);
     const [diseaseInsights, setDiseaseInsights] = useState(null);
@@ -67,83 +94,73 @@ const Analytics = () => {
     const [patientCount, setPatientCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [diseaseLoading, setDiseaseLoading] = useState(false);
-    const [timeRange, setTimeRange] = useState('6months');
-    const [activeChart, setActiveChart] = useState('trends');
-    const [cachedGrowthRate, setCachedGrowthRate] = useState(null);
-    const [lastDataHash, setLastDataHash] = useState(null);
+    const [diseaseTimeRange, setDiseaseTimeRange] = useState('6months');
+    const [overviewTimeRange, setOverviewTimeRange] = useState('6months');
+    const [diseaseSearch, setDiseaseSearch] = useState('');
     const [lastUpdated, setLastUpdated] = useState(new Date());
 
     const COLORS = ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#06B6D4', '#F97316', '#6366F1', '#A855F7'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = MONTH_LABELS;
 
-    const getDataHash = (data) => JSON.stringify(data);
 
-    const calculateGrowthRateFromData = (trendsData) => {
-        if (!trendsData || trendsData.length < 2) return 0;
-        
-        const monthlyTotals = {};
-        trendsData.forEach(item => {
-            const key = `${item._id.year}-${item._id.month}`;
-            monthlyTotals[key] = (monthlyTotals[key] || 0) + item.count;
-        });
-        
-        const months = Object.keys(monthlyTotals).sort();
-        if (months.length < 2) return 0;
-        
-        const lastTotal = monthlyTotals[months[months.length - 1]];
-        const prevTotal = monthlyTotals[months[months.length - 2]];
-        
-        if (prevTotal === 0) return 0;
-        return ((lastTotal - prevTotal) / prevTotal * 100).toFixed(1);
-    };
 
+    // Redo loadAnalyticsData to ensure all fields are captured correctly
     const loadAnalyticsData = useCallback(async () => {
         setLoading(true);
         try {
-            const [diseasesRes, provinceRes, trendsRes, statsRes, patientCountRes] = await Promise.all([
+            const [diseasesRes, allDiseasesRes, provinceRes, trendsRes, statsRes,
+                   patientCountRes, summaryRes, prevalenceRes] = await Promise.all([
                 getTopDiseases(),
+                getAllDiseases(),
                 getProvinceStats(),
                 getMonthlyTrends(),
                 getAIStats(),
-                getPatientCount()
+                getPatientCount(),
+                getGlobalSummary(),
+                getPrevalence()
             ]);
-            
-            setTopDiseases(diseasesRes.data || []);
-            setProvinceStats(provinceRes.data || []);
+
+            const topD = diseasesRes.data || [];
+            const allD = allDiseasesRes.data || [];
+            const merged = mergeDiseaseLists(topD, allD);
+
+            setTopDiseases(topD);
+            setSystemDiseases(merged);
+            setProvinceStats(provinceRes.data?.provinces || []);
             setMonthlyTrends(trendsRes.data || []);
             setAiStats(statsRes.data);
             setPatientCount(patientCountRes.data?.count || 0);
-            
-            const newHash = getDataHash(trendsRes.data);
-            if (newHash !== lastDataHash) {
-                setCachedGrowthRate(calculateGrowthRateFromData(trendsRes.data));
-                setLastDataHash(newHash);
-            }
+            setSummaryStats(summaryRes.data);
+            setPrevalenceStats(prevalenceRes.data || { activeBurden: 0, growthRate: 0, topDiseaseShare: 0 });
             setLastUpdated(new Date());
-            
-            if (diseasesRes.data && diseasesRes.data.length > 0 && !selectedDisease) {
-                setSelectedDisease(diseasesRes.data[0]._id);
+
+            // Default focus: disease with highest case count
+            if (merged.length > 0) {
+                setSelectedDisease((prev) => prev || merged[0]._id);
             }
-        } catch  {
+        } catch (error) {
+            console.error("Analytics Load Error:", error);
             toast.error('Failed to load analytics data');
         } finally {
             setLoading(false);
         }
-    }, [lastDataHash, selectedDisease]);
+    }, []);
 
     useEffect(() => {
         const loadDiseaseTrends = async () => {
             if (!selectedDisease) return;
             setDiseaseLoading(true);
             try {
-                const [trendsRes, insightsRes, analyticsRes] = await Promise.all([
+                const [trendsRes, insightsRes, analyticsRes] = await Promise.allSettled([
                     getDiseaseTrends(selectedDisease),
                     getDiseaseInsights(selectedDisease),
                     getDiseaseAnalytics(selectedDisease)
                 ]);
-                setDiseaseTrends(trendsRes.data || []);
-                setDiseaseInsights(insightsRes.data);
-                setDiseaseAnalytics(analyticsRes.data);
+                if (trendsRes.status === 'fulfilled') setDiseaseTrends(trendsRes.value.data || []);
+                if (insightsRes.status === 'fulfilled') setDiseaseInsights(insightsRes.value.data);
+                else setDiseaseInsights(null);
+                if (analyticsRes.status === 'fulfilled') setDiseaseAnalytics(analyticsRes.value.data);
+                else setDiseaseAnalytics(null);
             } catch (error) {
                 console.error('Failed to load disease data', error);
             } finally {
@@ -159,16 +176,14 @@ const Analytics = () => {
         }
     }, [canViewAnalytics, refreshTrigger, loadAnalyticsData]);
 
-    const filterMonthlyData = () => {
-        let monthsToShow = 6;
-        if (timeRange === '3months') monthsToShow = 3;
-        if (timeRange === '6months') monthsToShow = 6;
-        if (timeRange === '12months') monthsToShow = 12;
-        return monthlyTrends.slice(-monthsToShow);
+    const monthsForRange = (range) => (range === '3months' ? 3 : range === '12months' ? 12 : 6);
+
+    const filterMonthlyData = (range = overviewTimeRange) => {
+        return monthlyTrends.slice(-monthsForRange(range));
     };
 
-    const processMonthlyChartData = () => {
-        const filtered = filterMonthlyData();
+    const processMonthlyChartData = (range = overviewTimeRange) => {
+        const filtered = filterMonthlyData(range);
         const chartData = {};
         filtered.forEach(item => {
             const monthKey = `${item._id.year}-${item._id.month}`;
@@ -200,19 +215,14 @@ const Analytics = () => {
     };
 
     const calculateTotalCases = () => {
-        return topDiseases.reduce((sum, d) => sum + d.count, 0);
+        if (summaryStats?.totalCases != null) return summaryStats.totalCases;
+        return systemDiseases.reduce((sum, d) => sum + (d.count || 0), 0);
     };
 
     // Filter disease trends by time range
     const filterDiseaseTrends = () => {
         if (!diseaseTrends.length) return [];
-        let monthsToShow = 6;
-        if (timeRange === '3months') monthsToShow = 3;
-        if (timeRange === '12months') monthsToShow = 12;
-        return diseaseTrends.slice(-monthsToShow).map(d => ({
-            ...d,
-            label: `${months[d._id.month - 1]} ${d._id.year}`
-        }));
+        return diseaseTrends.slice(-monthsForRange(diseaseTimeRange));
     };
 
     // Get selected disease stats card values
@@ -223,21 +233,116 @@ const Analytics = () => {
         const admitted = da.outcomes?.['Admitted']?.count || 0;
         const deceased = da.outcomes?.['Deceased']?.count || 0;
         const total = da.totalCases || 1;
+        const hotspotInfo = da.hotspot
+            ? { label: da.hotspot, hotspots: da.primaryHotspots || [], maxCount: da.hotspotCases ?? 0 }
+            : resolvePrimaryHotspots(da.provinceBreakdown);
         return {
             totalCases: da.totalCases,
             growthRate: da.growthRate,
-            recoveryRate: Math.round((discharged / total) * 100),
-            admissionRate: Math.round((admitted / total) * 100),
-            mortalityRate: Math.round((deceased / total) * 100),
-            hotspot: da.provinceBreakdown?.[0]?.province || 'N/A',
-            hotspotCases: da.provinceBreakdown?.[0]?.count || 0
+            prevalenceShare: clampPercent(da.prevalenceShare ?? 0),
+            recoveryRate: clampPercent((discharged / total) * 100),
+            admissionRate: clampPercent((admitted / total) * 100),
+            mortalityRate: clampPercent((deceased / total) * 100),
+            hotspot: hotspotInfo.label || 'N/A',
+            hotspotCases: hotspotInfo.maxCount,
+            primaryHotspots: hotspotInfo.hotspots,
+            isTiedHotspot: (hotspotInfo.hotspots?.length || 0) > 1
         };
     };
 
+    const filteredDiseaseList = useMemo(() => {
+        const q = diseaseSearch.trim().toLowerCase();
+        if (!q) return systemDiseases;
+        return systemDiseases.filter((d) => d._id?.toLowerCase().includes(q));
+    }, [systemDiseases, diseaseSearch]);
+
+    const diseaseHistoricalFull = useMemo(() => {
+        if (diseaseAnalytics?.monthlyTrend?.length) return diseaseAnalytics.monthlyTrend;
+        return sortMonthlySeries(diseaseTrends);
+    }, [diseaseAnalytics, diseaseTrends]);
+
+    const trendChartData = useMemo(() => {
+        const rows = buildChartSeriesWithProjections(
+            diseaseHistoricalFull,
+            monthsForRange(diseaseTimeRange),
+            diseaseAnalytics?.projections,
+            PROJECTION_HORIZON,
+            months
+        );
+        if (rows.length) return rows;
+        return filterDiseaseTrends().map((d) => ({
+            label: `${months[(d._id?.month ?? 1) - 1]} ${d._id?.year}`,
+            actual: d.count,
+            projected: null
+        }));
+    }, [diseaseHistoricalFull, diseaseTimeRange, diseaseAnalytics, diseaseTrends, months]);
+
+    const topTenDiseases = useMemo(() => pickTopDiseases(systemDiseases), [systemDiseases]);
+    const distributionChart = useMemo(
+        () => buildDistributionPieData(systemDiseases, TOP_DISEASE_LIMIT),
+        [systemDiseases]
+    );
+    const topTenDiseaseIds = useMemo(() => topTenDiseases.map((d) => d._id), [topTenDiseases]);
+
+    const overviewFullTotals = useMemo(
+        () => aggregateMonthlyTotals(monthlyTrends),
+        [monthlyTrends]
+    );
+
+    const overviewMonthlyTotals = useMemo(
+        () => aggregateMonthlyTotals(filterMonthlyData(overviewTimeRange)),
+        [monthlyTrends, overviewTimeRange]
+    );
+
+    const overviewProjections = useMemo(
+        () => buildMonthlyProjections(overviewFullTotals, PROJECTION_HORIZON),
+        [overviewFullTotals]
+    );
+
+    const overviewLineData = useMemo(() => {
+        const rows = buildChartSeriesWithProjections(
+            overviewFullTotals,
+            monthsForRange(overviewTimeRange),
+            overviewProjections,
+            PROJECTION_HORIZON,
+            months
+        );
+        return rows.map((r) => ({
+            month: r.label,
+            actual: r.actual,
+            projected: r.projected
+        }));
+    }, [overviewFullTotals, overviewTimeRange, overviewProjections, months]);
+
+    const stackedMonthlyData = useMemo(
+        () => buildStackedMonthlyChartData(filterMonthlyData(overviewTimeRange), topTenDiseaseIds, months),
+        [monthlyTrends, overviewTimeRange, topTenDiseaseIds, months]
+    );
+
+    const stackedBarKeys = useMemo(() => {
+        const keys = [...topTenDiseaseIds];
+        if (stackedMonthlyData.some((row) => (row.Other || 0) > 0)) keys.push('Other');
+        return keys;
+    }, [topTenDiseaseIds, stackedMonthlyData]);
+
+    const diseaseProfile = diseaseInsights?.diseaseProfile || diseaseAnalytics?.diseaseProfile;
+    const hasDiseaseProfile = diseaseProfile && (
+        diseaseProfile.focusAreas?.length > 0 ||
+        diseaseProfile.peakMonth ||
+        diseaseProfile.recentGrowth ||
+        diseaseProfile.outcomeSummary
+    );
+
+    const trendInsightText = diseaseInsights?.summary?.trendInsight ?? diseaseAnalytics?.trendInsight ?? null;
+    const overviewInsightText = overviewMonthlyTotals.length >= 1
+        ? generateOverviewInsight(overviewMonthlyTotals, overviewProjections)
+        : null;
+    const recommendationList = diseaseInsights?.recommendations || [];
+
     const totalCases = calculateTotalCases();
-    const growthRate = cachedGrowthRate !== null ? cachedGrowthRate : 0;
+    const activeBurden = clampPercent(prevalenceStats.activeBurden ?? 0);
+    const caseGrowth = prevalenceStats.growthRate ?? 0;
     const provinceData = processProvinceChartData();
-    const filteredTrends = filterDiseaseTrends();
     const diseaseStats = getSelectedDiseaseStats();
 
     if (!canViewAnalytics) {
@@ -322,17 +427,25 @@ const Analytics = () => {
                     <MapIcon className="h-5 w-5 text-orange-400 mt-2" />
                 </div>
                 <div className="rounded-xl bg-gradient-to-br from-yellow-500/20 to-amber-500/20 border border-yellow-500/30 p-5">
-                    <p className="text-gray-400 text-xs mb-1">Prevalence Rate</p>
-                    <p className={`text-3xl font-bold ${parseFloat(growthRate) >= 0 ? 'text-red-400' : 'text-green-400'}`}>{growthRate}%</p>
-                    {parseFloat(growthRate) >= 0
-                        ? <ArrowTrendingUpIcon className="h-5 w-5 text-red-400 mt-2" />
-                        : <ArrowTrendingDownIcon className="h-5 w-5 text-green-400 mt-2" />}
-                    <p className="text-[10px] text-gray-500 mt-1">vs prev month</p>
+                    <p className="text-gray-400 text-xs mb-1">Active Burden Index</p>
+                    <p className="text-3xl font-bold text-amber-300">{activeBurden}%</p>
+                    <GlobeAltIcon className="h-5 w-5 text-amber-400 mt-2" />
+                    <p className="text-[10px] text-gray-500 mt-1">
+                        30-day visits / patients · growth {caseGrowth > 0 ? '+' : ''}{caseGrowth}%
+                    </p>
                 </div>
             </div>
 
-            {/* ── DISEASE SELECTOR + DISEASE-SPECIFIC STATS ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+            {/* ── DISEASE INTELLIGENCE ── */}
+            <section className="mb-8">
+                <div className="flex items-center gap-3 mb-5">
+                    <div className="h-8 w-1 rounded-full bg-gradient-to-b from-purple-500 to-pink-500" />
+                    <div>
+                        <h2 className="text-lg font-bold text-white uppercase tracking-tight">Disease Intelligence</h2>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest">Select a disease for metrics and AI insights</p>
+                    </div>
+                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
                 {/* Disease List */}
                 <div className="lg:col-span-1 rounded-xl bg-white/5 border border-white/10 p-5">
@@ -340,11 +453,23 @@ const Analytics = () => {
                         <BeakerIcon className="h-4 w-4 text-purple-400" />
                         Disease Focus
                     </h2>
-                    <p className="text-[10px] text-gray-500 mb-3 uppercase tracking-widest">Default: highest cases</p>
+                    <p className="text-[10px] text-gray-500 mb-3 uppercase tracking-widest">
+                        {systemDiseases.length} diseases · default: highest cases
+                    </p>
+                    <div className="relative mb-3">
+                        <MagnifyingGlassIcon className="h-4 w-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                        <input
+                            type="text"
+                            value={diseaseSearch}
+                            onChange={(e) => setDiseaseSearch(e.target.value)}
+                            placeholder="Search diseases..."
+                            className="w-full pl-9 pr-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
+                        />
+                    </div>
                     <div className="space-y-1.5 max-h-[420px] overflow-y-auto custom-scrollbar pr-1">
-                        {topDiseases.map((disease, idx) => (
+                        {filteredDiseaseList.map((disease, idx) => (
                             <button
-                                key={idx}
+                                key={disease._id}
                                 onClick={() => setSelectedDisease(disease._id)}
                                 className={`w-full p-3 rounded-xl text-left transition-all duration-200 ${
                                     selectedDisease === disease._id
@@ -359,7 +484,7 @@ const Analytics = () => {
                                             {disease.count} cases
                                         </p>
                                     </div>
-                                    {idx === 0 && selectedDisease !== disease._id && (
+                                    {systemDiseases[0]?._id === disease._id && selectedDisease !== disease._id && (
                                         <span className="text-[9px] bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded-full">TOP</span>
                                     )}
                                     {selectedDisease === disease._id && <SparklesIcon className="h-4 w-4 animate-pulse" />}
@@ -394,11 +519,16 @@ const Analytics = () => {
                                     <p className="text-[10px] text-gray-500 mt-1">All time</p>
                                 </div>
                                 <div className="rounded-xl bg-white/5 border border-white/10 p-4">
-                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Monthly Growth</p>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">National Share</p>
+                                    <p className="text-2xl font-black text-amber-300">{diseaseStats.prevalenceShare}%</p>
+                                    <p className="text-[10px] text-gray-500 mt-1">Of all system cases</p>
+                                </div>
+                                <div className="rounded-xl bg-white/5 border border-white/10 p-4">
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">30-Day Growth</p>
                                     <p className={`text-2xl font-black ${diseaseStats.growthRate > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                                        {diseaseStats.growthRate > 0 ? '+' : ''}{diseaseStats.growthRate}%
+                                        {diseaseStats.growthRate > 0 ? '+' : ''}{clampPercent(diseaseStats.growthRate)}%
                                     </p>
-                                    <p className="text-[10px] text-gray-500 mt-1">vs previous month</p>
+                                    <p className="text-[10px] text-gray-500 mt-1">vs prior 30 days</p>
                                 </div>
                                 <div className="rounded-xl bg-white/5 border border-white/10 p-4">
                                     <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Recovery Rate</p>
@@ -418,9 +548,13 @@ const Analytics = () => {
                                     <p className="text-[10px] text-gray-500 mt-1">Case fatality</p>
                                 </div>
                                 <div className="rounded-xl bg-white/5 border border-white/10 p-4">
-                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Primary Hotspot</p>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">
+                                        Primary Hotspot{diseaseStats.isTiedHotspot ? 's (tied)' : ''}
+                                    </p>
                                     <p className="text-lg font-black text-purple-400 uppercase">{diseaseStats.hotspot}</p>
-                                    <p className="text-[10px] text-gray-500 mt-1">{diseaseStats.hotspotCases} cases</p>
+                                    <p className="text-[10px] text-gray-500 mt-1">
+                                        {diseaseStats.hotspotCases} cases{diseaseStats.isTiedHotspot ? ' each' : ''}
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -431,9 +565,10 @@ const Analytics = () => {
                     )}
                 </div>
             </div>
+            </section>
 
             {/* ── AI DECISION SUPPORT ── */}
-            {diseaseInsights && (
+            {(diseaseInsights || diseaseAnalytics) && !diseaseLoading && (
                 <div className="mb-8">
                     <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-600 to-pink-600 p-[1px]">
                         <div className="relative rounded-2xl bg-slate-900/95 backdrop-blur-xl p-6">
@@ -450,7 +585,11 @@ const Analytics = () => {
                                 <div className="flex items-center gap-4">
                                     <div className="text-right">
                                         <p className="text-[10px] text-gray-500 uppercase tracking-widest">AI Confidence</p>
-                                        <p className="text-2xl font-black text-white">{diseaseInsights.aiConfidence?.toFixed(1)}%</p>
+                                        {diseaseInsights?.aiConfidence != null ? (
+                                            <p className="text-2xl font-black text-white">{diseaseInsights.aiConfidence.toFixed(1)}%</p>
+                                        ) : (
+                                            <p className="text-sm text-gray-500">Not available — fewer than 20 cases in model</p>
+                                        )}
                                     </div>
                                     <div className={`px-4 py-2 rounded-xl border font-black tracking-widest text-sm ${
                                         diseaseInsights.summary?.riskLevel === 'CRITICAL' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
@@ -467,15 +606,29 @@ const Analytics = () => {
                                 <div className="rounded-xl bg-white/5 border border-white/10 p-4">
                                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Growth Analysis</p>
                                     <div className={`text-2xl font-black ${diseaseInsights.summary?.growthRate > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                                        {diseaseInsights.summary?.growthRate > 0 ? '+' : ''}{diseaseInsights.summary?.growthRate}%
+                                        {diseaseInsights.summary?.growthRate > 0 ? '+' : ''}{clampPercent(diseaseInsights.summary?.growthRate)}%
                                     </div>
                                     <p className="text-[10px] text-gray-500 mt-1">vs previous month</p>
                                 </div>
                                 <div className="rounded-xl bg-white/5 border border-white/10 p-4">
-                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Primary Hotspot</p>
-                                    <div className="flex items-center gap-2">
-                                        <MapIcon className="h-5 w-5 text-purple-400" />
-                                        <span className="text-xl font-black text-white uppercase">{diseaseInsights.summary?.hotspot}</span>
+                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
+                                        Primary Hotspot{(diseaseInsights.summary?.primaryHotspots?.length || 0) > 1 ? 's' : ''}
+                                    </p>
+                                    <div className="flex items-start gap-2">
+                                        <MapIcon className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
+                                        <div>
+                                            <span className="text-lg font-black text-white uppercase leading-tight block">
+                                                {diseaseInsights.summary?.hotspot
+                                                    || diseaseStats?.hotspot
+                                                    || resolvePrimaryHotspots(diseaseAnalytics?.provinceBreakdown).label
+                                                    || 'N/A'}
+                                            </span>
+                                            {(diseaseInsights.summary?.primaryHotspots?.length || 0) > 1 && (
+                                                <p className="text-[10px] text-amber-400/90 mt-1">
+                                                    Tied — {diseaseInsights.summary.primaryHotspots.length} provinces at {diseaseInsights.summary.hotspotCases} cases each
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="rounded-xl bg-white/5 border border-white/10 p-4">
@@ -558,9 +711,19 @@ const Analytics = () => {
 
                             {/* AI Recommendations */}
                             <div>
-                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.3em] mb-4">AI Recommended Actions</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    {diseaseInsights.recommendations?.map((rec, idx) => (
+                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-[0.3em] mb-2">
+                                    AI Recommended Actions
+                                    {recommendationList.length > 0 && (
+                                        <span className="ml-2 text-purple-400">({recommendationList.length} from records)</span>
+                                    )}
+                                </h3>
+                                {recommendationList.length === 0 ? (
+                                    <p className="text-sm text-gray-500 py-6 text-center border border-dashed border-white/10 rounded-xl">
+                                        {NO_DATA} Add medical records for this disease to generate recommendations.
+                                    </p>
+                                ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[520px] overflow-y-auto custom-scrollbar pr-1">
+                                    {recommendationList.map((rec, idx) => (
                                         <div key={idx} className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/10 hover:border-white/20 transition-all duration-300">
                                             <div className={`mt-0.5 p-2 rounded-lg flex-shrink-0 ${
                                                 rec.type === 'URGENT' || rec.type === 'CRITICAL' ? 'bg-red-500/20 text-red-400' :
@@ -577,29 +740,74 @@ const Analytics = () => {
                                         </div>
                                     ))}
                                 </div>
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* ── TREND CHART + PROVINCE BREAKDOWN ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            {hasDiseaseProfile && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                    {diseaseProfile.recentGrowth && (
+                        <div className="rounded-xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-indigo-500/20 p-5">
+                            <p className="text-[10px] text-indigo-400 uppercase tracking-widest mb-2">Recent activity</p>
+                            <p className="text-sm text-gray-200">{diseaseProfile.recentGrowth}</p>
+                        </div>
+                    )}
+                    {diseaseProfile.peakMonth && (
+                        <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Peak month (recorded)</p>
+                            <p className="text-sm text-gray-200">{diseaseProfile.peakMonth}</p>
+                        </div>
+                    )}
+                    {diseaseProfile.outcomeSummary && (
+                        <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Outcomes (recorded)</p>
+                            <p className="text-sm text-gray-200">{diseaseProfile.outcomeSummary}</p>
+                        </div>
+                    )}
+                    {diseaseProfile.focusAreas?.length > 0 && (
+                        <div className="md:col-span-3 rounded-xl bg-white/5 border border-white/10 p-5">
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2">Data-driven focus areas</p>
+                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                {diseaseProfile.focusAreas.map((area) => (
+                                    <li key={area} className="text-xs text-purple-300 flex items-start gap-2">
+                                        <FireIcon className="h-3.5 w-3.5 flex-shrink-0 mt-0.5" />
+                                        {area}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ── CLINICAL ANALYTICS ── */}
+            <section className="mb-8">
+                <div className="flex items-center gap-3 mb-5">
+                    <div className="h-8 w-1 rounded-full bg-gradient-to-b from-violet-500 to-fuchsia-500" />
+                    <div>
+                        <h2 className="text-lg font-bold text-white uppercase tracking-tight">Clinical Analytics</h2>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest">Trends, hotspots, and regional burden for {selectedDisease}</p>
+                    </div>
+                </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
 
                 {/* Trend Chart */}
                 <div className="lg:col-span-2 rounded-xl bg-white/5 border border-white/10 p-6">
                     <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
                         <div>
                             <h2 className="text-lg font-bold text-white uppercase tracking-tight">Case Trend — {selectedDisease}</h2>
-                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Monthly incident reports</p>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Actuals + AI 3-month projection</p>
                         </div>
                         <div className="flex gap-2">
                             {['3months', '6months', '12months'].map((range) => (
                                 <button
                                     key={range}
-                                    onClick={() => setTimeRange(range)}
+                                    onClick={() => setDiseaseTimeRange(range)}
                                     className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-200 ${
-                                        timeRange === range
+                                        diseaseTimeRange === range
                                             ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
                                             : 'bg-white/5 text-gray-400 hover:text-white'
                                     }`}
@@ -609,9 +817,17 @@ const Analytics = () => {
                             ))}
                         </div>
                     </div>
-                    {filteredTrends.length > 0 ? (
+                    <div className="mb-4 p-4 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                        <p className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                            <CpuChipIcon className="h-3.5 w-3.5" /> AI Trend Insight
+                        </p>
+                        <p className="text-sm text-gray-300 leading-relaxed">
+                            {trendInsightText || NO_DATA}
+                        </p>
+                    </div>
+                    {trendChartData.length > 0 ? (
                         <ResponsiveContainer width="100%" height={300}>
-                            <AreaChart data={filteredTrends}>
+                            <AreaChart data={trendChartData}>
                                 <defs>
                                     <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.35}/>
@@ -622,7 +838,9 @@ const Analytics = () => {
                                 <XAxis dataKey="label" stroke="rgba(255,255,255,0.2)" fontSize={10} tick={{ fill: '#94a3b8' }} />
                                 <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tick={{ fill: '#94a3b8' }} />
                                 <Tooltip contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }} itemStyle={{ color: '#fff', fontSize: '12px' }} />
-                                <Area type="monotone" dataKey="count" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#trendGrad)" name="Cases" />
+                                <Legend wrapperStyle={{ fontSize: '10px' }} />
+                                <Area type="monotone" dataKey="actual" stroke="#8B5CF6" strokeWidth={3} fillOpacity={1} fill="url(#trendGrad)" name="Actual" connectNulls={false} />
+                                <Line type="monotone" dataKey="projected" stroke="#F472B6" strokeWidth={2} strokeDasharray="6 4" dot={{ r: 3 }} name="Projected" connectNulls />
                             </AreaChart>
                         </ResponsiveContainer>
                     ) : (
@@ -641,7 +859,7 @@ const Analytics = () => {
                     </h3>
                     {provinceData.length > 0 ? (
                         <div className="space-y-2">
-                            {provinceData.slice(0, 8).map((prov, idx) => (
+                            {provinceData.map((prov, idx) => (
                                 <div key={prov.name} className="flex items-center gap-3">
                                     <span className="text-[10px] text-gray-500 w-4">{idx + 1}</span>
                                     <div className="flex-1">
@@ -653,7 +871,7 @@ const Analytics = () => {
                                             <div
                                                 className="h-full rounded-full"
                                                 style={{
-                                                    width: `${provinceData[0]?.value > 0 ? (prov.value / provinceData[0].value) * 100 : 0}%`,
+                                                    width: `${provinceData[0]?.value > 0 ? clampPercent((prov.value / provinceData[0].value) * 100) : 0}%`,
                                                     backgroundColor: COLORS[idx % COLORS.length]
                                                 }}
                                             ></div>
@@ -680,7 +898,7 @@ const Analytics = () => {
                         </h3>
                         {diseaseAnalytics.topSymptoms?.length > 0 ? (
                             <div className="space-y-2.5">
-                                {diseaseAnalytics.topSymptoms.slice(0, 8).map((s, idx) => (
+                                {diseaseAnalytics.topSymptoms.map((s, idx) => (
                                     <div key={s.symptom}>
                                         <div className="flex justify-between text-xs mb-1">
                                             <span className="text-gray-300 capitalize">{s.symptom}</span>
@@ -762,85 +980,30 @@ const Analytics = () => {
                     </div>
                 </div>
             )}
+            </section>
 
-            {/* ── YEARLY TREND + DISEASE DISTRIBUTION PIE ── */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-
-                {/* Yearly Trend Bar Chart */}
-                {diseaseAnalytics?.yearlyTrend?.length > 0 && (
-                    <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                        <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-5">
-                            Year-over-Year — {selectedDisease}
-                        </h3>
-                        <ResponsiveContainer width="100%" height={220}>
-                            <BarChart data={diseaseAnalytics.yearlyTrend}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="year" stroke="rgba(255,255,255,0.2)" fontSize={11} tick={{ fill: '#94a3b8' }} />
-                                <YAxis stroke="rgba(255,255,255,0.2)" fontSize={11} tick={{ fill: '#94a3b8' }} />
-                                <Tooltip contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }} itemStyle={{ color: '#fff' }} />
-                                <Bar dataKey="count" name="Cases" radius={[4, 4, 0, 0]}>
-                                    {diseaseAnalytics.yearlyTrend.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+            {/* ── NATIONAL OVERVIEW ── */}
+            <section className="mb-8">
+                <div className="flex items-center gap-3 mb-5">
+                    <div className="h-8 w-1 rounded-full bg-gradient-to-b from-cyan-400 to-blue-500" />
+                    <div>
+                        <h2 className="text-lg font-bold text-white uppercase tracking-tight">National Overview</h2>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest">System volume, 3-month forecast, top-10 disease mix</p>
                     </div>
-                )}
-
-                {/* Disease Distribution Pie */}
-                {topDiseases.length > 0 && (
-                    <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                        <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-5">
-                            Overall Disease Distribution
-                        </h3>
-                        <div className="flex items-center gap-4">
-                            <ResponsiveContainer width="50%" height={200}>
-                                <PieChart>
-                                    <Pie
-                                        data={topDiseases.slice(0, 8).map(d => ({ name: d._id, value: d.count }))}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={50}
-                                        outerRadius={80}
-                                        paddingAngle={3}
-                                        dataKey="value"
-                                    >
-                                        {topDiseases.slice(0, 8).map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-                                    <Tooltip contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }} itemStyle={{ color: '#fff', fontSize: '12px' }} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                            <div className="flex-1 space-y-1.5">
-                                {topDiseases.slice(0, 8).map((d, idx) => (
-                                    <div key={d._id} className="flex items-center gap-2">
-                                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></div>
-                                        <span className="text-[10px] text-gray-400 truncate flex-1">{d._id}</span>
-                                        <span className="text-[10px] text-white font-bold">{d.count}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* ── ALL-DISEASES MONTHLY OVERVIEW ── */}
-            <div className="rounded-xl bg-white/5 border border-white/10 p-6 mb-8">
+                </div>
+            <div className="rounded-xl bg-white/5 border border-white/10 p-6 mb-6">
                 <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
                     <div>
-                        <h2 className="text-lg font-bold text-white uppercase tracking-tight">All-Disease Monthly Overview</h2>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">System-wide case volume across all diseases</p>
+                        <h2 className="text-lg font-bold text-white uppercase tracking-tight">Monthly Volume & Forecast</h2>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-0.5">Total visits with 3-month linear projection</p>
                     </div>
                     <div className="flex gap-2">
                         {['3months', '6months', '12months'].map((range) => (
                             <button
                                 key={range}
-                                onClick={() => setTimeRange(range)}
+                                onClick={() => setOverviewTimeRange(range)}
                                 className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-200 ${
-                                    timeRange === range
+                                    overviewTimeRange === range
                                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
                                         : 'bg-white/5 text-gray-400 hover:text-white'
                                 }`}
@@ -850,19 +1013,39 @@ const Analytics = () => {
                         ))}
                     </div>
                 </div>
-                {processMonthlyChartData().length > 0 ? (
-                    <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={processMonthlyChartData()}>
+                <div className="mb-4 p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                    <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-1 flex items-center gap-1">
+                        <SparklesIcon className="h-3.5 w-3.5" /> System Forecast Insight
+                    </p>
+                    <p className="text-sm text-gray-300 leading-relaxed">{overviewInsightText || NO_DATA}</p>
+                </div>
+                {(overviewLineData.length > 0 || stackedMonthlyData.length > 0) ? (
+                    <>
+                    <ResponsiveContainer width="100%" height={200}>
+                        <AreaChart data={overviewLineData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                            <XAxis dataKey="month" stroke="rgba(255,255,255,0.2)" fontSize={10} tick={{ fill: '#94a3b8' }} />
+                            <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tick={{ fill: '#94a3b8' }} />
+                            <Tooltip contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }} />
+                            <Legend wrapperStyle={{ fontSize: '10px' }} />
+                            <Area type="monotone" dataKey="actual" stroke="#06B6D4" strokeWidth={2} fill="#06B6D4" fillOpacity={0.12} name="Total actual" connectNulls={false} />
+                            <Line type="monotone" dataKey="projected" stroke="#F59E0B" strokeWidth={2} strokeDasharray="5 3" name="Projected" connectNulls />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-widest mt-6 mb-3">Top {TOP_DISEASE_LIMIT} diseases by month (remainder in Other)</p>
+                    <ResponsiveContainer width="100%" height={260}>
+                        <BarChart data={stackedMonthlyData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                             <XAxis dataKey="month" stroke="rgba(255,255,255,0.2)" fontSize={10} tick={{ fill: '#94a3b8' }} />
                             <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tick={{ fill: '#94a3b8' }} />
                             <Tooltip contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }} itemStyle={{ fontSize: '11px' }} />
                             <Legend wrapperStyle={{ fontSize: '10px', color: '#94a3b8' }} />
-                            {topDiseases.slice(0, 5).map((disease, idx) => (
-                                <Bar key={disease._id} dataKey={disease._id} stackId="a" fill={COLORS[idx % COLORS.length]} radius={idx === 4 ? [4, 4, 0, 0] : [0, 0, 0, 0]} />
+                            {stackedBarKeys.map((key, idx) => (
+                                <Bar key={key} dataKey={key} stackId="a" fill={COLORS[idx % COLORS.length]} name={key} />
                             ))}
                         </BarChart>
                     </ResponsiveContainer>
+                    </>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-16 text-gray-500 bg-white/5 rounded-xl border border-dashed border-white/10">
                         <ChartBarIcon className="h-10 w-10 mb-3 opacity-20" />
@@ -870,6 +1053,78 @@ const Analytics = () => {
                     </div>
                 )}
             </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                {distributionChart.pie.length > 0 && (
+                    <div className="rounded-xl bg-white/5 border border-white/10 p-6 lg:col-span-1">
+                        <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-1">Overall Disease Distribution</h3>
+                        <p className="text-[10px] text-gray-500 mb-4">Top {TOP_DISEASE_LIMIT} only{distributionChart.otherCount > 0 ? ' · Other groups the rest' : ''}</p>
+                        <div className="flex flex-col sm:flex-row items-center gap-4">
+                            <ResponsiveContainer width="100%" height={200}>
+                                <PieChart>
+                                    <Pie data={distributionChart.pie} cx="50%" cy="50%" innerRadius={48} outerRadius={76} dataKey="value" nameKey="name">
+                                        {distributionChart.pie.map((entry, index) => (
+                                            <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip formatter={(v, n) => [`${v} cases`, n]} contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }} />
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="flex-1 space-y-1 max-h-[200px] overflow-y-auto custom-scrollbar">
+                                {distributionChart.pie.map((d, idx) => (
+                                    <div key={d.name} className="flex justify-between gap-2 text-[10px]">
+                                        <span className="text-gray-400 truncate"><span className="inline-block w-2 h-2 rounded-full mr-1" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />{d.name}</span>
+                                        <span className="text-white font-bold tabular-nums">{d.value}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                {diseaseAnalytics?.yearlyTrend?.length > 0 && (
+                    <div className="rounded-xl bg-white/5 border border-white/10 p-6">
+                        <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-4">Year-over-Year — {selectedDisease}</h3>
+                        <ResponsiveContainer width="100%" height={200}>
+                            <BarChart data={diseaseAnalytics.yearlyTrend}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                <XAxis dataKey="year" stroke="rgba(255,255,255,0.2)" fontSize={11} tick={{ fill: '#94a3b8' }} />
+                                <YAxis stroke="rgba(255,255,255,0.2)" fontSize={11} tick={{ fill: '#94a3b8' }} />
+                                <Tooltip contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }} />
+                                <Bar dataKey="count" name="Cases" radius={[4, 4, 0, 0]}>
+                                    {diseaseAnalytics.yearlyTrend.map((entry, index) => (
+                                        <Cell key={`yr-${index}`} fill={COLORS[index % COLORS.length]} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                )}
+            </div>
+            </section>
+
+            {/* ── EPIDEMIOLOGICAL RADAR (selected disease) ── */}
+            {diseaseInsights?.demographics && (
+                <div className="rounded-xl bg-white/5 border border-white/10 p-6 mb-8">
+                    <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <ShieldExclamationIcon className="h-4 w-4 text-orange-400" />
+                        Risk Radar — {selectedDisease}
+                    </h3>
+                    <ResponsiveContainer width="100%" height={260}>
+                        <RadarChart data={[
+                            { metric: 'Pediatric', value: clampPercent(diseaseInsights.demographics.child) },
+                            { metric: 'Adult', value: clampPercent(diseaseInsights.demographics.adult) },
+                            { metric: 'Geriatric', value: clampPercent(diseaseInsights.demographics.elderly) },
+                            { metric: 'Growth', value: clampPercent(Math.abs(diseaseInsights.summary?.growthRate || 0)) },
+                            { metric: 'Burden', value: clampPercent(diseaseStats?.prevalenceShare || 0) }
+                        ]}>
+                            <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                            <PolarAngleAxis dataKey="metric" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                            <Radar dataKey="value" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.35} />
+                            <Tooltip contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px' }} />
+                        </RadarChart>
+                    </ResponsiveContainer>
+                </div>
+            )}
 
         </div>
     );

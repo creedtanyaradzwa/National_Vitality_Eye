@@ -58,10 +58,25 @@ export const AuthProvider = ({ children }) => {
         if (user.role === 'admin') return true;
         
         const rolePermissions = {
-            doctor: ['view:patients', 'create:patients', 'edit:patients', 'view:records', 'create:records', 'edit:records', 'view:analytics', 'use:ai_predictor'],
-            nurse: ['view:patients', 'create:patients', 'view:records', 'create:records', 'view:analytics'],
-            data_entry: ['view:patients', 'create:patients', 'edit:patients', 'view:records', 'create:records'],
-            viewer: ['view:patients', 'view:records', 'view:analytics']
+            doctor: [
+                'view:patients', 'create:patients', 'edit:patients', 
+                'view:records', 'create:records', 'edit:records', 
+                'view:analytics', 'use:ai_predictor', 'view:logs'
+            ],
+            nurse: [
+                'view:patients', 'create:patients', 
+                'view:records', 'create:records', 
+                'view:analytics', 'use:ai_predictor', 'view:logs'
+            ],
+            data_entry: [
+                'view:patients', 'create:patients', 'edit:patients', 
+                'view:records', 'create:records', 
+                'view:analytics', 'use:ai_predictor', 'view:logs'
+            ],
+            viewer: [
+                'view:patients', 'view:records', 
+                'view:analytics', 'use:ai_predictor', 'view:logs'
+            ]
         };
         
         const permissions = rolePermissions[user.role] || [];

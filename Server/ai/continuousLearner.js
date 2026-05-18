@@ -123,6 +123,19 @@ class ContinuousLearner {
 
     // ============ CORE LEARNING FUNCTIONS ============
 
+    // Calculate age from DOB
+    calculateAge(dob) {
+        if (!dob) return null;
+        const birthDate = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    }
+
     // Process a single new record
     processNewRecord(record, patientProfile = null) {
         if (!record || !record.disease) {
@@ -233,7 +246,7 @@ class ContinuousLearner {
         
         // Update patient demographics if available
         if (patientProfile) {
-            const age = patientProfile.age;
+            const age = patientProfile.age || this.calculateAge(patientProfile.dateOfBirth);
             const gender = patientProfile.gender;
             
             if (age !== null && typeof age === 'number') {
@@ -344,11 +357,13 @@ class ContinuousLearner {
                 this.safeAverage(provStat.vitalSignsAverages.temperature.sum, provStat.vitalSignsAverages.temperature.count);
         }
         
-        if (patientProfile && patientProfile.age !== null) {
-            const age = patientProfile.age;
-            if (age < 18) provStat.ageGroups.child++;
-            else if (age < 65) provStat.ageGroups.adult++;
-            else provStat.ageGroups.elderly++;
+        if (patientProfile) {
+            const age = patientProfile.age || this.calculateAge(patientProfile.dateOfBirth);
+            if (age !== null && typeof age === 'number') {
+                if (age < 18) provStat.ageGroups.child++;
+                else if (age < 65) provStat.ageGroups.adult++;
+                else provStat.ageGroups.elderly++;
+            }
         }
         
         // Update symptom correlations
@@ -398,7 +413,9 @@ class ContinuousLearner {
         let processed = 0;
         for (const record of records) {
             if (record && record.disease) {
-                this.processNewRecord(record);
+                // If the record has a populated patientId, use it as the profile
+                const profile = record.patientId && typeof record.patientId === 'object' ? record.patientId : null;
+                this.processNewRecord(record, profile);
                 processed++;
             }
         }
@@ -442,7 +459,7 @@ class ContinuousLearner {
                     if (symptomCount > 0) {
                         const contribution = this.safePercentage(symptomCount, pattern.count, symptomWeight / validSymptoms.length);
                         symptomScore += contribution;
-                        reasons.push(`${symptom} (${Math.round(contribution)}% match)`);
+                        reasons.push(`${symptom} shows strong clinical correlation (${Math.round(contribution)}% weight)`);
                     }
                 });
                 symptomScore = Math.min(symptomScore, symptomWeight);
@@ -457,7 +474,7 @@ class ContinuousLearner {
             if (provinceCount > 0) {
                 provinceScore = this.safePercentage(provinceCount, pattern.count, provinceWeight);
                 totalScore += provinceScore;
-                reasons.push(`${validProvince} prevalence (${Math.round(provinceScore)}%)`);
+                reasons.push(`Regional epidemiological prevalence in ${validProvince} (${Math.round(provinceScore)}%)`);
             }
             totalPossibleScore += provinceWeight;
             
@@ -470,7 +487,7 @@ class ContinuousLearner {
                 if (monthlyTotal > 0) {
                     seasonalScore = Math.min((monthCount / monthlyTotal) * seasonalWeight, seasonalWeight);
                     totalScore += seasonalScore;
-                    reasons.push(`Seasonal pattern (${Math.round(seasonalScore)}%)`);
+                    reasons.push(`Alignment with historical seasonal transmission cycles (${Math.round(seasonalScore)}%)`);
                 }
             }
             totalPossibleScore += seasonalWeight;
@@ -486,7 +503,7 @@ class ContinuousLearner {
                 const ageGroupCount = pattern.ageGroups[ageGroup] || 0;
                 ageScore = this.safePercentage(ageGroupCount, pattern.count, ageWeight);
                 totalScore += ageScore;
-                reasons.push(`Age group (${ageGroup} - ${Math.round(ageScore)}%)`);
+                reasons.push(`Demographic susceptibility: ${ageGroup} cohort (${Math.round(ageScore)}%)`);
             }
             totalPossibleScore += ageWeight;
             
@@ -497,7 +514,7 @@ class ContinuousLearner {
                 const genderCount = pattern.genderStats[patientGender] || 0;
                 genderScore = this.safePercentage(genderCount, pattern.count, genderWeight);
                 totalScore += genderScore;
-                reasons.push(`Gender (${patientGender} - ${Math.round(genderScore)}%)`);
+                reasons.push(`Biological gender correlation: ${patientGender} (${Math.round(genderScore)}%)`);
             }
             totalPossibleScore += genderWeight;
             
@@ -513,7 +530,7 @@ class ContinuousLearner {
                 });
                 riskScore = Math.min(riskScore, riskWeight);
                 totalScore += riskScore;
-                if (riskScore > 0) reasons.push(`Risk factors (${Math.round(riskScore)}%)`);
+                if (riskScore > 0) reasons.push(`Specific clinical risk factor alignment (${Math.round(riskScore)}%)`);
             }
             totalPossibleScore += riskWeight;
             
@@ -527,7 +544,7 @@ class ContinuousLearner {
                 const tempMatch = Math.max(0, 100 - (tempDiff * 10)) / 100;
                 vitalsScore += tempMatch * (vitalsWeight / 5);
                 vitalsMatched++;
-                if (tempMatch > 0.5) reasons.push(`Temperature pattern (${Math.round(tempMatch * 100)}% match)`);
+                if (tempMatch > 0.5) reasons.push(`Homeostatic deviation: Temperature match (${Math.round(tempMatch * 100)}%)`);
             }
             
             if (patientVitals && pattern.vitalSignsAverages.heartRate.avg && patientVitals.heartRate) {
@@ -535,7 +552,7 @@ class ContinuousLearner {
                 const hrMatch = Math.max(0, 100 - (hrDiff * 5)) / 100;
                 vitalsScore += hrMatch * (vitalsWeight / 5);
                 vitalsMatched++;
-                if (hrMatch > 0.5) reasons.push(`Heart rate pattern (${Math.round(hrMatch * 100)}% match)`);
+                if (hrMatch > 0.5) reasons.push(`Cardiovascular pattern: Heart rate match (${Math.round(hrMatch * 100)}%)`);
             }
             
             if (patientVitals && pattern.vitalSignsAverages.systolicBP.avg && patientVitals.systolicBP) {
@@ -543,7 +560,7 @@ class ContinuousLearner {
                 const bpMatch = Math.max(0, 100 - (bpDiff * 3)) / 100;
                 vitalsScore += bpMatch * (vitalsWeight / 5);
                 vitalsMatched++;
-                if (bpMatch > 0.5) reasons.push(`Blood pressure pattern (${Math.round(bpMatch * 100)}% match)`);
+                if (bpMatch > 0.5) reasons.push(`Hemodynamic pattern: Blood pressure match (${Math.round(bpMatch * 100)}%)`);
             }
             
             if (patientVitals && pattern.vitalSignsAverages.oxygenSaturation.avg && patientVitals.oxygenSaturation) {
@@ -551,7 +568,7 @@ class ContinuousLearner {
                 const o2Match = Math.max(0, 100 - (o2Diff * 20)) / 100;
                 vitalsScore += o2Match * (vitalsWeight / 5);
                 vitalsMatched++;
-                if (o2Match > 0.5) reasons.push(`Oxygen saturation pattern (${Math.round(o2Match * 100)}% match)`);
+                if (o2Match > 0.5) reasons.push(`Respiratory pattern: O₂ saturation match (${Math.round(o2Match * 100)}%)`);
             }
             
             if (patientVitals && pattern.vitalSignsAverages.respiratoryRate?.avg && patientVitals.respiratoryRate) {
@@ -559,7 +576,7 @@ class ContinuousLearner {
                 const rrMatch = Math.max(0, 100 - (rrDiff * 10)) / 100;
                 vitalsScore += rrMatch * (vitalsWeight / 5);
                 vitalsMatched++;
-                if (rrMatch > 0.5) reasons.push(`Respiratory rate pattern (${Math.round(rrMatch * 100)}% match)`);
+                if (rrMatch > 0.5) reasons.push(`Ventilatory pattern: Respiratory rate match (${Math.round(rrMatch * 100)}%)`);
             }
             
             vitalsScore = Math.min(vitalsScore, vitalsWeight);
@@ -575,7 +592,7 @@ class ContinuousLearner {
                         const conditionCount = pattern.chronicConditions.get(condition) || 0;
                         chronicScore += this.safePercentage(conditionCount, pattern.count, chronicWeight / normConditions.length);
                         if (conditionCount > 0) {
-                            reasons.push(`${condition} history (${Math.round((conditionCount / pattern.count) * 100)}% correlation)`);
+                            reasons.push(`Medical history: ${condition} co-morbidity (${Math.round((conditionCount / pattern.count) * 100)}% correlation)`);
                         }
                     }
                 });
@@ -592,7 +609,7 @@ class ContinuousLearner {
                     const familyCount = pattern.familyHistory.get(condition) || 0;
                     familyScore += this.safePercentage(familyCount, pattern.count, familyWeight / normFamilyAll.length);
                     if (familyCount > 0) {
-                        reasons.push(`Family history: ${condition} (${Math.round((familyCount / pattern.count) * 100)}% correlation)`);
+                        reasons.push(`Hereditary risk: Family history of ${condition} (${Math.round((familyCount / pattern.count) * 100)}% correlation)`);
                     }
                 });
                 familyScore = Math.min(familyScore, familyWeight);
@@ -669,15 +686,15 @@ class ContinuousLearner {
         if (age !== null && typeof age === 'number') {
             if (age > 65) {
                 riskScore += 20;
-                riskFactors.push(`Elderly patient (${age} years) +20`);
-                recommendations.push("Regular geriatric assessment");
+                riskFactors.push(`Geriatric age group (Age: ${age}) increases clinical risk complexity (+20)`);
+                recommendations.push("Prioritize comprehensive geriatric assessment and multi-morbidity screening");
             } else if (age < 5) {
                 riskScore += 15;
-                riskFactors.push(`Young child (${age} years) +15`);
-                recommendations.push("Pediatric specialist review");
+                riskFactors.push(`Pediatric age group (Age: ${age}) indicates heightened physiological vulnerability (+15)`);
+                recommendations.push("Urgent pediatric specialist evaluation for age-specific clinical manifestations");
             } else if (age > 50) {
                 riskScore += 8;
-                riskFactors.push(`Middle age (${age} years) +8`);
+                riskFactors.push(`Advancing age (Age: ${age}) correlates with increased risk of chronic pathology (+8)`);
             }
         }
         
@@ -690,8 +707,8 @@ class ContinuousLearner {
             if (condition.status !== "Controlled") conditionScore += 5;
             
             riskScore = Math.min(riskScore + conditionScore, 100);
-            riskFactors.push(`${condition.condition} (${condition.status}, ${condition.severity}) +${conditionScore}`);
-            recommendations.push(`Regular monitoring for ${condition.condition}`);
+            riskFactors.push(`Comorbidity: ${condition.condition} (${condition.status}, ${condition.severity} severity) (+${conditionScore})`);
+            recommendations.push(`Strict monitoring and management protocol for ${condition.condition}`);
         });
         
         // 3. FAMILY HISTORY (max 25)
@@ -705,8 +722,8 @@ class ContinuousLearner {
         if (allFamilyConditions.length > 0) {
             const familyRisk = Math.min(allFamilyConditions.length * 5, 25);
             riskScore = Math.min(riskScore + familyRisk, 100);
-            riskFactors.push(`Family history (${allFamilyConditions.join(", ")}) +${familyRisk}`);
-            recommendations.push("Genetic counseling recommended");
+            riskFactors.push(`Genetic predisposition: Family history of ${allFamilyConditions.join(", ")} (+${familyRisk})`);
+            recommendations.push("Consider genetic counseling and targeted screening for hereditary conditions");
         }
         
         // 4. VITAL SIGNS ABNORMALITIES (max 40)
@@ -715,20 +732,20 @@ class ContinuousLearner {
             if (vitals.bmi) {
                 if (vitals.bmi > 30) {
                     riskScore = Math.min(riskScore + 10, 100);
-                    riskFactors.push(`Obesity (BMI ${vitals.bmi}) +10`);
-                    recommendations.push("Nutritional counseling");
+                    riskFactors.push(`Metabolic risk: Obesity (BMI: ${vitals.bmi}) (+10)`);
+                    recommendations.push("Nutritional counseling and metabolic risk factor assessment");
                 } else if (vitals.bmi < 18.5) {
                     riskScore = Math.min(riskScore + 8, 100);
-                    riskFactors.push(`Underweight (BMI ${vitals.bmi}) +8`);
-                    recommendations.push("Nutritional support");
+                    riskFactors.push(`Nutritional risk: Underweight (BMI: ${vitals.bmi}) (+8)`);
+                    recommendations.push("Nutritional support and investigation of underlying causes");
                 }
             }
             if (vitals.bloodPressure) {
                 const { systolic, diastolic } = vitals.bloodPressure;
                 if (systolic > 140 || diastolic > 90) {
                     riskScore = Math.min(riskScore + 12, 100);
-                    riskFactors.push(`Hypertension (${systolic}/${diastolic}) +12`);
-                    recommendations.push("Blood pressure monitoring");
+                    riskFactors.push(`Cardiovascular risk: Hypertension (${systolic}/${diastolic} mmHg) (+12)`);
+                    recommendations.push("Serial blood pressure monitoring and antihypertensive evaluation");
                 }
             }
             if (vitals.heartRate && (vitals.heartRate > 100 || vitals.heartRate < 60)) {

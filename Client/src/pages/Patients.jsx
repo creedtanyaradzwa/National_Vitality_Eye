@@ -14,7 +14,8 @@ import {
     SparklesIcon,
     ArrowPathIcon,
     ShieldCheckIcon,
-    ExclamationTriangleIcon
+    ExclamationTriangleIcon,
+    CommandLineIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -31,6 +32,11 @@ const Patients = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [showModal, setShowModal] = useState(false);
     const [editingPatient, setEditingPatient] = useState(null);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalResults, setTotalResults] = useState(0);
+    const [limit] = useState(10);
+    
     const [formData, setFormData] = useState({
         nationalId: '',
         firstName: '',
@@ -47,12 +53,15 @@ const Patients = () => {
 
     useEffect(() => {
         loadPatients();
-    }, []);
+    }, [page]);
 
     const loadPatients = async () => {
+        setLoading(true);
         try {
-            const response = await getPatients();
-            setPatients(response.data);
+            const response = await getPatients(page, limit);
+            setPatients(response.data.patients);
+            setTotalPages(response.data.pages);
+            setTotalResults(response.data.total);
         } catch {
             toast.error('Failed to load patients');
         } finally {
@@ -62,25 +71,35 @@ const Patients = () => {
 
     const handleSearch = async () => {
         if (!searchTerm.trim()) {
+            setPage(1);
             loadPatients();
             return;
         }
         
+        setLoading(true);
         try {
             const response = await getPatientByNationalId(searchTerm);
             if (response.data) {
                 setPatients([response.data]);
+                setTotalPages(1);
+                setTotalResults(1);
             } else {
                 setPatients([]);
+                setTotalPages(0);
+                setTotalResults(0);
                 toast.info('No patient found with that National ID');
             }
         } catch (error) {
             if (error.response?.status === 404) {
                 setPatients([]);
+                setTotalPages(0);
+                setTotalResults(0);
                 toast.info('No patient found with that National ID');
             } else {
                 toast.error('Search failed');
             }
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -305,7 +324,7 @@ const Patients = () => {
                                             <td className="px-8 py-5 whitespace-nowrap text-right">
                                                 <div className="flex justify-end space-x-2">
                                                     <button
-                                                        onClick={() => navigate(`/patients/${patient._id}`)}
+                                                        onClick={() => navigate('/records', { state: { selectedPatient: patient } })}
                                                         className="p-2.5 rounded-xl bg-brand-dark-800 border border-white/5 text-gray-500 hover:text-cyber-blue hover:border-cyber-blue/30 transition-all duration-300"
                                                         title="ACCESS_NODE"
                                                     >
@@ -336,6 +355,42 @@ const Patients = () => {
                         </table>
                     </div>
                 </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                    <div className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
+                            Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, totalResults)} of {totalResults} Citizens
+                        </p>
+                        <div className="flex items-center space-x-2">
+                            <button
+                                onClick={() => setPage(p => Math.max(1, p - 1))}
+                                disabled={page === 1}
+                                className="px-4 py-2 rounded-xl bg-brand-dark-900 border border-white/5 text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-all font-mono text-xs uppercase tracking-widest"
+                            >
+                                Previous
+                            </button>
+                            <div className="flex items-center space-x-1">
+                                {[...Array(totalPages)].map((_, i) => (
+                                    <button
+                                        key={i + 1}
+                                        onClick={() => setPage(i + 1)}
+                                        className={`w-10 h-10 rounded-xl border transition-all font-mono text-xs ${page === i + 1 ? 'bg-cyber-blue/10 border-cyber-blue text-cyber-blue shadow-[0_0_15px_rgba(0,242,255,0.1)]' : 'bg-brand-dark-900 border-white/5 text-gray-500 hover:text-white'}`}
+                                    >
+                                        {i + 1}
+                                    </button>
+                                ))}
+                            </div>
+                            <button
+                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                                disabled={page === totalPages}
+                                className="px-4 py-2 rounded-xl bg-brand-dark-900 border border-white/5 text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-all font-mono text-xs uppercase tracking-widest"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Registration Modal */}

@@ -13,12 +13,53 @@ router.use(protect, isApproved);
 // GET all patients
 router.get("/", hasPermission("view:patients"), async (req, res) => {
     try {
-        const patients = await Patient.find().select("-clinicalProfile");
-        res.json(patients);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        // Security: Filter patients created by user or linked via medical records
+        const accessFilter = await getPatientAccessFilter(req.user);
+
+        const [patients, total] = await Promise.all([
+            Patient.find(accessFilter)
+                .select("-clinicalProfile")
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+            Patient.countDocuments(accessFilter)
+        ]);
+
+        res.json({
+            patients,
+            total,
+            page,
+            pages: Math.ceil(total / limit)
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
+
+// Helper for patient access filtering
+async function getPatientAccessFilter(user) {
+    if (user.role === 'admin') return {};
+
+    // Get IDs of patients from medical records created by or tagged to the user
+    const MedicalRecord = require("../models/MedicalRecord");
+    const recordPatients = await MedicalRecord.distinct("patientId", {
+        $or: [
+            { createdBy: user._id },
+            { taggedUsers: user._id }
+        ]
+    });
+
+    return {
+        $or: [
+            { createdBy: user._id },
+            { _id: { $in: recordPatients } }
+        ]
+    };
+}
 
 // POST create patient
 router.post("/", hasPermission("create:patients"), async (req, res) => {

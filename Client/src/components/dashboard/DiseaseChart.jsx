@@ -41,7 +41,7 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
-const DiseaseChart = ({ data, selectedDisease, onSelectDisease, diseaseTrends }) => {
+const DiseaseChart = ({ data, totalCases: propTotalCases, selectedDisease, onSelectDisease, diseaseTrends }) => {
     const [chartType, setChartType] = useState('bar');
 
     if (!data || data.length === 0) {
@@ -58,7 +58,7 @@ const DiseaseChart = ({ data, selectedDisease, onSelectDisease, diseaseTrends })
         );
     }
 
-    const totalCases = data.reduce((sum, d) => sum + d.count, 0);
+    const totalCases = propTotalCases || data.reduce((sum, d) => sum + d.count, 0);
 
     const chartData = data.slice(0, 8).map((item, index) => ({
         name: item._id,

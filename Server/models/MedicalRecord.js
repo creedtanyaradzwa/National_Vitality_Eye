@@ -34,7 +34,7 @@ const medicalRecordSchema = new mongoose.Schema({
     },
     visitType: {
         type: String,
-        enum: ["Emergency", "Outpatient", "Inpatient", "Follow-up", "Consultation", "Home Visit"],
+        enum: ["Emergency", "Outpatient", "Inpatient", "Follow-up", "Consultation", "Home Visit", "Telemedicine"],
         default: "Outpatient"
     },
     admissionId: String,

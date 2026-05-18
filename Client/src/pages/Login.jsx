@@ -10,7 +10,8 @@ import {
   HomeIcon,
   UserPlusIcon,
   EyeIcon,
-  EyeSlashIcon
+  EyeSlashIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 
 const Login = () => {

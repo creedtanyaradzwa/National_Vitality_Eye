@@ -15,6 +15,17 @@
   html {
     scroll-behavior: smooth;
   }
+
+  /* Global Select & Option Styling Fix */
+  select {
+    @apply cursor-pointer;
+    color-scheme: dark;
+  }
+
+  select option {
+    background-color: #0f172a !important; /* bg-slate-900 */
+    color: #ffffff !important;
+  }
 }
 
 @layer components {

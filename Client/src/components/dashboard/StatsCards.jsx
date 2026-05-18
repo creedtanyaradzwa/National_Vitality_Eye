@@ -24,8 +24,8 @@ const StatsCards = ({ stats, diseaseStats, selectedDisease }) => {
             trend: null
         },
         {
-            title: 'Total Cases',
-            value: stats.totalCases || 0,
+            title: 'Total Clinical Events',
+            value: stats.totalClinicalEvents || 0,
             icon: DocumentTextIcon,
             color: 'text-cyber-green',
             borderColor: 'border-cyber-green/20',

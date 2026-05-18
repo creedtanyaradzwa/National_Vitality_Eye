@@ -116,9 +116,11 @@ self.addEventListener('fetch', event => {
                     }
                     return response;
                 });
-            }).catch(() => {
+            }).catch(async () => {
                 // Return offline page for navigation
                 if (event.request.mode === 'navigate') {
+                    const cachedIndex = await caches.match('/index.html');
+                    if (cachedIndex) return cachedIndex;
                     return caches.match('/offline.html');
                 }
                 return new Response('Offline - Content not available', { status: 404 });
@@ -135,9 +137,14 @@ self.addEventListener('fetch', event => {
                 return cachedResponse;
             }
             if (event.request.mode === 'navigate') {
+                const cachedIndex = await caches.match('/index.html');
+                if (cachedIndex) return cachedIndex;
                 return caches.match('/offline.html');
             }
-            return new Response('Offline', { status: 503 });
+            return new Response('Offline - Content not available', { 
+                status: 503,
+                headers: { 'Content-Type': 'text/plain' }
+            });
         })
     );
 });

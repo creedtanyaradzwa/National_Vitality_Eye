@@ -27,6 +27,35 @@ const io = new Server(server, {
     }
 });
 
+const jwt = require("jsonwebtoken");
+const User = require("./models/User");
+
+io.use((socket, next) => {
+    const token = socket.handshake.query.token;
+    if (!token) {
+        console.log("WebSocket connection rejected: No token provided");
+        return next(new Error("Authentication error"));
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        User.findById(decoded.id).select("-password").then(user => {
+            if (!user) {
+                console.log("WebSocket connection rejected: User not found");
+                return next(new Error("Authentication error"));
+            }
+            socket.user = user;
+            next();
+        }).catch(err => {
+            console.log("WebSocket connection error:", err.message);
+            next(new Error("Authentication error"));
+        });
+    } catch (err) {
+        console.log("WebSocket connection rejected:", err.message);
+        next(new Error("Authentication error"));
+    }
+});
+
 global.io = io;
 
 // ============ MIDDLEWARE ============
@@ -63,15 +92,15 @@ async function initializeAI() {
     try {
         console.log("\n🧠 Initializing Enhanced Clinical AI...");
         
-        // Load ALL records — confidentiality only controls patient portal visibility,
-        // not what feeds the AI. The AI never receives patient names or IDs;
-        // it only reads clinical fields (disease, symptoms, vitals, province, disposition).
+        // Load ALL records with patient data — confidentiality only controls patient portal visibility,
+        // not what feeds the AI. The AI never receives patient names or identifiers;
+        // it only reads clinical fields (disease, symptoms, vitals, province, disposition, age, gender).
         const records = await MedicalRecord.find({})
+            .populate('patientId', 'dateOfBirth gender clinicalProfile')
             .select({
                 disease: 1, symptoms: 1, province: 1, visitDate: 1,
-                vitalSigns: 1, disposition: 1
-            })
-            .limit(5000);
+                vitalSigns: 1, disposition: 1, patientId: 1
+            });
         
         console.log(`📊 Found ${records.length} medical records`);
         
@@ -79,7 +108,12 @@ async function initializeAI() {
         const emitter = new AlertEmitter(io);
         
         if (records.length > 0) {
-            ai.processBatch(records);
+            // Process batch with patient profiles
+            records.forEach(record => {
+                if (record && record.disease) {
+                    ai.processNewRecord(record, record.patientId);
+                }
+            });
             console.log(`✅ AI trained with ${records.length} records`);
         }
         

@@ -22,7 +22,10 @@ async function resetSysAdmin() {
                     password: hashedPassword,
                     approvalStatus: "approved",
                     isActive: true,
-                    role: "admin"
+                    role: "admin",
+                    hospitalName: "National Referral Hospital",
+                    province: "Harare",
+                    position: "System Administrator"
                 }
             }
         );

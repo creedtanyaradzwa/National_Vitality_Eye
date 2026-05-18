@@ -32,7 +32,7 @@ export const changeUserRole = (userId, newRole) => API.patch(`/api/auth/admin/us
 export const getUserDocuments = (userId) => API.get(`/api/auth/admin/users/${userId}/documents`);
 
 // ============ PATIENTS ============
-export const getPatients = () => API.get('/patients');
+export const getPatients = (page = 1, limit = 10) => API.get(`/patients?page=${page}&limit=${limit}`);
 export const getPatient = (id) => API.get(`/patients/${id}`);
 export const getPatientByNationalId = (nationalId) => API.get(`/patients/national/${nationalId}`);
 export const createPatient = (data) => API.post('/patients', data);
@@ -49,7 +49,7 @@ export const updateVitalSigns = (id, data) => API.patch(`/patients/${id}/vital-s
 export const addRiskFactor = (id, data) => API.post(`/patients/${id}/risk-factor`, data);
 
 // ============ MEDICAL RECORDS ============
-export const getMedicalRecords = () => API.get('/medical-records');
+export const getMedicalRecords = (page = 1, limit = 10) => API.get(`/medical-records?page=${page}&limit=${limit}`);
 export const getPatientRecords = (patientId) => API.get(`/medical-records/patient/${patientId}`);
 export const createMedicalRecord = (data) => API.post('/medical-records', data);
 export const updateMedicalRecord = (id, data) => API.patch(`/medical-records/${id}`, data);
@@ -57,24 +57,51 @@ export const deleteMedicalRecord = (id) => API.delete(`/medical-records/${id}`);
 export const getHospitalStaff = () => API.get('/medical-records/staff');
 
 // ============ STATISTICS ============
+export const getGlobalSummary = () => API.get('/medical-records/stats/summary');
 export const getTopDiseases = () => API.get('/medical-records/stats/top-diseases');
+export const getAllDiseases = () => API.get('/medical-records/stats/all-diseases');
+export const getSystemLoad = () => {
+    const url = `/medical-records/stats/system-load`;
+    return API.get(url);
+};
 // GET province statistics with optional period and disease filter
 export const getProvinceStats = (period = 'all', disease = '') => {
     const params = new URLSearchParams({ period });
     if (disease && disease !== 'All Diseases') params.append('disease', disease);
-    return API.get(`/medical-records/stats/by-province?${params.toString()}`);
+    return API.get(`/medical-records/stats/by-province?${params.toString()}`).then((res) => {
+        const payload = res.data;
+        if (Array.isArray(payload)) {
+            return {
+                ...res,
+                data: {
+                    provinces: payload.map((p) => ({
+                        ...p,
+                        total: p.total ?? p.count ?? 0
+                    })),
+                    summary: null
+                }
+            };
+        }
+        const provinces = (payload?.provinces || []).map((p) => ({
+            ...p,
+            total: p.total ?? p.count ?? 0
+        }));
+        return { ...res, data: { provinces, summary: payload?.summary ?? null } };
+    });
 };
 // GET deep analytics for a specific disease
 export const getDiseaseAnalytics = (disease) => API.get(`/medical-records/stats/disease-analytics/${encodeURIComponent(disease)}`);
 export const getMonthlyTrends = () => API.get('/medical-records/stats/monthly-trends');
+export const getGrowthRate    = () => API.get('/medical-records/stats/growth-rate');
+export const getPrevalence    = () => API.get('/medical-records/stats/prevalence');
 
 // ============ AI ============
 export const getAIStatus = () => API.get('/ai/status');
 export const predictDisease = (data) => API.post('/ai/predict', data);
 export const getAlerts = () => API.get('/ai/alerts');
 export const getPatientRisk = (patientId) => API.get(`/ai/risk/${patientId}`);
-export const getDiseaseTrends = (disease) => API.get(`/ai/trends/${disease}`);
-export const getDiseaseInsights = (disease) => API.get(`/ai/disease-insights/${disease}`);
+export const getDiseaseTrends = (disease) => API.get(`/medical-records/stats/disease-trends/${encodeURIComponent(disease)}`);
+export const getDiseaseInsights = (disease) => API.get(`/ai/disease-insights/${encodeURIComponent(disease)}`);
 export const getAIStats = () => API.get('/ai/stats');
 export const getPatientTriage = (patientId) => API.get(`/ai/patient-triage/${patientId}`);
 export const predictTriage = (data) => API.post('/ai/predict-triage', data);

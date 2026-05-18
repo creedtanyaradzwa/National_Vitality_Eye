@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
+import { useAuth } from './useAuth';
 
 // Create context
 const AlertContext = React.createContext(undefined);
@@ -16,18 +17,37 @@ export const useAlerts = () => {
 
 // Alert Provider Component
 export const AlertProvider = ({ children }) => {
+    const { token, isAuthenticated } = useAuth();
     const [alerts, setAlerts] = useState([]);
     const [activeAlerts, setActiveAlerts] = useState([]);
     const [connected, setConnected] = useState(false);
     const socketRef = useRef(null);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
-        if (!token) return;
+        // Only connect if authenticated and token exists
+        if (!isAuthenticated || !token) {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+                socketRef.current = null;
+            }
+            setConnected(false);
+            return;
+        }
 
-        const newSocket = io('http://localhost:5000', {
+        console.log('🔌 Attempting WebSocket connection...');
+
+        // Use window.location.hostname to connect to the same host
+        const socketUrl = window.location.hostname === 'localhost' 
+            ? 'http://localhost:5000' 
+            : `http://${window.location.hostname}:5000`;
+
+        const newSocket = io(socketUrl, {
             query: { token },
-            transports: ['websocket', 'polling']
+            transports: ['websocket', 'polling'],
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            timeout: 20000
         });
 
         socketRef.current = newSocket;
@@ -37,9 +57,18 @@ export const AlertProvider = ({ children }) => {
             console.log('✅ WebSocket connected');
         });
 
-        newSocket.on('disconnect', () => {
+        newSocket.on('connect_error', (error) => {
+            console.error('❌ WebSocket connection error:', error.message);
             setConnected(false);
-            console.log('❌ WebSocket disconnected');
+        });
+
+        newSocket.on('disconnect', (reason) => {
+            setConnected(false);
+            console.log('❌ WebSocket disconnected:', reason);
+            if (reason === "io server disconnect") {
+                // the disconnection was initiated by the server, you need to reconnect manually
+                newSocket.connect();
+            }
         });
 
         newSocket.on('welcome', (data) => {
@@ -74,7 +103,7 @@ export const AlertProvider = ({ children }) => {
                 newSocket.disconnect();
             }
         };
-    }, []);
+    }, [token, isAuthenticated]);
 
     const acknowledgeAlert = (alertId) => {
         if (socketRef.current) {
