@@ -113,41 +113,64 @@ const AIVitalsInsights = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-            <div className="max-w-4xl mx-auto px-4 py-8">
-                <button onClick={() => navigate('/patient/dashboard')} className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition">
-                    <ArrowLeftIcon className="h-5 w-5" /> Back to Dashboard
+        <div className="min-h-screen bg-brand-dark-950 text-gray-200">
+            {/* Futuristic Background */}
+            <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/5 blur-[120px] rounded-full" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/5 blur-[120px] rounded-full" />
+            </div>
+
+            <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
+                {/* Back Button */}
+                <button 
+                    onClick={() => navigate('/patient/dashboard')} 
+                    className="mb-8 flex items-center space-x-3 text-gray-500 hover:text-white group transition-all duration-300"
+                >
+                    <div className="p-2 rounded-xl bg-brand-dark-900 border border-white/5 group-hover:border-cyber-purple/30 transition-all">
+                        <ArrowLeftIcon className="h-4 w-4 group-hover:-translate-x-1 transition" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Return to Core</span>
                 </button>
 
                 {/* Header */}
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] mb-8">
-                    <div className="rounded-2xl bg-slate-900/80 backdrop-blur-xl p-6 flex justify-between items-center flex-wrap gap-4">
-                        <div className="flex items-center gap-3">
-                            <HeartIcon className="h-8 w-8 text-pink-400" />
+                <div className="glass-card-modern p-8 mb-10 border border-white/5">
+                    <div className="flex justify-between items-center flex-wrap gap-6">
+                        <div className="flex items-center space-x-6">
+                            <div className="relative w-16 h-16">
+                                <div className="absolute inset-0 rounded-2xl bg-cyber-blue/20 blur-xl animate-pulse" />
+                                <div className="relative w-16 h-16 rounded-2xl bg-brand-dark-900 border border-cyber-blue/30 flex items-center justify-center shadow-2xl">
+                                    <HeartIcon className="h-8 w-8 text-cyber-blue" />
+                                </div>
+                            </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-white">Vitals AI Insights</h1>
-                                <p className="text-gray-400 text-sm">Anomaly detection and trend analysis on your vital signs</p>
+                                <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic">Vitals Analysis Matrix</h1>
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mt-1">
+                                    Neural anomaly detection and trend projections
+                                </p>
                             </div>
                         </div>
-                        <button onClick={load} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition">
-                            <ArrowPathIcon className="h-5 w-5 text-gray-400" />
+                        <button 
+                            onClick={load} 
+                            className="p-3 rounded-xl bg-brand-dark-900 border border-white/5 hover:border-cyber-blue/30 text-gray-500 hover:text-cyber-blue transition-all duration-300 shadow-xl"
+                        >
+                            <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
                         </button>
                     </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-2 mb-6">
+                <div className="flex rounded-2xl bg-brand-dark-950 p-1.5 mb-10 border border-white/5 w-fit">
                     {[
-                        { key: 'anomalies', label: 'Anomaly Alerts' },
-                        { key: 'trends',    label: 'Trend Analysis' }
+                        { key: 'anomalies', label: 'Anomaly Protocol' },
+                        { key: 'trends',    label: 'Trend Matrix' }
                     ].map(tab => (
                         <button
                             key={tab.key}
                             onClick={() => setActiveTab(tab.key)}
-                            className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                            className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
                                 activeTab === tab.key
-                                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                                    : 'bg-white/5 text-gray-400 hover:text-white border border-white/10'
+                                    ? 'bg-brand-dark-800 text-white shadow-lg border border-white/10'
+                                    : 'text-gray-500 hover:text-gray-300'
                             }`}
                         >
                             {tab.label}
@@ -157,23 +180,25 @@ const AIVitalsInsights = () => {
 
                 {/* ── ANOMALIES TAB ── */}
                 {activeTab === 'anomalies' && data && (
-                    <div className="space-y-5">
+                    <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* Status banner */}
-                        <div className={`rounded-xl p-4 border flex items-center gap-3 ${
+                        <div className={`glass-card-modern p-6 border flex items-center gap-6 ${
                             data.allClear
-                                ? 'bg-green-500/10 border-green-500/20'
-                                : 'bg-yellow-500/10 border-yellow-500/20'
+                                ? 'border-cyber-green/20 bg-cyber-green/5'
+                                : 'border-yellow-500/20 bg-yellow-500/5'
                         }`}>
-                            {data.allClear
-                                ? <CheckCircleIcon className="h-6 w-6 text-green-400 flex-shrink-0" />
-                                : <ShieldExclamationIcon className="h-6 w-6 text-yellow-400 flex-shrink-0" />}
+                            <div className={`p-3 rounded-xl bg-brand-dark-950 border ${data.allClear ? 'border-cyber-green/30' : 'border-yellow-500/30'} shadow-2xl`}>
+                                {data.allClear
+                                    ? <CheckCircleIcon className="h-6 w-6 text-cyber-green animate-pulse" />
+                                    : <ShieldExclamationIcon className="h-6 w-6 text-yellow-400 animate-pulse" />}
+                            </div>
                             <div>
-                                <p className={`font-bold text-sm ${data.allClear ? 'text-green-300' : 'text-yellow-300'}`}>
-                                    {data.message}
+                                <p className={`text-sm font-black uppercase tracking-widest italic ${data.allClear ? 'text-cyber-green' : 'text-yellow-400'}`}>
+                                    {data.message.toUpperCase()}
                                 </p>
                                 {data.latestDate && (
-                                    <p className="text-xs text-gray-500 mt-0.5">
-                                        Based on {data.recordsAnalyzed} records · Latest: {new Date(data.latestDate).toLocaleDateString()}
+                                    <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mt-1">
+                                        ANALYTICS_NODE: {data.recordsAnalyzed} SAMPLES · TIMESTAMP: {new Date(data.latestDate).toLocaleDateString().toUpperCase()}
                                     </p>
                                 )}
                             </div>
@@ -181,61 +206,88 @@ const AIVitalsInsights = () => {
 
                         {/* Latest vitals quick view */}
                         {data.latestVitals && Object.keys(data.latestVitals).length > 0 && (
-                            <div className="rounded-xl bg-white/5 border border-white/10 p-5">
-                                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Latest Recorded Vitals</h3>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    {data.latestVitals.temperature && (
-                                        <div className="bg-white/5 rounded-lg p-3 text-center">
-                                            <p className="text-[10px] text-gray-500 uppercase">Temp</p>
-                                            <p className={`text-lg font-black ${data.latestVitals.temperature > 38.5 ? 'text-red-400' : 'text-white'}`}>
-                                                {data.latestVitals.temperature}°C
+                            <div className="glass-card-modern p-8 border border-white/5">
+                                <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em] mb-8 italic flex items-center gap-3">
+                                    <div className="w-1 h-1 rounded-full bg-cyber-blue" />
+                                    LIVE BIOMETRIC TELEMETRY
+                                </h3>
+                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                                    {[
+                                        { label: 'Thermal', val: data.latestVitals.temperature ? `${data.latestVitals.temperature}°C` : null, warn: data.latestVitals.temperature > 38.5 },
+                                        { label: 'Cardiac', val: data.latestVitals.heartRate ? `${data.latestVitals.heartRate} BPM` : null, warn: data.latestVitals.heartRate > 100 },
+                                        { label: 'Pressure', val: data.latestVitals.bloodPressure?.systolic ? `${data.latestVitals.bloodPressure.systolic}/${data.latestVitals.bloodPressure.diastolic}` : null, warn: data.latestVitals.bloodPressure?.systolic > 140 },
+                                        { label: 'Oxygen', val: data.latestVitals.oxygenSaturation ? `${data.latestVitals.oxygenSaturation}%` : null, warn: data.latestVitals.oxygenSaturation < 95 }
+                                    ].map((v, i) => v.val && (
+                                        <div key={i} className="bg-brand-dark-900 border border-white/5 rounded-2xl p-5 shadow-xl hover:border-cyber-blue/30 transition-all duration-300">
+                                            <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-1">{v.label}</p>
+                                            <p className={`text-xl font-black italic tracking-tighter ${v.warn ? 'text-red-400' : 'text-white'}`}>
+                                                {v.val}
                                             </p>
                                         </div>
-                                    )}
-                                    {data.latestVitals.heartRate && (
-                                        <div className="bg-white/5 rounded-lg p-3 text-center">
-                                            <p className="text-[10px] text-gray-500 uppercase">Heart Rate</p>
-                                            <p className={`text-lg font-black ${data.latestVitals.heartRate > 100 ? 'text-orange-400' : 'text-white'}`}>
-                                                {data.latestVitals.heartRate} bpm
-                                            </p>
-                                        </div>
-                                    )}
-                                    {data.latestVitals.bloodPressure?.systolic && (
-                                        <div className="bg-white/5 rounded-lg p-3 text-center">
-                                            <p className="text-[10px] text-gray-500 uppercase">Blood Pressure</p>
-                                            <p className={`text-lg font-black ${data.latestVitals.bloodPressure.systolic > 140 ? 'text-red-400' : 'text-white'}`}>
-                                                {data.latestVitals.bloodPressure.systolic}/{data.latestVitals.bloodPressure.diastolic}
-                                            </p>
-                                        </div>
-                                    )}
-                                    {data.latestVitals.oxygenSaturation && (
-                                        <div className="bg-white/5 rounded-lg p-3 text-center">
-                                            <p className="text-[10px] text-gray-500 uppercase">O₂ Sat</p>
-                                            <p className={`text-lg font-black ${data.latestVitals.oxygenSaturation < 95 ? 'text-red-400' : 'text-white'}`}>
-                                                {data.latestVitals.oxygenSaturation}%
-                                            </p>
-                                        </div>
-                                    )}
+                                    ))}
                                 </div>
                             </div>
                         )}
 
                         {/* Anomaly cards */}
                         {data.anomalies?.length > 0 ? (
-                            <div className="space-y-4">
-                                <h3 className="text-sm font-bold text-white uppercase tracking-widest">Detected Anomalies</h3>
-                                {data.anomalies.map((a, i) => <VitalCard key={i} anomaly={a} />)}
+                            <div className="space-y-6">
+                                <h3 className="text-[10px] font-bold text-red-400 uppercase tracking-[0.3em] italic flex items-center gap-3">
+                                    <ExclamationTriangleIcon className="h-4 w-4" /> BIOMETRIC IRREGULARITIES DETECTED
+                                </h3>
+                                {data.anomalies.map((a, i) => {
+                                    const s = severityStyle(a.severity);
+                                    return (
+                                        <div key={i} className={`glass-card-modern p-8 border transition-all duration-500 hover:scale-[1.01] ${
+                                            a.severity === 'HIGH' ? 'border-red-500/20 bg-red-500/5' : 'border-yellow-500/20 bg-yellow-500/5'
+                                        }`}>
+                                            <div className="flex justify-between items-start mb-8 flex-wrap gap-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 rounded-xl bg-brand-dark-950 border flex items-center justify-center shadow-xl ${a.severity === 'HIGH' ? 'border-red-500/30' : 'border-yellow-500/30'}`}>
+                                                        <ShieldExclamationIcon className={`h-6 w-6 ${a.severity === 'HIGH' ? 'text-red-400' : 'text-yellow-400'}`} />
+                                                    </div>
+                                                    <h3 className={`text-2xl font-black italic tracking-tighter uppercase ${a.severity === 'HIGH' ? 'text-red-400' : 'text-yellow-400'}`}>{a.vital}</h3>
+                                                </div>
+                                                <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${s.badge}`}>
+                                                    SEVERITY_{a.severity}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                                <div className="bg-brand-dark-950/50 rounded-2xl p-6 border border-white/5">
+                                                    <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-2">LAST_READING</p>
+                                                    <p className={`text-3xl font-black italic tracking-tighter ${a.severity === 'HIGH' ? 'text-red-400' : 'text-yellow-400'}`}>{a.current}</p>
+                                                </div>
+                                                {a.yourAverage && (
+                                                    <div className="bg-brand-dark-950/50 rounded-2xl p-6 border border-white/5">
+                                                        <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-2">NEURAL_BASELINE</p>
+                                                        <p className="text-3xl font-black text-white italic tracking-tighter">{a.yourAverage}</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="text-sm font-bold text-gray-400 uppercase tracking-widest leading-relaxed mb-6 italic">{a.message}</p>
+                                            <div className="flex items-start gap-4 p-5 rounded-2xl bg-brand-dark-900 border border-white/5 border-l-cyber-blue border-l-4">
+                                                <InformationCircleIcon className="h-5 w-5 text-cyber-blue flex-shrink-0 mt-0.5" />
+                                                <p className="text-[10px] font-black text-white uppercase tracking-widest italic">{a.action}</p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         ) : data.hasData ? (
-                            <div className="text-center py-10 bg-white/5 rounded-xl border border-white/10">
-                                <CheckCircleIcon className="h-12 w-12 text-green-400 mx-auto mb-3" />
-                                <p className="text-white font-semibold">All vitals look normal</p>
-                                <p className="text-gray-500 text-sm mt-1">No unusual readings compared to your personal baseline</p>
+                            <div className="glass-card-modern py-20 text-center border border-white/5">
+                                <div className="w-20 h-20 rounded-3xl bg-brand-dark-950 border border-cyber-green/30 flex items-center justify-center mx-auto mb-6 shadow-2xl animate-pulse">
+                                    <CheckCircleIcon className="h-10 w-10 text-cyber-green" />
+                                </div>
+                                <h3 className="text-xl font-black text-white uppercase tracking-tighter italic mb-2">Protocol Optimal</h3>
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">No unusual signals detected relative to historical baseline.</p>
                             </div>
                         ) : (
-                            <div className="text-center py-10 bg-white/5 rounded-xl border border-white/10">
-                                <HeartIcon className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                                <p className="text-gray-400">No vital sign records found yet</p>
+                            <div className="glass-card-modern py-20 text-center border border-white/5">
+                                <div className="w-20 h-20 rounded-3xl bg-brand-dark-950 border border-white/5 flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                                    <HeartIcon className="h-10 w-10 text-gray-700" />
+                                </div>
+                                <h3 className="text-xl font-black text-white uppercase tracking-tighter italic mb-2">Telemetry Offline</h3>
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Awaiting sequential biometric samples for analysis.</p>
                             </div>
                         )}
                     </div>
@@ -243,81 +295,107 @@ const AIVitalsInsights = () => {
 
                 {/* ── TRENDS TAB ── */}
                 {activeTab === 'trends' && trends && (
-                    <div className="space-y-5">
+                    <div className="space-y-8 animate-in fade-in slide-in-from-top-4 duration-500">
                         {/* Summary banner */}
-                        <div className="rounded-xl bg-white/5 border border-white/10 p-4">
-                            <p className="text-sm text-gray-300">{trends.summary}</p>
+                        <div className="glass-card-modern p-6 border border-white/5 bg-brand-dark-900/50">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-relaxed italic">
+                                NEURAL_TREND_OUTPUT: {trends.summary.toUpperCase()}
+                            </p>
                             {trends.hasData && (
-                                <div className="flex gap-4 mt-3 text-xs text-gray-500">
-                                    <span className="text-green-400 font-bold">{trends.improvingCount} improving</span>
-                                    <span className="text-orange-400 font-bold">{trends.worseningCount} worsening</span>
-                                    <span className="text-blue-400 font-bold">{(trends.trends?.length || 0) - trends.improvingCount - trends.worseningCount} stable</span>
+                                <div className="flex gap-6 mt-4 pt-4 border-t border-white/5">
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-cyber-green shadow-[0_0_10px_rgba(57,255,20,0.5)]" />
+                                        <span className="text-[9px] font-black text-cyber-green uppercase tracking-[0.2em]">{trends.improvingCount} OPTIMISING</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-red-400 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+                                        <span className="text-[9px] font-black text-red-400 uppercase tracking-[0.2em]">{trends.worseningCount} REGRESSING</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 rounded-full bg-cyber-blue shadow-[0_0_10px_rgba(0,242,255,0.5)]" />
+                                        <span className="text-[9px] font-black text-cyber-blue uppercase tracking-[0.2em]">{(trends.trends?.length || 0) - trends.improvingCount - trends.worseningCount} STABLE</span>
+                                    </div>
                                 </div>
                             )}
                         </div>
 
                         {trends.trends?.length > 0 ? trends.trends.map((t, i) => (
-                            <div key={i} className={`rounded-xl border p-5 ${trendBg(t.trend)}`}>
-                                <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
-                                    <div className="flex items-center gap-3">
-                                        <span className={`text-2xl font-black ${trendColor(t.trend)}`}>{trendIcon(t.trend)}</span>
+                            <div key={i} className={`glass-card-modern p-8 border transition-all duration-500 ${
+                                t.trend === 'IMPROVING' ? 'border-cyber-green/10 hover:border-cyber-green/30' :
+                                t.trend === 'WORSENING' ? 'border-red-500/10 hover:border-red-500/30' :
+                                'border-white/5 hover:border-cyber-blue/30'
+                            }`}>
+                                <div className="flex justify-between items-center mb-8 flex-wrap gap-6">
+                                    <div className="flex items-center gap-6">
+                                        <div className={`w-14 h-14 rounded-2xl bg-brand-dark-950 border flex items-center justify-center shadow-xl ${
+                                            t.trend === 'IMPROVING' ? 'border-cyber-green/30' :
+                                            t.trend === 'WORSENING' ? 'border-red-500/30' :
+                                            'border-cyber-blue/30'
+                                        }`}>
+                                            <span className={`text-3xl font-black italic ${trendColor(t.trend)}`}>{trendIcon(t.trend)}</span>
+                                        </div>
                                         <div>
-                                            <h3 className="font-bold text-white text-sm">{t.vital}</h3>
-                                            <p className="text-xs text-gray-400">{t.explanation}</p>
+                                            <h3 className="text-xl font-black text-white uppercase tracking-tighter italic mb-1">{t.vital}</h3>
+                                            <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{t.explanation}</p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-8">
                                         <div className="text-right">
-                                            <p className="text-[10px] text-gray-500 uppercase">Latest</p>
-                                            <p className={`text-lg font-black ${trendColor(t.trend)}`}>{t.latestValue}</p>
+                                            <p className="text-[8px] font-bold text-gray-600 uppercase tracking-[0.2em] mb-1">LATEST_VALUE</p>
+                                            <p className={`text-2xl font-black italic tracking-tighter ${trendColor(t.trend)}`}>{t.latestValue}</p>
                                         </div>
-                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${
-                                            t.trend === 'IMPROVING' ? 'bg-green-500/20 text-green-400 border-green-500/30' :
-                                            t.trend === 'WORSENING' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' :
-                                            'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                                        <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                            t.trend === 'IMPROVING' ? 'bg-cyber-green/10 text-cyber-green border-cyber-green/20' :
+                                            t.trend === 'WORSENING' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                            'bg-cyber-blue/10 text-cyber-blue border-cyber-blue/20'
                                         }`}>{t.trend}</span>
                                     </div>
                                 </div>
 
                                 {t.chartData?.length > 1 && (
-                                    <ResponsiveContainer width="100%" height={120}>
-                                        <LineChart data={t.chartData}>
-                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                            <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={9} tick={{ fill: '#94a3b8' }} />
-                                            <YAxis stroke="rgba(255,255,255,0.2)" fontSize={9} tick={{ fill: '#94a3b8' }} width={35} />
-                                            <Tooltip contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }} />
-                                            <Line
-                                                type="monotone" dataKey="value" strokeWidth={2}
-                                                stroke={t.trend === 'IMPROVING' ? '#10b981' : t.trend === 'WORSENING' ? '#f97316' : '#3b82f6'}
-                                                dot={{ r: 3 }} name={t.vital}
-                                            />
-                                        </LineChart>
-                                    </ResponsiveContainer>
+                                    <div className="h-[150px] w-full bg-brand-dark-950/50 rounded-2xl p-4 border border-white/5">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <LineChart data={t.chartData}>
+                                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                                <XAxis dataKey="date" hide />
+                                                <YAxis hide domain={['dataMin - 1', 'dataMax + 1']} />
+                                                <Tooltip contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '10px' }} />
+                                                <Line
+                                                    type="monotone" dataKey="value" strokeWidth={3}
+                                                    stroke={t.trend === 'IMPROVING' ? '#39ff14' : t.trend === 'WORSENING' ? '#ef4444' : '#00f2ff'}
+                                                    dot={{ r: 3, fill: '#0a0a0b', strokeWidth: 2 }} activeDot={{ r: 5 }} name="Biometric Signal"
+                                                />
+                                            </LineChart>
+                                        </ResponsiveContainer>
+                                    </div>
                                 )}
 
                                 {!t.inNormalRange && (
-                                    <div className="mt-3 flex items-center gap-2 text-xs text-yellow-400">
-                                        <ExclamationTriangleIcon className="h-3.5 w-3.5 flex-shrink-0" />
-                                        Latest reading is outside the normal range — mention this to your doctor.
+                                    <div className="mt-6 flex items-center gap-3 p-4 rounded-xl bg-yellow-500/5 border border-yellow-500/10">
+                                        <ExclamationTriangleIcon className="h-4 w-4 text-yellow-400 flex-shrink-0" />
+                                        <p className="text-[9px] font-black text-yellow-400 uppercase tracking-widest italic">OUT_OF_NOMINAL_RANGE: PROTOCOL REQUIRES CLINICAL REVIEW</p>
                                     </div>
                                 )}
                             </div>
                         )) : (
-                            <div className="text-center py-10 bg-white/5 rounded-xl border border-white/10">
-                                <HeartIcon className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                                <p className="text-gray-400">Not enough records to analyse trends yet</p>
-                                <p className="text-gray-500 text-sm mt-1">Trends appear after 2 or more visits with recorded vitals</p>
+                            <div className="glass-card-modern py-20 text-center border border-white/5">
+                                <div className="w-20 h-20 rounded-3xl bg-brand-dark-950 border border-white/5 flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                                    <HeartIcon className="h-10 w-10 text-gray-700" />
+                                </div>
+                                <h3 className="text-xl font-black text-white uppercase tracking-tighter italic mb-2">Insufficient History</h3>
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Trend analysis requires a minimum of 2 telemetry samples.</p>
                             </div>
                         )}
                     </div>
                 )}
 
                 {/* Disclaimer */}
-                <div className="mt-6 rounded-xl bg-white/5 border border-white/10 p-4 flex items-start gap-3">
-                    <InformationCircleIcon className="h-5 w-5 text-gray-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-gray-500 leading-relaxed">
-                        Anomaly detection compares your latest readings against your own historical baseline.
-                        This is not a medical diagnosis. Always consult your doctor for medical advice.
+                <div className="mt-10 p-6 rounded-2xl bg-brand-dark-900 border border-white/5 border-l-cyber-blue border-l-4 flex items-start gap-4">
+                    <InformationCircleIcon className="h-5 w-5 text-cyber-blue flex-shrink-0" />
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
+                        NEURAL ANALYSIS DISCLAIMER: IRREGULARITY DETECTION IS BASED ON DEVIATIONS FROM PERSONAL ARCHIVE LOGS. 
+                        IT DOES NOT SUBSTITUTE FOR A PRIMARY DIAGNOSTIC PROTOCOL. 
+                        CONTACT A MEDICAL PROVIDER FOR INTERPRETATION.
                     </p>
                 </div>
             </div>

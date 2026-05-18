@@ -76,127 +76,170 @@ const PatientVitals = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-            <div className="max-w-7xl mx-auto px-4 py-8">
-                <button onClick={() => navigate('/patient/dashboard')} className="mb-6 flex items-center space-x-2 text-gray-400 hover:text-white">
-                    <ArrowLeftIcon className="h-5 w-5" />
-                    <span>Back to Dashboard</span>
+        <div className="min-h-screen bg-brand-dark-950 text-gray-200">
+            {/* Futuristic Background */}
+            <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/5 blur-[120px] rounded-full" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/5 blur-[120px] rounded-full" />
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 py-8 relative z-10">
+                {/* Back Button */}
+                <button 
+                    onClick={() => navigate('/patient/dashboard')} 
+                    className="mb-8 flex items-center space-x-3 text-gray-500 hover:text-white group transition-all duration-300"
+                >
+                    <div className="p-2 rounded-xl bg-brand-dark-900 border border-white/5 group-hover:border-cyber-purple/30 transition-all">
+                        <ArrowLeftIcon className="h-4 w-4 group-hover:-translate-x-1 transition" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Return to Core</span>
                 </button>
 
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] mb-8">
-                    <div className="rounded-2xl bg-slate-900/80 backdrop-blur-xl p-6">
-                        <div className="flex items-center space-x-3">
-                            <HeartIcon className="h-8 w-8 text-white" />
-                            <h1 className="text-2xl font-bold text-white">My Vital Signs</h1>
+                {/* Header */}
+                <div className="glass-card-modern p-8 mb-10 border border-white/5">
+                    <div className="flex items-center space-x-6">
+                        <div className="relative w-16 h-16">
+                            <div className="absolute inset-0 rounded-2xl bg-cyber-blue/20 blur-xl animate-pulse" />
+                            <div className="relative w-16 h-16 rounded-2xl bg-brand-dark-900 border border-cyber-blue/30 flex items-center justify-center shadow-2xl">
+                                <HeartIcon className="h-8 w-8 text-cyber-blue" />
+                            </div>
                         </div>
-                        <p className="text-gray-400 mt-2">{vitals.length} vital sign records found</p>
+                        <div>
+                            <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic">Vitals Monitor</h1>
+                            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mt-1">
+                                <span className="text-cyber-blue">{vitals.length}</span> Physiological Data Streams Active
+                            </p>
+                        </div>
                     </div>
                 </div>
 
                 {vitals.length === 0 ? (
-                    <div className="text-center py-12 bg-white/5 rounded-xl">
-                        <HeartIcon className="h-12 w-12 mx-auto text-gray-600 mb-3" />
-                        <p className="text-gray-400">No vital signs recorded yet</p>
-                        <p className="text-sm text-gray-500 mt-1">Vital signs will appear here after your medical visits</p>
+                    <div className="glass-card-modern py-20 text-center border border-white/5">
+                        <div className="w-20 h-20 rounded-3xl bg-brand-dark-950 border border-white/5 flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                            <HeartIcon className="h-10 w-10 text-gray-700" />
+                        </div>
+                        <h3 className="text-xl font-black text-white uppercase tracking-tighter italic mb-2">No Biometric Feed</h3>
+                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Awaiting initial physiological assessment logs.</p>
                     </div>
                 ) : (
                     <>
-                        {/* Latest Vitals Cards - Most recent first */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                            <div className="bg-white/5 rounded-xl p-4 text-center">
-                                <p className="text-xs text-gray-400">Latest Temperature</p>
-                                <p className="text-2xl font-bold text-white">{vitals[0]?.vitalSigns?.temperature || '-'}°C</p>
-                                <p className="text-xs text-gray-500 mt-1">{vitals[0]?.visitDate ? new Date(vitals[0].visitDate).toLocaleDateString() : ''}</p>
+                        {/* Latest Vitals Cards */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+                            {[
+                                { label: 'Temperature', value: `${vitals[0]?.vitalSigns?.temperature || '-'}°C`, color: 'text-orange-400', border: 'border-orange-500/20' },
+                                { label: 'Heart Rate', value: `${vitals[0]?.vitalSigns?.heartRate || '-'} BPM`, color: 'text-red-400', border: 'border-red-500/20' },
+                                { label: 'Blood Pressure', value: vitals[0]?.vitalSigns?.bloodPressure?.systolic ? `${vitals[0].vitalSigns.bloodPressure.systolic}/${vitals[0].vitalSigns.bloodPressure.diastolic}` : '-', color: 'text-cyber-purple', border: 'border-cyber-purple/20' },
+                                { label: 'Body Weight', value: `${vitals[0]?.vitalSigns?.weight || '-'} KG`, color: 'text-cyber-blue', border: 'border-cyber-blue/20' }
+                            ].map((card, i) => (
+                                <div key={i} className={`stat-card border ${card.border}`}>
+                                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{card.label}</p>
+                                    <p className={`text-3xl font-black italic tracking-tighter ${card.color}`}>{card.value}</p>
+                                    <p className="text-[8px] font-bold text-gray-700 uppercase tracking-[0.2em] mt-3">
+                                        FEED: {vitals[0]?.visitDate ? new Date(vitals[0].visitDate).toLocaleDateString().toUpperCase() : ''}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Analysis Section */}
+                        <div className="glass-card-modern p-8 border border-white/5 mb-10">
+                            {/* Chart Selector */}
+                            <div className="flex flex-wrap gap-3 mb-10">
+                                {[
+                                    { id: 'bloodPressure', label: 'Biometric Pressure' },
+                                    { id: 'temperature', label: 'Thermal Profile' },
+                                    { id: 'heartRate', label: 'Cardiac Rhythm' },
+                                    { id: 'weight', label: 'Mass Matrix' }
+                                ].map(btn => (
+                                    <button 
+                                        key={btn.id}
+                                        onClick={() => setSelectedVital(btn.id)} 
+                                        className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${
+                                            selectedVital === btn.id 
+                                                ? 'bg-brand-dark-800 text-cyber-blue border-cyber-blue/30 shadow-[0_0_20px_rgba(0,242,255,0.1)]' 
+                                                : 'bg-brand-dark-950 text-gray-600 border-white/5 hover:text-gray-400'
+                                        }`}
+                                    >
+                                        {btn.label}
+                                    </button>
+                                ))}
                             </div>
-                            <div className="bg-white/5 rounded-xl p-4 text-center">
-                                <p className="text-xs text-gray-400">Latest Heart Rate</p>
-                                <p className="text-2xl font-bold text-white">{vitals[0]?.vitalSigns?.heartRate || '-'} bpm</p>
-                                <p className="text-xs text-gray-500 mt-1">{vitals[0]?.visitDate ? new Date(vitals[0].visitDate).toLocaleDateString() : ''}</p>
-                            </div>
-                            <div className="bg-white/5 rounded-xl p-4 text-center">
-                                <p className="text-xs text-gray-400">Latest BP</p>
-                                <p className="text-2xl font-bold text-white">{vitals[0]?.vitalSigns?.bloodPressure?.systolic || '-'}/{vitals[0]?.vitalSigns?.bloodPressure?.diastolic || '-'}</p>
-                                <p className="text-xs text-gray-500 mt-1">{vitals[0]?.visitDate ? new Date(vitals[0].visitDate).toLocaleDateString() : ''}</p>
-                            </div>
-                            <div className="bg-white/5 rounded-xl p-4 text-center">
-                                <p className="text-xs text-gray-400">Latest Weight</p>
-                                <p className="text-2xl font-bold text-white">{vitals[0]?.vitalSigns?.weight || '-'} kg</p>
-                                <p className="text-xs text-gray-500 mt-1">{vitals[0]?.visitDate ? new Date(vitals[0].visitDate).toLocaleDateString() : ''}</p>
+
+                            {/* Chart */}
+                            <div className="h-[400px] w-full bg-brand-dark-950/50 rounded-2xl p-6 border border-white/5">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    {selectedVital === 'bloodPressure' ? (
+                                        <LineChart data={chartData}>
+                                            <defs>
+                                                <linearGradient id="colorSys" x1="0" y1="0" x2="0" y2="1">
+                                                    <stop offset="5%" stopColor="#bc13fe" stopOpacity={0.1}/>
+                                                    <stop offset="95%" stopColor="#bc13fe" stopOpacity={0}/>
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                            <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
+                                            <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
+                                            <Tooltip 
+                                                contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px', fontWeight: 'bold' }}
+                                                itemStyle={{ textTransform: 'uppercase', letterSpacing: '0.1em' }}
+                                            />
+                                            <Line type="monotone" dataKey="systolicBP" stroke="#bc13fe" strokeWidth={3} dot={{ r: 4, fill: '#0a0a0b', strokeWidth: 2 }} activeDot={{ r: 6, strokeWidth: 0 }} name="SYSTOLIC" />
+                                            <Line type="monotone" dataKey="diastolicBP" stroke="#00f2ff" strokeWidth={3} dot={{ r: 4, fill: '#0a0a0b', strokeWidth: 2 }} activeDot={{ r: 6, strokeWidth: 0 }} name="DIASTOLIC" />
+                                        </LineChart>
+                                    ) : selectedVital === 'temperature' ? (
+                                        <LineChart data={chartData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                            <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
+                                            <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} domain={['dataMin - 1', 'dataMax + 1']} />
+                                            <Tooltip contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }} />
+                                            <Line type="monotone" dataKey="temperature" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, fill: '#0a0a0b', strokeWidth: 2 }} name="TEMP_CELSIUS" />
+                                        </LineChart>
+                                    ) : selectedVital === 'heartRate' ? (
+                                        <LineChart data={chartData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                            <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
+                                            <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
+                                            <Tooltip contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }} />
+                                            <Line type="monotone" dataKey="heartRate" stroke="#ef4444" strokeWidth={3} dot={{ r: 4, fill: '#0a0a0b', strokeWidth: 2 }} name="HEART_RATE_BPM" />
+                                        </LineChart>
+                                    ) : (
+                                        <LineChart data={chartData}>
+                                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                                            <XAxis dataKey="date" stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
+                                            <YAxis stroke="rgba(255,255,255,0.2)" fontSize={10} tickLine={false} axisLine={false} />
+                                            <Tooltip contentStyle={{ backgroundColor: '#0a0a0b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', fontSize: '10px' }} />
+                                            <Line type="monotone" dataKey="weight" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, fill: '#0a0a0b', strokeWidth: 2 }} name="MASS_KG" />
+                                        </LineChart>
+                                    )}
+                                </ResponsiveContainer>
                             </div>
                         </div>
 
-                        {/* Chart Selector */}
-                        <div className="flex flex-wrap gap-2 mb-6">
-                            <button onClick={() => setSelectedVital('bloodPressure')} className={`px-4 py-2 rounded-lg text-sm ${selectedVital === 'bloodPressure' ? 'bg-purple-500 text-white' : 'bg-white/10 text-gray-400'}`}>Blood Pressure</button>
-                            <button onClick={() => setSelectedVital('temperature')} className={`px-4 py-2 rounded-lg text-sm ${selectedVital === 'temperature' ? 'bg-purple-500 text-white' : 'bg-white/10 text-gray-400'}`}>Temperature</button>
-                            <button onClick={() => setSelectedVital('heartRate')} className={`px-4 py-2 rounded-lg text-sm ${selectedVital === 'heartRate' ? 'bg-purple-500 text-white' : 'bg-white/10 text-gray-400'}`}>Heart Rate</button>
-                            <button onClick={() => setSelectedVital('weight')} className={`px-4 py-2 rounded-lg text-sm ${selectedVital === 'weight' ? 'bg-purple-500 text-white' : 'bg-white/10 text-gray-400'}`}>Weight</button>
-                        </div>
-
-                        {/* Chart - Oldest to newest (left to right) */}
-                        <div className="bg-white/5 rounded-xl p-4 h-80">
-                            <ResponsiveContainer width="100%" height="100%">
-                                {selectedVital === 'bloodPressure' ? (
-                                    <LineChart data={chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                        <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
-                                        <YAxis stroke="rgba(255,255,255,0.3)" />
-                                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none' }} />
-                                        <Line type="monotone" dataKey="systolicBP" stroke="#f59e0b" name="Systolic BP" />
-                                        <Line type="monotone" dataKey="diastolicBP" stroke="#ec4899" name="Diastolic BP" />
-                                    </LineChart>
-                                ) : selectedVital === 'temperature' ? (
-                                    <LineChart data={chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                        <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
-                                        <YAxis stroke="rgba(255,255,255,0.3)" />
-                                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none' }} />
-                                        <Line type="monotone" dataKey="temperature" stroke="#f59e0b" name="Temperature (°C)" />
-                                    </LineChart>
-                                ) : selectedVital === 'heartRate' ? (
-                                    <LineChart data={chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                        <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
-                                        <YAxis stroke="rgba(255,255,255,0.3)" />
-                                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none' }} />
-                                        <Line type="monotone" dataKey="heartRate" stroke="#ef4444" name="Heart Rate (bpm)" />
-                                    </LineChart>
-                                ) : (
-                                    <LineChart data={chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                        <XAxis dataKey="date" stroke="rgba(255,255,255,0.3)" />
-                                        <YAxis stroke="rgba(255,255,255,0.3)" />
-                                        <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: 'none' }} />
-                                        <Line type="monotone" dataKey="weight" stroke="#8b5cf6" name="Weight (kg)" />
-                                    </LineChart>
-                                )}
-                            </ResponsiveContainer>
-                        </div>
-
-                        {/* Data Table - Newest to oldest (latest first) */}
-                        <div className="bg-white/5 rounded-xl overflow-hidden mt-6">
-                            <div className="p-4 border-b border-white/10">
-                                <h3 className="font-semibold text-white">Vitals History (Latest First)</h3>
+                        {/* Historical Log */}
+                        <div className="glass-card-modern border border-white/5 overflow-hidden">
+                            <div className="p-6 border-b border-white/5 bg-brand-dark-900/50 flex justify-between items-center">
+                                <h3 className="text-xl font-black text-white uppercase tracking-tighter italic">Biometric Log History</h3>
+                                <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest italic">Encrypted Sequential Stream</span>
                             </div>
                             <div className="overflow-x-auto">
-                                <table className="min-w-full">
-                                    <thead className="bg-white/5">
+                                <table className="w-full">
+                                    <thead className="bg-brand-dark-950">
                                         <tr>
-                                            <th className="px-4 py-3 text-left text-xs text-gray-400">Date</th>
-                                            <th className="px-4 py-3 text-left text-xs text-gray-400">Temp</th>
-                                            <th className="px-4 py-3 text-left text-xs text-gray-400">BP</th>
-                                            <th className="px-4 py-3 text-left text-xs text-gray-400">HR</th>
-                                            <th className="px-4 py-3 text-left text-xs text-gray-400">Weight</th>
+                                            <th className="px-6 py-4 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Timestamp</th>
+                                            <th className="px-6 py-4 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Thermal</th>
+                                            <th className="px-6 py-4 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Pressure</th>
+                                            <th className="px-6 py-4 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Cardiac</th>
+                                            <th className="px-6 py-4 text-left text-[9px] font-black text-gray-500 uppercase tracking-widest">Mass</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody className="divide-y divide-white/5">
                                         {tableData.map((v, i) => (
-                                            <tr key={i} className="border-t border-white/10">
-                                                <td className="px-4 py-2 text-sm text-white">{v.date}</td>
-                                                <td className="px-4 py-2 text-sm text-white">{v.temperature || '-'}°C</td>
-                                                <td className="px-4 py-2 text-sm text-white">{v.systolicBP && v.diastolicBP ? `${v.systolicBP}/${v.diastolicBP}` : '-'}</td>
-                                                <td className="px-4 py-2 text-sm text-white">{v.heartRate || '-'}</td>
-                                                <td className="px-4 py-2 text-sm text-white">{v.weight || '-'} kg</td>
+                                            <tr key={i} className="hover:bg-white/5 transition-colors group">
+                                                <td className="px-6 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-widest">{v.date.toUpperCase()}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-white italic">{v.temperature || '--'}<span className="text-[9px] text-gray-600 ml-0.5">°C</span></td>
+                                                <td className="px-6 py-4 text-xs font-black text-cyber-purple italic">{v.systolicBP && v.diastolicBP ? `${v.systolicBP}/${v.diastolicBP}` : '--'}</td>
+                                                <td className="px-6 py-4 text-xs font-black text-red-400 italic">{v.heartRate || '--'}<span className="text-[9px] text-gray-600 ml-0.5">BPM</span></td>
+                                                <td className="px-6 py-4 text-xs font-black text-cyber-blue italic">{v.weight || '--'}<span className="text-[9px] text-gray-600 ml-0.5">KG</span></td>
                                             </tr>
                                         ))}
                                     </tbody>

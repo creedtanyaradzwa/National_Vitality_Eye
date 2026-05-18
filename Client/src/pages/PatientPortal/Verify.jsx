@@ -48,15 +48,19 @@ const PatientVerify = () => {
 
     if (verifying) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-                <div className="text-center">
-                    <div className="relative">
-                        <div className="w-16 h-16 border-4 border-purple-500/20 rounded-full animate-spin border-t-purple-500 mx-auto"></div>
+            <div className="min-h-screen bg-brand-dark-950 flex items-center justify-center relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/10 blur-[120px] rounded-full animate-pulse" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/10 blur-[120px] rounded-full animate-pulse delay-700" />
+                </div>
+                <div className="relative z-10 text-center">
+                    <div className="relative w-20 h-20 mx-auto mb-6">
+                        <div className="absolute inset-0 rounded-full border-4 border-cyber-blue/20 animate-spin border-t-cyber-blue"></div>
                         <div className="absolute inset-0 flex items-center justify-center">
-                            <ArrowPathIcon className="h-6 w-6 text-purple-400 animate-pulse" />
+                            <ArrowPathIcon className="h-8 w-8 text-cyber-blue animate-pulse" />
                         </div>
                     </div>
-                    <p className="text-gray-400 mt-4">Verifying your email...</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-cyber-blue italic">Verifying Identity Node...</p>
                 </div>
             </div>
         );
@@ -64,21 +68,29 @@ const PatientVerify = () => {
 
     if (success) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-green-500 to-emerald-500 p-[1px] w-full max-w-md">
-                    <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8 text-center">
-                        <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
-                            <CheckCircleIcon className="h-10 w-10 text-green-400" />
+            <div className="min-h-screen bg-brand-dark-950 flex items-center justify-center relative overflow-hidden p-4">
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/10 blur-[120px] rounded-full animate-pulse" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/10 blur-[120px] rounded-full animate-pulse delay-700" />
+                </div>
+
+                <div className="relative z-10 w-full max-w-md">
+                    <div className="glass-card-modern p-10 border border-cyber-green/20 shadow-2xl text-center bg-cyber-green/5">
+                        <div className="relative w-24 h-24 mx-auto mb-8">
+                            <div className="absolute inset-0 rounded-3xl bg-cyber-green/20 blur-2xl animate-pulse" />
+                            <div className="relative w-24 h-24 rounded-3xl bg-brand-dark-900 border border-cyber-green/30 flex items-center justify-center shadow-2xl">
+                                <CheckCircleIcon className="h-12 w-12 text-cyber-green" />
+                            </div>
                         </div>
-                        <h1 className="text-2xl font-bold text-white mb-2">Email Verified!</h1>
-                        <p className="text-gray-400 mb-6">
-                            Your email has been successfully verified. You can now login to your patient portal.
+                        <h1 className="text-3xl font-black text-white tracking-tighter mb-4 uppercase italic">Node Verified</h1>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-cyber-green/70 mb-10 leading-relaxed">
+                            EMAIL IDENTITY PROTOCOL SYNCHRONIZED. REDIRECTING TO CORE INTERFACE...
                         </p>
                         <button
                             onClick={() => navigate('/patient/login')}
-                            className="w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:shadow-lg transition-all duration-300"
+                            className="w-full btn-primary-modern group flex items-center justify-center"
                         >
-                            Go to Login
+                            <span>ENTER PORTAL</span>
                         </button>
                     </div>
                 </div>
@@ -87,26 +99,36 @@ const PatientVerify = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-red-500 to-pink-500 p-[1px] w-full max-w-md">
-                <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8 text-center">
-                    <div className="w-20 h-20 rounded-full bg-red-500/20 flex items-center justify-center mx-auto mb-4">
-                        <XCircleIcon className="h-10 w-10 text-red-400" />
+        <div className="min-h-screen bg-brand-dark-950 flex items-center justify-center relative overflow-hidden p-4">
+            <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/10 blur-[120px] rounded-full animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/10 blur-[120px] rounded-full animate-pulse delay-700" />
+            </div>
+
+            <div className="relative z-10 w-full max-w-md">
+                <div className="glass-card-modern p-10 border border-red-500/20 shadow-2xl text-center bg-red-500/5">
+                    <div className="relative w-24 h-24 mx-auto mb-8">
+                        <div className="absolute inset-0 rounded-3xl bg-red-500/20 blur-2xl animate-pulse" />
+                        <div className="relative w-24 h-24 rounded-3xl bg-brand-dark-900 border border-red-500/30 flex items-center justify-center shadow-2xl">
+                            <XCircleIcon className="h-12 w-12 text-red-400" />
+                        </div>
                     </div>
-                    <h1 className="text-2xl font-bold text-white mb-2">Verification Failed</h1>
-                    <p className="text-gray-400 mb-6">{error}</p>
-                    <div className="space-y-3">
+                    <h1 className="text-2xl font-black text-white tracking-tighter mb-4 uppercase italic">Sync Failure</h1>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-red-300/70 mb-10 leading-relaxed">
+                        {error.toUpperCase()}
+                    </p>
+                    <div className="space-y-4">
                         <button
                             onClick={() => navigate('/patient/login')}
-                            className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300"
+                            className="w-full py-4 rounded-2xl bg-brand-dark-900 border border-white/10 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-white transition-all"
                         >
-                            Go to Login
+                            RETURN TO CORE
                         </button>
                         <button
                             onClick={() => navigate('/patient/register')}
-                            className="w-full py-3 rounded-xl bg-white/10 text-white font-semibold hover:bg-white/20 transition-all duration-300"
+                            className="w-full py-4 rounded-2xl bg-brand-dark-950 border border-red-500/30 text-[10px] font-black uppercase tracking-[0.3em] text-red-400 hover:bg-red-500/10 transition-all"
                         >
-                            Register Again
+                            RE-INITIALIZE REGISTRATION
                         </button>
                     </div>
                 </div>

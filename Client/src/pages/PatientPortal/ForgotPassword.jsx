@@ -32,24 +32,35 @@ const ForgotPassword = () => {
 
     if (submitted) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-md">
-                    <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8 text-center">
-                        <div className="w-20 h-20 rounded-full bg-purple-500/20 flex items-center justify-center mx-auto mb-4">
-                            <EnvelopeIcon className="h-10 w-10 text-purple-400" />
+            <div className="min-h-screen bg-brand-dark-950 flex items-center justify-center relative overflow-hidden p-4">
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/10 blur-[120px] rounded-full animate-pulse" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/10 blur-[120px] rounded-full animate-pulse delay-700" />
+                </div>
+
+                <div className="relative z-10 w-full max-w-md">
+                    <div className="glass-card-modern p-10 border border-white/5 shadow-2xl text-center">
+                        <div className="relative w-24 h-24 mx-auto mb-8">
+                            <div className="absolute inset-0 rounded-3xl bg-cyber-blue/20 blur-2xl animate-pulse" />
+                            <div className="relative w-24 h-24 rounded-3xl bg-brand-dark-900 border border-cyber-blue/30 flex items-center justify-center shadow-2xl">
+                                <EnvelopeIcon className="h-12 w-12 text-cyber-blue" />
+                            </div>
                         </div>
-                        <h1 className="text-2xl font-bold text-white mb-2">Check Your Email</h1>
-                        <p className="text-gray-400 mb-6">
-                            We've sent a password reset link to <strong className="text-purple-400">{email}</strong>
+                        <h1 className="text-3xl font-black text-white tracking-tighter mb-4 uppercase italic">Archive Sync</h1>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-8 leading-relaxed">
+                            Password reset protocol initialized for identifier:<br/>
+                            <span className="text-cyber-blue mt-2 block">{email}</span>
                         </p>
-                        <p className="text-gray-500 text-sm mb-6">
-                            If you don't see it, check your spam folder.
-                        </p>
+                        <div className="p-5 rounded-2xl bg-brand-dark-900 border border-white/5 mb-10">
+                            <p className="text-[9px] font-bold text-gray-600 uppercase tracking-[0.2em] leading-relaxed">
+                                VERIFY INBOX FOR ACCESS KEY RESET DE-CRYPTIONS. IF NULL, CHECK SPAM-NODES.
+                            </p>
+                        </div>
                         <Link
                             to="/patient/login"
-                            className="inline-block w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300 text-center"
+                            className="w-full btn-primary-modern group flex items-center justify-center"
                         >
-                            Back to Login
+                            <span>BACK TO CORE</span>
                         </Link>
                     </div>
                 </div>
@@ -58,30 +69,36 @@ const ForgotPassword = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-md">
-                <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8">
-                    <div className="text-center mb-8">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-4">
-                            <EnvelopeIcon className="h-8 w-8 text-white" />
+        <div className="min-h-screen bg-brand-dark-950 flex items-center justify-center relative overflow-hidden p-4">
+            <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/10 blur-[120px] rounded-full animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/10 blur-[120px] rounded-full animate-pulse delay-700" />
+            </div>
+
+            <div className="relative z-10 w-full max-w-md">
+                <div className="glass-card-modern p-10 border border-white/5 shadow-2xl">
+                    <div className="text-center mb-10">
+                        <div className="relative w-24 h-24 mx-auto mb-6">
+                            <div className="absolute inset-0 rounded-3xl bg-cyber-purple/20 blur-2xl animate-pulse" />
+                            <div className="relative w-24 h-24 rounded-3xl bg-brand-dark-900 border border-cyber-purple/30 flex items-center justify-center shadow-2xl">
+                                <EnvelopeIcon className="h-12 w-12 text-cyber-purple" />
+                            </div>
                         </div>
-                        <h1 className="text-2xl font-bold text-white mb-2">Forgot Password?</h1>
-                        <p className="text-gray-400 text-sm">
-                            Enter your email address and we'll send you a link to reset your password.
-                        </p>
+                        <h1 className="text-3xl font-black text-white tracking-tighter mb-2 uppercase italic">Lost Access?</h1>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">Initiate identity recovery protocol</p>
                     </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label className="block text-gray-300 text-sm font-medium mb-2">Email Address</label>
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-1">Email Identifier</label>
                             <div className="relative">
-                                <EnvelopeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                <EnvelopeIcon className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-                                    placeholder="you@example.com"
+                                    className="w-full pl-14 pr-6 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 focus:outline-none focus:border-cyber-purple/50 focus:ring-4 focus:ring-cyber-purple/5 transition-all duration-500"
+                                    placeholder="user@health.node"
                                     required
                                 />
                             </div>
@@ -90,15 +107,15 @@ const ForgotPassword = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+                            className="w-full btn-primary-modern group"
                         >
-                            {loading ? 'Sending...' : 'Send Reset Link'}
+                            <span>{loading ? 'SYNCING...' : 'INITIATE RESET'}</span>
                         </button>
 
-                        <div className="text-center">
-                            <Link to="/patient/login" className="text-gray-400 hover:text-white text-sm inline-flex items-center">
-                                <ArrowLeftIcon className="h-4 w-4 mr-1" />
-                                Back to Login
+                        <div className="text-center pt-4">
+                            <Link to="/patient/login" className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 hover:text-cyber-purple transition-all flex items-center justify-center gap-2">
+                                <ArrowLeftIcon className="h-3 w-3" />
+                                RETURN_TO_CORE
                             </Link>
                         </div>
                     </form>

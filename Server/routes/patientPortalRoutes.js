@@ -200,10 +200,7 @@ router.get("/records", async (req, res) => {
                     symptoms: 1, primaryDiagnosis: 1, secondaryDiagnoses: 1,
                     disease: 1, differentialDiagnosis: 1, physicalExam: 1,
                     prescribedMedications: 1, treatmentPlan: 1, investigations: 1,
-                    vitalSigns: 1, notes: 1, province: 1, followUp: 1, referrals: 1,
-                    // Explicitly exclude staff-only fields
-                    doctorNotes: 0, nursingNotes: 0,
-                    createdBy: 0, updatedBy: 0, reviewedBy: 0, taggedUsers: 0
+                    vitalSigns: 1, notes: 1, province: 1, followUp: 1, referrals: 1
                 }),
             MedicalRecord.countDocuments(query)
         ]);

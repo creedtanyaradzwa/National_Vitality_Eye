@@ -65,16 +65,29 @@ const ResetPassword = () => {
 
     if (error && !resetSuccess) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-red-500 to-pink-500 p-[1px] w-full max-w-md">
-                    <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8 text-center">
-                        <h1 className="text-2xl font-bold text-white mb-2">Invalid or Expired Link</h1>
-                        <p className="text-gray-400 mb-6">{error}</p>
+            <div className="min-h-screen bg-brand-dark-950 flex items-center justify-center relative overflow-hidden p-4">
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/10 blur-[120px] rounded-full animate-pulse" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/10 blur-[120px] rounded-full animate-pulse delay-700" />
+                </div>
+
+                <div className="relative z-10 w-full max-w-md">
+                    <div className="glass-card-modern p-10 border border-red-500/20 shadow-2xl text-center bg-red-500/5">
+                        <div className="relative w-24 h-24 mx-auto mb-8">
+                            <div className="absolute inset-0 rounded-3xl bg-red-500/20 blur-2xl animate-pulse" />
+                            <div className="relative w-24 h-24 rounded-3xl bg-brand-dark-900 border border-red-500/30 flex items-center justify-center shadow-2xl">
+                                <LockClosedIcon className="h-12 w-12 text-red-400" />
+                            </div>
+                        </div>
+                        <h1 className="text-2xl font-black text-white tracking-tighter mb-4 uppercase italic">Token Corruption</h1>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-red-300/70 mb-8 leading-relaxed">
+                            {error.toUpperCase()}
+                        </p>
                         <Link
                             to="/patient/forgot-password"
-                            className="inline-block w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300 text-center"
+                            className="w-full py-4 rounded-2xl bg-brand-dark-900 border border-red-500/30 text-[10px] font-black uppercase tracking-[0.3em] text-red-400 hover:bg-red-500/10 transition-all duration-300 inline-block"
                         >
-                            Request New Reset Link
+                            RE-INITIALIZE RECOVERY
                         </Link>
                     </div>
                 </div>
@@ -84,21 +97,29 @@ const ResetPassword = () => {
 
     if (resetSuccess) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-green-500 to-emerald-500 p-[1px] w-full max-w-md">
-                    <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8 text-center">
-                        <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-4">
-                            <CheckCircleIcon className="h-10 w-10 text-green-400" />
+            <div className="min-h-screen bg-brand-dark-950 flex items-center justify-center relative overflow-hidden p-4">
+                <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                    <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/10 blur-[120px] rounded-full animate-pulse" />
+                    <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/10 blur-[120px] rounded-full animate-pulse delay-700" />
+                </div>
+
+                <div className="relative z-10 w-full max-w-md">
+                    <div className="glass-card-modern p-10 border border-cyber-green/20 shadow-2xl text-center bg-cyber-green/5">
+                        <div className="relative w-24 h-24 mx-auto mb-8">
+                            <div className="absolute inset-0 rounded-3xl bg-cyber-green/20 blur-2xl animate-pulse" />
+                            <div className="relative w-24 h-24 rounded-3xl bg-brand-dark-900 border border-cyber-green/30 flex items-center justify-center shadow-2xl">
+                                <CheckCircleIcon className="h-12 w-12 text-cyber-green" />
+                            </div>
                         </div>
-                        <h1 className="text-2xl font-bold text-white mb-2">Password Reset!</h1>
-                        <p className="text-gray-400 mb-6">
-                            Your password has been successfully reset. You can now login with your new password.
+                        <h1 className="text-2xl font-black text-white tracking-tighter mb-4 uppercase italic">Key Re-Generated</h1>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-cyber-green/70 mb-8 leading-relaxed">
+                            ACCESS PROTOCOLS UPDATED SUCCESSFULLY. REDIRECTING TO CORE INTERFACE...
                         </p>
                         <Link
                             to="/patient/login"
-                            className="inline-block w-full py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold hover:shadow-lg transition-all duration-300 text-center"
+                            className="w-full btn-primary-modern group flex items-center justify-center"
                         >
-                            Go to Login
+                            <span>MANUAL OVERRIDE</span>
                         </Link>
                     </div>
                 </div>
@@ -107,52 +128,58 @@ const ResetPassword = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-md">
-                <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8">
-                    <div className="text-center mb-8">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-4">
-                            <LockClosedIcon className="h-8 w-8 text-white" />
+        <div className="min-h-screen bg-brand-dark-950 flex items-center justify-center relative overflow-hidden p-4">
+            <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/10 blur-[120px] rounded-full animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/10 blur-[120px] rounded-full animate-pulse delay-700" />
+            </div>
+
+            <div className="relative z-10 w-full max-w-md">
+                <div className="glass-card-modern p-10 border border-white/5 shadow-2xl">
+                    <div className="text-center mb-10">
+                        <div className="relative w-24 h-24 mx-auto mb-6">
+                            <div className="absolute inset-0 rounded-3xl bg-cyber-purple/20 blur-2xl animate-pulse" />
+                            <div className="relative w-24 h-24 rounded-3xl bg-brand-dark-900 border border-cyber-purple/30 flex items-center justify-center shadow-2xl">
+                                <LockClosedIcon className="h-12 w-12 text-cyber-purple" />
+                            </div>
                         </div>
-                        <h1 className="text-2xl font-bold text-white mb-2">Reset Password</h1>
-                        <p className="text-gray-400 text-sm">
-                            Enter your new password below.
-                        </p>
+                        <h1 className="text-3xl font-black text-white tracking-tighter mb-2 uppercase italic">New Access Key</h1>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">Configure high-entropy credentials</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label className="block text-gray-300 text-sm font-medium mb-2">New Password</label>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-1">New Access Identifier</label>
                             <div className="relative">
-                                <LockClosedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                <LockClosedIcon className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                                    className="w-full pl-14 pr-14 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 focus:outline-none focus:border-cyber-purple/50 focus:ring-4 focus:ring-cyber-purple/5 transition-all duration-500"
                                     placeholder="••••••••"
                                     required
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white"
+                                    className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
                                 >
                                     {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                                 </button>
                             </div>
-                            <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+                            <p className="text-[9px] font-bold text-gray-700 uppercase tracking-widest ml-1">MIN_ENTROPY: 8 CHARACTERS</p>
                         </div>
 
-                        <div>
-                            <label className="block text-gray-300 text-sm font-medium mb-2">Confirm New Password</label>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-1">Confirm Identifier</label>
                             <div className="relative">
-                                <LockClosedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                <LockClosedIcon className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                    className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                                    className="w-full pl-14 pr-6 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 focus:outline-none focus:border-cyber-purple/50 focus:ring-4 focus:ring-cyber-purple/5 transition-all duration-500"
                                     placeholder="••••••••"
                                     required
                                 />
@@ -162,15 +189,15 @@ const ResetPassword = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+                            className="w-full btn-primary-modern group mt-4"
                         >
-                            {loading ? 'Resetting...' : 'Reset Password'}
+                            <span>{loading ? 'GENERATING...' : 'RESET ACCESS KEY'}</span>
                         </button>
 
-                        <div className="text-center">
-                            <Link to="/patient/login" className="text-gray-400 hover:text-white text-sm inline-flex items-center">
-                                <ArrowLeftIcon className="h-4 w-4 mr-1" />
-                                Back to Login
+                        <div className="text-center pt-4">
+                            <Link to="/patient/login" className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 hover:text-cyber-purple transition-all flex items-center justify-center gap-2">
+                                <ArrowLeftIcon className="h-3 w-3" />
+                                RETURN_TO_CORE
                             </Link>
                         </div>
                     </form>

@@ -127,67 +127,83 @@ const PatientDashboard = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-            <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="min-h-screen bg-brand-dark-950 text-gray-200">
+            {/* Futuristic Background */}
+            <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/5 blur-[120px] rounded-full" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/5 blur-[120px] rounded-full" />
+            </div>
+
+            <div className="max-w-7xl mx-auto px-4 py-8 relative z-10">
                 {/* Header */}
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] mb-8">
-                    <div className="rounded-2xl bg-slate-900/80 backdrop-blur-xl p-6">
-                        <div className="flex justify-between items-center flex-wrap gap-4">
-                            <div>
-                                <h1 className="text-3xl font-bold text-white">Patient Portal</h1>
-                                <p className="text-gray-400">Welcome back, {patient?.firstName || 'Patient'} {patient?.lastName || ''}</p>
+                <div className="glass-card-modern p-6 mb-8 border border-white/5">
+                    <div className="flex justify-between items-center flex-wrap gap-4">
+                        <div className="flex items-center space-x-4">
+                            <div className="relative w-16 h-16">
+                                <div className="absolute inset-0 rounded-2xl bg-cyber-purple/20 blur-xl animate-pulse" />
+                                <div className="relative w-16 h-16 rounded-2xl bg-brand-dark-900 border border-cyber-purple/30 flex items-center justify-center shadow-2xl">
+                                    <UserIcon className="h-8 w-8 text-cyber-purple" />
+                                </div>
                             </div>
-                            <button
-                                onClick={handleLogout}
-                                className="px-4 py-2 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 transition"
-                            >
-                                Logout
-                            </button>
+                            <div>
+                                <h1 className="text-2xl font-black text-white tracking-tighter uppercase italic">
+                                    Patient <span className="text-cyber-purple">Portal</span>
+                                </h1>
+                                <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">
+                                    Subject: {patient?.firstName || 'User'} {patient?.lastName || ''}
+                                </p>
+                            </div>
                         </div>
+                        <button
+                            onClick={handleLogout}
+                            className="px-6 py-2.5 rounded-xl bg-brand-dark-900 border border-red-500/30 text-[10px] font-bold uppercase tracking-widest text-red-500 hover:bg-red-500/10 transition-all duration-300 shadow-[0_0_20px_rgba(239,68,68,0.05)]"
+                        >
+                            De-Authenticate
+                        </button>
                     </div>
                 </div>
 
                 {/* AI Predictive Triage Priority Card */}
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-cyan-500 to-blue-500 p-[1px] mb-8 group">
+                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-cyber-purple to-cyber-blue p-[1px] mb-8 group">
                     <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]"></div>
-                    <div className="relative rounded-2xl bg-slate-900/90 backdrop-blur-xl p-6">
-                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                            <div className="flex items-center space-x-4">
-                                <div className={`p-4 rounded-2xl ${getTriageStyles(triageStatus.priority)} animate-pulse`}>
-                                    <SparklesIcon className="h-8 w-8" />
+                    <div className="relative rounded-2xl bg-brand-dark-950/90 backdrop-blur-xl p-8">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+                            <div className="flex items-center space-x-6">
+                                <div className={`p-5 rounded-2xl border ${getTriageStyles(triageStatus.priority)} animate-pulse shadow-2xl`}>
+                                    <SparklesIcon className="h-10 w-10" />
                                 </div>
                                 <div>
                                     <div className="flex items-center space-x-2">
-                                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyan-400">Clinical Intelligence</span>
-                                        <span className="w-1 h-1 rounded-full bg-white/20"></span>
-                                        <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Live Assessment</span>
+                                        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyber-blue">Neural Assessment</span>
+                                        <span className="w-1.5 h-1.5 rounded-full bg-white/10"></span>
+                                        <span className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-600">Active Stream</span>
                                     </div>
-                                    <h2 className="text-2xl font-black text-white mt-1 uppercase tracking-tight">Your Health Priority Status</h2>
+                                    <h2 className="text-3xl font-black text-white mt-1 uppercase tracking-tighter italic">Live Health Priority</h2>
                                 </div>
                             </div>
 
-                            <div className="flex items-center space-x-4 w-full md:w-auto">
+                            <div className="flex items-center space-x-6 w-full md:w-auto">
                                 <div className="flex-1 md:flex-none text-right">
-                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Vitality Score</p>
-                                    <p className="text-3xl font-black text-white">{triageStatus.score || 0}</p>
+                                    <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">Vitality Matrix</p>
+                                    <p className="text-4xl font-black text-white italic">{triageStatus.score || 0}<span className="text-sm text-gray-600 ml-1">v-pts</span></p>
                                 </div>
-                                <div className={`px-6 py-3 rounded-xl border font-black tracking-widest text-lg ${getTriageStyles(triageStatus.priority)}`}>
+                                <div className={`px-8 py-4 rounded-2xl border font-black tracking-widest text-xl italic shadow-2xl ${getTriageStyles(triageStatus.priority)}`}>
                                     {triageStatus.priority}
                                 </div>
                             </div>
                         </div>
 
                         {triageStatus.reasons && triageStatus.reasons.length > 0 && (
-                            <div className="mt-6 pt-6 border-t border-white/5">
-                                <div className="flex items-center space-x-2 mb-3">
-                                    <ExclamationTriangleIcon className="h-4 w-4 text-cyan-400" />
-                                    <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Clinical Indicators detected by AI</span>
+                            <div className="mt-8 pt-8 border-t border-white/5">
+                                <div className="flex items-center space-x-2 mb-4">
+                                    <ExclamationTriangleIcon className="h-4 w-4 text-cyber-blue" />
+                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">Clinical Patterns Identified</span>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-3">
                                     {triageStatus.reasons.map((reason, idx) => (
                                         <span 
                                             key={idx}
-                                            className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-gray-300 uppercase"
+                                            className="px-4 py-1.5 rounded-full bg-brand-dark-900 border border-white/5 text-[9px] font-bold text-gray-400 uppercase tracking-widest hover:border-cyber-blue/30 transition-colors"
                                         >
                                             {reason}
                                         </span>
@@ -196,161 +212,135 @@ const PatientDashboard = () => {
                             </div>
                         )}
 
-                        <div className="mt-4 flex items-center justify-between text-[10px] font-mono text-gray-600">
-                            <span>LAST UPDATED: {triageStatus.lastAssessment ? new Date(triageStatus.lastAssessment).toLocaleString() : 'PENDING'}</span>
+                        <div className="mt-6 flex items-center justify-between text-[9px] font-bold text-gray-700 tracking-widest">
+                            <span>TIMESTAMP: {triageStatus.lastAssessment ? new Date(triageStatus.lastAssessment).toLocaleString().toUpperCase() : 'PENDING'}</span>
                             <span className="flex items-center">
-                                <ShieldCheckIcon className="h-3 w-3 mr-1 text-green-500/50" />
-                                AUTOMATED CLINICAL TRIAGE
+                                <ShieldCheckIcon className="h-3 w-3 mr-2 text-cyber-blue/50" />
+                                AI-DRIVEN TRIAGE PROTOCOL v4.0
                             </span>
                         </div>
                     </div>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div className="bg-white/5 rounded-xl p-6 border border-white/10">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-400 text-sm">Total Records</p>
-                                <p className="text-3xl font-bold text-white">{stats.totalRecords || recentRecords.length || 0}</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+                    {[
+                        { label: 'Total Records', value: stats.totalRecords || recentRecords.length || 0, icon: DocumentTextIcon, color: 'text-cyber-purple' },
+                        { label: 'Last Visit', value: stats.lastVisitDate ? new Date(stats.lastVisitDate).toLocaleDateString() : 'N/A', icon: CalendarIcon, color: 'text-cyber-blue' },
+                        { label: 'Node Status', value: 'ACTIVE', icon: CpuChipIcon, color: 'text-cyber-green' }
+                    ].map((stat, i) => (
+                        <div key={i} className="stat-card group">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">{stat.label}</p>
+                                    <p className="text-2xl font-black text-white italic tracking-tighter">{stat.value}</p>
+                                </div>
+                                <div className="w-12 h-12 rounded-xl bg-brand-dark-950 border border-white/5 flex items-center justify-center group-hover:border-cyber-purple/30 transition-all duration-500 shadow-xl">
+                                    <stat.icon className={`h-6 w-6 ${stat.color} group-hover:scale-110 transition-transform`} />
+                                </div>
                             </div>
-                            <DocumentTextIcon className="h-10 w-10 text-purple-400" />
                         </div>
-                    </div>
-                    <div className="bg-white/5 rounded-xl p-6 border border-white/10">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-400 text-sm">Last Visit</p>
-                                <p className="text-lg font-bold text-white">
-                                    {stats.lastVisitDate ? new Date(stats.lastVisitDate).toLocaleDateString() : 'N/A'}
-                                </p>
-                            </div>
-                            <CalendarIcon className="h-10 w-10 text-purple-400" />
-                        </div>
-                    </div>
-                    <div className="bg-white/5 rounded-xl p-6 border border-white/10">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-gray-400 text-sm">Profile Status</p>
-                                <p className="text-lg font-bold text-white">Active</p>
-                            </div>
-                            <UserIcon className="h-10 w-10 text-purple-400" />
-                        </div>
-                    </div>
+                    ))}
                 </div>
 
                 {/* Navigation Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Medical Records Card */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
                     <div 
-                        className="bg-white/5 rounded-xl p-6 border border-white/10 hover:border-purple-500/30 transition cursor-pointer group"
+                        className="glass-card-modern p-8 group cursor-pointer border border-white/5 hover:border-cyber-purple/30"
                         onClick={() => navigate('/patient/records')}
                     >
-                        <DocumentTextIcon className="h-12 w-12 text-purple-400 mb-4 group-hover:scale-110 transition" />
-                        <h3 className="text-xl font-semibold text-white mb-2">Medical Records</h3>
-                        <p className="text-gray-400">View your complete medical history including diagnoses, lab results, and imaging</p>
-                        <ArrowRightIcon className="h-5 w-5 text-purple-400 mt-4 group-hover:translate-x-1 transition" />
+                        <div className="flex items-start justify-between mb-6">
+                            <div className="w-16 h-16 rounded-2xl bg-brand-dark-950 border border-white/5 flex items-center justify-center shadow-xl group-hover:border-cyber-purple/30 transition-all duration-500">
+                                <DocumentTextIcon className="h-8 w-8 text-cyber-purple group-hover:scale-110 transition-transform" />
+                            </div>
+                            <ArrowRightIcon className="h-6 w-6 text-gray-700 group-hover:text-cyber-purple group-hover:translate-x-2 transition-all duration-500" />
+                        </div>
+                        <h3 className="text-2xl font-black text-white mb-3 uppercase tracking-tighter italic">Clinical Archives</h3>
+                        <p className="text-xs font-bold text-gray-500 leading-relaxed uppercase tracking-widest">Access your complete biometric history, laboratory findings, and diagnostic protocols.</p>
                     </div>
                     
-                    {/* Vital Signs Card */}
                     <div 
-                        className="bg-white/5 rounded-xl p-6 border border-white/10 hover:border-purple-500/30 transition cursor-pointer group"
+                        className="glass-card-modern p-8 group cursor-pointer border border-white/5 hover:border-cyber-blue/30"
                         onClick={() => navigate('/patient/vitals')}
                     >
-                        <HeartIcon className="h-12 w-12 text-purple-400 mb-4 group-hover:scale-110 transition" />
-                        <h3 className="text-xl font-semibold text-white mb-2">Vital Signs</h3>
-                        <p className="text-gray-400">Track your health metrics over time with interactive charts</p>
-                        <ArrowRightIcon className="h-5 w-5 text-purple-400 mt-4 group-hover:translate-x-1 transition" />
+                        <div className="flex items-start justify-between mb-6">
+                            <div className="w-16 h-16 rounded-2xl bg-brand-dark-950 border border-white/5 flex items-center justify-center shadow-xl group-hover:border-cyber-blue/30 transition-all duration-500">
+                                <HeartIcon className="h-8 w-8 text-cyber-blue group-hover:scale-110 transition-transform" />
+                            </div>
+                            <ArrowRightIcon className="h-6 w-6 text-gray-700 group-hover:text-cyber-blue group-hover:translate-x-2 transition-all duration-500" />
+                        </div>
+                        <h3 className="text-2xl font-black text-white mb-3 uppercase tracking-tighter italic">Vitals Monitor</h3>
+                        <p className="text-xs font-bold text-gray-500 leading-relaxed uppercase tracking-widest">Real-time analysis of physiological metrics and historical trend visualisation.</p>
                     </div>
                 </div>
 
                 {/* ── AI FEATURES HUB ── */}
-                <div className="mt-8">
-                    <div className="flex items-center gap-3 mb-5">
-                        <div className="p-2 rounded-xl bg-purple-500/20 border border-purple-500/30">
-                            <SparklesIcon className="h-5 w-5 text-purple-400" />
+                <div className="mt-12">
+                    <div className="flex items-center gap-4 mb-8">
+                        <div className="w-12 h-12 rounded-xl bg-brand-dark-900 border border-cyber-purple/30 flex items-center justify-center shadow-xl">
+                            <SparklesIcon className="h-6 w-6 text-cyber-purple animate-pulse" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-white">AI Health Features</h2>
-                            <p className="text-xs text-gray-500">Personalised insights powered by your medical data</p>
+                            <h2 className="text-xl font-black text-white uppercase tracking-tighter italic">AI Augmentation Core</h2>
+                            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em]">Subject-specific health intelligence protocols</p>
                         </div>
                     </div>
 
                     {/* Quick health score strip */}
                     {aiSummary && (
-                        <div className={`rounded-xl border p-4 mb-5 flex items-center justify-between flex-wrap gap-3 ${
-                            aiSummary.scoreColor === 'green'  ? 'bg-green-500/10 border-green-500/20' :
-                            aiSummary.scoreColor === 'yellow' ? 'bg-yellow-500/10 border-yellow-500/20' :
-                            aiSummary.scoreColor === 'orange' ? 'bg-orange-500/10 border-orange-500/20' :
-                            'bg-red-500/10 border-red-500/20'
+                        <div className={`glass-card-modern p-6 mb-8 border flex items-center justify-between flex-wrap gap-6 hover:translate-y-0 ${
+                            aiSummary.scoreColor === 'green'  ? 'border-cyber-green/20 hover:border-cyber-green/40' :
+                            aiSummary.scoreColor === 'yellow' ? 'border-yellow-500/20 hover:border-yellow-500/40' :
+                            aiSummary.scoreColor === 'orange' ? 'border-orange-500/20 hover:border-orange-500/40' :
+                            'border-red-500/20 hover:border-red-500/40'
                         }`}>
-                            <div className="flex items-center gap-3">
-                                <div className={`text-3xl font-black ${
-                                    aiSummary.scoreColor === 'green'  ? 'text-green-400' :
+                            <div className="flex items-center gap-6">
+                                <div className={`text-4xl font-black italic ${
+                                    aiSummary.scoreColor === 'green'  ? 'text-cyber-green' :
                                     aiSummary.scoreColor === 'yellow' ? 'text-yellow-400' :
                                     aiSummary.scoreColor === 'orange' ? 'text-orange-400' : 'text-red-400'
-                                }`}>{aiSummary.healthScore}</div>
+                                }`}>{aiSummary.healthScore}<span className="text-xs text-gray-600 ml-1 font-bold">PTS</span></div>
                                 <div>
-                                    <p className="text-white font-bold text-sm">Health Score — {aiSummary.scoreLabel}</p>
-                                    <p className="text-xs text-gray-400">Triage: {aiSummary.triagePriority} · {aiSummary.warnings?.length || 0} warning{aiSummary.warnings?.length !== 1 ? 's' : ''}</p>
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-1">Health Matrix Score</p>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-lg font-black text-white uppercase tracking-tighter italic">{aiSummary.scoreLabel}</p>
+                                        <span className="w-1 h-1 rounded-full bg-white/20"></span>
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{aiSummary.warnings?.length || 0} Indicators Flagged</p>
+                                    </div>
                                 </div>
                             </div>
                             <button
                                 onClick={() => navigate('/patient/ai/health-summary')}
-                                className="flex items-center gap-1.5 text-xs text-purple-400 hover:text-purple-300 transition font-medium"
+                                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand-dark-900 border border-white/5 text-[10px] font-bold uppercase tracking-widest text-cyber-purple hover:text-cyber-blue hover:border-cyber-blue/30 transition-all duration-300 shadow-xl"
                             >
-                                Full Summary <ArrowRightIcon className="h-3.5 w-3.5" />
+                                Analysis Report <ArrowRightIcon className="h-4 w-4" />
                             </button>
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[
-                            {
-                                path: '/patient/ai/health-summary',
-                                icon: ChartBarIcon,
-                                title: 'Health Summary',
-                                desc: 'AI-generated overview of your health score, triage status, and key findings',
-                                color: 'text-purple-400',
-                                border: 'hover:border-purple-500/40'
-                            },
-                            {
-                                path: '/patient/ai/vitals-insights',
-                                icon: ArrowTrendingUpIcon,
-                                title: 'Vitals Insights',
-                                desc: 'Anomaly detection and trend analysis on your vital sign history',
-                                color: 'text-pink-400',
-                                border: 'hover:border-pink-500/40'
-                            },
-                            {
-                                path: '/patient/ai/reminders',
-                                icon: BellAlertIcon,
-                                title: 'Reminders',
-                                desc: 'Follow-up appointments and active medications from your records',
-                                color: 'text-yellow-400',
-                                border: 'hover:border-yellow-500/40'
-                            },
-                            {
-                                path: '/patient/ai/symptom-checker',
-                                icon: MagnifyingGlassIcon,
-                                title: 'Symptom Checker',
-                                desc: 'Enter your symptoms and get AI guidance on when to seek care',
-                                color: 'text-cyan-400',
-                                border: 'hover:border-cyan-500/40'
-                            }
+                            { path: '/patient/ai/health-summary', icon: ChartBarIcon, title: 'Health Score', desc: 'Neural analysis of biometric markers and clinical history.', color: 'text-cyber-purple', border: 'hover:border-cyber-purple/30' },
+                            { path: '/patient/ai/vitals-insights', icon: ArrowTrendingUpIcon, title: 'Trend Matrix', desc: 'Anomaly detection and multi-vector trend projections.', color: 'text-cyber-pink', border: 'hover:border-cyber-pink/30' },
+                            { path: '/patient/ai/reminders', icon: BellAlertIcon, title: 'Active Stream', desc: 'Real-time protocol reminders and follow-up tracking.', color: 'text-yellow-400', border: 'hover:border-yellow-400/30' },
+                            { path: '/patient/ai/symptom-checker', icon: MagnifyingGlassIcon, title: 'Neural Triage', desc: 'AI-guided assessment for emergent symptom protocols.', color: 'text-cyber-blue', border: 'hover:border-cyber-blue/30' }
                         ].map(card => (
                             <div
                                 key={card.path}
                                 onClick={() => navigate(card.path)}
-                                className={`bg-white/5 rounded-xl p-5 border border-white/10 ${card.border} transition-all duration-200 cursor-pointer group`}
+                                className={`glass-card-modern p-6 border border-white/5 ${card.border} transition-all duration-500 cursor-pointer group`}
                             >
-                                <div className="flex items-start gap-3">
-                                    <card.icon className={`h-8 w-8 ${card.color} flex-shrink-0 group-hover:scale-110 transition-transform duration-200`} />
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="font-bold text-white text-sm mb-1">{card.title}</h3>
-                                        <p className="text-gray-400 text-xs leading-relaxed">{card.desc}</p>
+                                <div className="flex flex-col gap-4">
+                                    <div className="w-12 h-12 rounded-xl bg-brand-dark-950 border border-white/5 flex items-center justify-center shadow-xl group-hover:border-cyber-purple/30 transition-all duration-500">
+                                        <card.icon className={`h-6 w-6 ${card.color} group-hover:scale-110 transition-transform duration-500`} />
                                     </div>
-                                    <ArrowRightIcon className="h-4 w-4 text-gray-600 group-hover:text-gray-400 group-hover:translate-x-0.5 transition-all duration-200 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <h3 className="font-black text-white text-sm uppercase tracking-tighter italic mb-1">{card.title}</h3>
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">{card.desc}</p>
+                                    </div>
+                                    <div className="pt-2">
+                                        <ArrowRightIcon className="h-4 w-4 text-gray-700 group-hover:text-white group-hover:translate-x-1 transition-all duration-500" />
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -359,28 +349,47 @@ const PatientDashboard = () => {
 
                 {/* Recent Records Section */}
                 {recentRecords.length > 0 && (
-                    <div className="mt-8">
-                        <h2 className="text-xl font-semibold text-white mb-4">Recent Medical Records</h2>
-                        <div className="space-y-3">
+                    <div className="mt-16">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 rounded-xl bg-brand-dark-900 border border-white/5 flex items-center justify-center shadow-xl">
+                                <DocumentTextIcon className="h-6 w-6 text-gray-400" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-black text-white uppercase tracking-tighter italic">Recent Logs</h2>
+                                <p className="text-[10px] font-bold text-gray-600 uppercase tracking-[0.2em]">Chronological clinical records stream</p>
+                            </div>
+                        </div>
+                        <div className="grid gap-4">
                             {recentRecords.map((record, idx) => (
                                 <div 
                                     key={idx} 
-                                    className="bg-white/5 rounded-xl p-4 border border-white/10 hover:bg-white/10 transition cursor-pointer"
+                                    className="glass-card-modern p-5 border border-white/5 hover:border-white/10 group cursor-pointer"
                                     onClick={() => navigate('/patient/records')}
                                 >
                                     <div className="flex justify-between items-center">
-                                        <div>
-                                            <p className="font-semibold text-white">{record.disease || record.primaryDiagnosis?.name || 'Medical Visit'}</p>
-                                            <p className="text-sm text-gray-400">{record.visitDate ? new Date(record.visitDate).toLocaleDateString() : 'Date N/A'}</p>
-                                            <p className="text-xs text-gray-500">{record.hospital || 'Hospital N/A'}</p>
+                                        <div className="flex items-center gap-6">
+                                            <div className="w-12 h-12 rounded-xl bg-brand-dark-950 border border-white/5 flex items-center justify-center shadow-xl">
+                                                <span className="text-[10px] font-black text-cyber-purple italic">#{idx + 1}</span>
+                                            </div>
+                                            <div>
+                                                <p className="font-black text-white uppercase tracking-tighter italic text-lg">{record.disease || record.primaryDiagnosis?.name || 'Medical Visit'}</p>
+                                                <div className="flex items-center gap-3 mt-1">
+                                                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{record.visitDate ? new Date(record.visitDate).toLocaleDateString().toUpperCase() : 'DATE_MISSING'}</p>
+                                                    <span className="w-1 h-1 rounded-full bg-white/10"></span>
+                                                    <p className="text-[9px] font-bold text-cyber-blue uppercase tracking-widest">{record.hospital || 'UNKNOWN_FACILITY'}</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                                            record.disposition === 'Discharged' ? 'bg-green-500/20 text-green-400' : 
-                                            record.disposition === 'Admitted' ? 'bg-yellow-500/20 text-yellow-400' :
-                                            'bg-gray-500/20 text-gray-400'
-                                        }`}>
-                                            {record.disposition || 'Completed'}
-                                        </span>
+                                        <div className="flex items-center gap-6">
+                                            <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${
+                                                record.disposition === 'Discharged' ? 'bg-cyber-green/10 text-cyber-green border-cyber-green/20' : 
+                                                record.disposition === 'Admitted' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                                'bg-brand-dark-900 text-gray-500 border-white/5'
+                                            }`}>
+                                                {record.disposition || 'COMPLETED'}
+                                            </span>
+                                            <ArrowRightIcon className="h-5 w-5 text-gray-700 group-hover:text-white transition-colors" />
+                                        </div>
                                     </div>
                                 </div>
                             ))}

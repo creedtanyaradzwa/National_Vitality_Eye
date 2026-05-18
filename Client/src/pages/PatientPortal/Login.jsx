@@ -128,35 +128,45 @@ const PatientLogin = () => {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-md">
-                <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8">
-                    <div className="text-center mb-8">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mx-auto mb-4">
-                            <UserIcon className="h-8 w-8 text-white" />
+        <div className="min-h-screen bg-brand-dark-950 flex items-center justify-center relative overflow-hidden p-4">
+            {/* Futuristic Background */}
+            <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/10 blur-[120px] rounded-full animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/10 blur-[120px] rounded-full animate-pulse delay-700" />
+                <div className="absolute top-[20%] right-[10%] w-[20%] h-[20%] bg-cyber-blue/5 blur-[100px] rounded-full" />
+            </div>
+
+            <div className="relative z-10 w-full max-w-md">
+                <div className="glass-card-modern p-10 border border-white/5 shadow-2xl">
+                    <div className="text-center mb-10">
+                        <div className="relative w-24 h-24 mx-auto mb-6">
+                            <div className="absolute inset-0 rounded-3xl bg-cyber-purple/20 blur-2xl animate-pulse" />
+                            <div className="relative w-24 h-24 rounded-3xl bg-brand-dark-900 border border-cyber-purple/30 flex items-center justify-center shadow-2xl">
+                                <UserIcon className="h-12 w-12 text-cyber-purple" />
+                            </div>
                         </div>
-                        <h1 className="text-3xl font-bold text-white mb-2">Patient Portal</h1>
-                        <p className="text-gray-400">Access your medical records securely</p>
+                        <h1 className="text-3xl font-bold text-white tracking-tighter mb-2">PATIENT PORTAL</h1>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-500">Secure Health Access Protocol</p>
                     </div>
 
                     {/* Tab Switcher */}
-                    <div className="flex rounded-lg bg-white/10 p-1 mb-6">
+                    <div className="flex rounded-2xl bg-brand-dark-950 p-1.5 mb-8 border border-white/5">
                         <button
                             onClick={() => setIsLogin(true)}
-                            className={`flex-1 py-2 rounded-lg font-medium transition-all duration-300 ${
+                            className={`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${
                                 isLogin 
-                                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                                    : 'text-gray-400 hover:text-white'
+                                    ? 'bg-brand-dark-800 text-white shadow-lg border border-white/10'
+                                    : 'text-gray-500 hover:text-gray-300'
                             }`}
                         >
                             Login
                         </button>
                         <button
                             onClick={() => setIsLogin(false)}
-                            className={`flex-1 py-2 rounded-lg font-medium transition-all duration-300 ${
+                            className={`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all duration-300 ${
                                 !isLogin 
-                                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                                    : 'text-gray-400 hover:text-white'
+                                    ? 'bg-brand-dark-800 text-white shadow-lg border border-white/10'
+                                    : 'text-gray-500 hover:text-gray-300'
                             }`}
                         >
                             Register
@@ -166,172 +176,153 @@ const PatientLogin = () => {
                     {/* Login Form */}
                     {isLogin ? (
                         <form onSubmit={handleLoginSubmit} className="space-y-6">
-                            <div>
-                                <label className="block text-gray-300 text-sm font-medium mb-2">Email Address</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-1">Email Identifier</label>
                                 <div className="relative">
-                                    <EnvelopeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                    <EnvelopeIcon className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                                     <input
                                         type="email"
                                         name="email"
                                         value={loginData.email}
                                         onChange={handleLoginChange}
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-                                        placeholder="you@example.com"
+                                        className="w-full pl-14 pr-6 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 focus:outline-none focus:border-cyber-purple/50 focus:ring-4 focus:ring-cyber-purple/5 transition-all duration-500"
+                                        placeholder="user@health.node"
                                         required
                                     />
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-gray-300 text-sm font-medium mb-2">Password</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-1">Access Key</label>
                                 <div className="relative">
-                                    <LockClosedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                    <LockClosedIcon className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         name="password"
                                         value={loginData.password}
                                         onChange={handleLoginChange}
-                                        className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                                        className="w-full pl-14 pr-14 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 focus:outline-none focus:border-cyber-purple/50 focus:ring-4 focus:ring-cyber-purple/5 transition-all duration-500"
                                         placeholder="••••••••"
                                         required
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white"
+                                        className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
                                     >
                                         {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                                     </button>
                                 </div>
                             </div>
-                            {/* Forgot Password Link */}
                             <div className="text-right">
-                                <Link to="/patient/forgot-password" className="text-sm text-purple-400 hover:text-purple-300 transition">
-                                    Forgot Password?
+                                <Link to="/patient/forgot-password" name="email" className="text-[10px] font-bold uppercase tracking-widest text-cyber-purple hover:text-cyber-blue transition-colors">
+                                    Reset Protocol
                                 </Link>
                             </div>
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+                                className="w-full btn-primary-modern group"
                             >
-                                {loading ? 'Logging in...' : 'Login'}
+                                <span>{loading ? 'PROCESSING...' : 'INITIALIZE ACCESS'}</span>
                             </button>
                         </form>
                     ) : (
                         /* Register Form */
                         <form onSubmit={handleRegisterSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-gray-300 text-sm font-medium mb-2">National ID *</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-1">National ID Node</label>
                                 <div className="relative">
-                                    <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                    <UserIcon className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                                     <input
                                         type="text"
                                         name="nationalId"
                                         value={registerData.nationalId}
                                         onChange={handleRegisterChange}
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-                                        placeholder="63-123456-A12"
+                                        className="w-full pl-14 pr-6 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 focus:outline-none focus:border-cyber-purple/50 focus:ring-4 focus:ring-cyber-purple/5 transition-all duration-500"
+                                        placeholder="00-000000-X00"
                                         required
                                     />
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">Must match your hospital records</p>
                             </div>
-                            <div>
-                                <label className="block text-gray-300 text-sm font-medium mb-2">Email *</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-1">Email Identifier</label>
                                 <div className="relative">
-                                    <EnvelopeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                    <EnvelopeIcon className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                                     <input
                                         type="email"
                                         name="email"
                                         value={registerData.email}
                                         onChange={handleRegisterChange}
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-                                        placeholder="you@example.com"
+                                        className="w-full pl-14 pr-6 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 focus:outline-none focus:border-cyber-purple/50 focus:ring-4 focus:ring-cyber-purple/5 transition-all duration-500"
+                                        placeholder="user@health.node"
                                         required
                                     />
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-gray-300 text-sm font-medium mb-2">Phone Number</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-1">New Access Key</label>
                                 <div className="relative">
-                                    <PhoneIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
-                                    <input
-                                        type="tel"
-                                        name="phoneNumber"
-                                        value={registerData.phoneNumber}
-                                        onChange={handleRegisterChange}
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-                                        placeholder="0771234567"
-                                    />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-gray-300 text-sm font-medium mb-2">Password *</label>
-                                <div className="relative">
-                                    <LockClosedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                    <LockClosedIcon className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         name="password"
                                         value={registerData.password}
                                         onChange={handleRegisterChange}
-                                        className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                                        className="w-full pl-14 pr-14 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 focus:outline-none focus:border-cyber-purple/50 focus:ring-4 focus:ring-cyber-purple/5 transition-all duration-500"
                                         placeholder="••••••••"
                                         required
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white"
+                                        className="absolute right-5 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-white transition-colors"
                                     >
                                         {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                                     </button>
                                 </div>
-                                <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
                             </div>
-                            <div>
-                                <label className="block text-gray-300 text-sm font-medium mb-2">Confirm Password *</label>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-gray-500 ml-1">Confirm Key</label>
                                 <div className="relative">
-                                    <LockClosedIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
+                                    <LockClosedIcon className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-500" />
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         name="confirmPassword"
                                         value={registerData.confirmPassword}
                                         onChange={handleRegisterChange}
-                                        className="w-full pl-10 pr-12 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                                        className="w-full pl-14 pr-6 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 focus:outline-none focus:border-cyber-purple/50 focus:ring-4 focus:ring-cyber-purple/5 transition-all duration-500"
                                         placeholder="••••••••"
                                         required
                                     />
                                 </div>
                             </div>
-                            <div className="flex items-center space-x-3">
+                            <div className="flex items-center space-x-3 p-2">
                                 <input
                                     type="checkbox"
                                     name="consent"
+                                    id="consent"
                                     checked={registerData.consent}
                                     onChange={handleRegisterChange}
-                                    className="w-4 h-4 rounded border-white/30 bg-white/5 checked:bg-purple-500 focus:ring-purple-500"
+                                    className="w-5 h-5 rounded-lg border-white/10 bg-brand-dark-950 text-cyber-purple focus:ring-cyber-purple/20 focus:ring-offset-0 transition-all cursor-pointer"
                                     required
                                 />
-                                <label className="text-gray-300 text-sm">
-                                    I consent to the processing of my medical data
+                                <label htmlFor="consent" className="text-[10px] font-bold uppercase tracking-widest text-gray-500 cursor-pointer">
+                                    Authorize Data Processing Protocol
                                 </label>
                             </div>
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300 disabled:opacity-50"
+                                className="w-full btn-primary-modern group mt-2"
                             >
-                                {loading ? 'Registering...' : 'Register'}
+                                <span>{loading ? 'REGISTERING...' : 'CREATE ACCOUNT'}</span>
                             </button>
                         </form>
                     )}
                     
-                    <div className="mt-6 pt-4 border-t border-white/10 text-center">
-                        <p className="text-xs text-gray-500">
-                            By using this portal, you agree to our 
-                            <button className="text-purple-400 hover:underline mx-1">Terms of Service</button>
-                            and
-                            <button className="text-purple-400 hover:underline ml-1">Privacy Policy</button>
+                    <div className="mt-10 pt-6 border-t border-white/5 text-center">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-600">
+                            System Node: <span className="text-cyber-blue">NV-EYE-PT-01</span>
                         </p>
                     </div>
                 </div>

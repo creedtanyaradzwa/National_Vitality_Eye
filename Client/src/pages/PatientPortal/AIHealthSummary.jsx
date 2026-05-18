@@ -61,76 +61,99 @@ const AIHealthSummary = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-            <div className="max-w-4xl mx-auto px-4 py-8">
-                <button onClick={() => navigate('/patient/dashboard')} className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition">
-                    <ArrowLeftIcon className="h-5 w-5" /> Back to Dashboard
+        <div className="min-h-screen bg-brand-dark-950 text-gray-200">
+            {/* Futuristic Background */}
+            <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/5 blur-[120px] rounded-full" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/5 blur-[120px] rounded-full" />
+            </div>
+
+            <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
+                {/* Back Button */}
+                <button 
+                    onClick={() => navigate('/patient/dashboard')} 
+                    className="mb-8 flex items-center space-x-3 text-gray-500 hover:text-white group transition-all duration-300"
+                >
+                    <div className="p-2 rounded-xl bg-brand-dark-900 border border-white/5 group-hover:border-cyber-purple/30 transition-all">
+                        <ArrowLeftIcon className="h-4 w-4 group-hover:-translate-x-1 transition" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Return to Core</span>
                 </button>
 
                 {/* Header */}
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] mb-8">
-                    <div className="rounded-2xl bg-slate-900/80 backdrop-blur-xl p-6 flex justify-between items-center flex-wrap gap-4">
-                        <div className="flex items-center gap-3">
-                            <SparklesIcon className="h-8 w-8 text-purple-400" />
+                <div className="glass-card-modern p-8 mb-10 border border-white/5">
+                    <div className="flex justify-between items-center flex-wrap gap-6">
+                        <div className="flex items-center space-x-6">
+                            <div className="relative w-16 h-16">
+                                <div className="absolute inset-0 rounded-2xl bg-cyber-purple/20 blur-xl animate-pulse" />
+                                <div className="relative w-16 h-16 rounded-2xl bg-brand-dark-900 border border-cyber-purple/30 flex items-center justify-center shadow-2xl">
+                                    <SparklesIcon className="h-8 w-8 text-cyber-purple" />
+                                </div>
+                            </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-white">AI Health Summary</h1>
-                                <p className="text-gray-400 text-sm">Personalised insights from your medical history</p>
+                                <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic">Health Matrix Report</h1>
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mt-1">
+                                    Neural analysis of clinical history stream
+                                </p>
                             </div>
                         </div>
-                        <button onClick={load} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition">
-                            <ArrowPathIcon className="h-5 w-5 text-gray-400" />
+                        <button 
+                            onClick={load} 
+                            className="p-3 rounded-xl bg-brand-dark-900 border border-white/5 hover:border-cyber-purple/30 text-gray-500 hover:text-cyber-purple transition-all duration-300 shadow-xl"
+                        >
+                            <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
                         </button>
                     </div>
                 </div>
 
                 {summary && (
-                    <div className="space-y-6">
+                    <div className="space-y-8">
                         {/* Health Score */}
-                        <div className="rounded-2xl bg-white/5 border border-white/10 p-6">
-                            <div className="flex flex-col md:flex-row items-center gap-6">
+                        <div className="glass-card-modern p-8 border border-white/5">
+                            <div className="flex flex-col md:flex-row items-center gap-10">
                                 {/* Score circle */}
                                 <div className="relative flex-shrink-0">
-                                    <svg className="w-36 h-36 -rotate-90" viewBox="0 0 120 120">
-                                        <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="10" />
+                                    <svg className="w-40 h-40 -rotate-90" viewBox="0 0 120 120">
+                                        <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="8" />
                                         <circle
                                             cx="60" cy="60" r="50" fill="none"
-                                            stroke="url(#scoreGrad)" strokeWidth="10"
+                                            stroke="url(#scoreGrad)" strokeWidth="8"
                                             strokeLinecap="round"
                                             strokeDasharray={`${(summary.healthScore / 100) * 314} 314`}
+                                            className="transition-all duration-1000 ease-out"
                                         />
                                         <defs>
                                             <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                                <stop offset="0%" stopColor={summary.scoreColor === 'green' ? '#10b981' : summary.scoreColor === 'yellow' ? '#f59e0b' : summary.scoreColor === 'orange' ? '#f97316' : '#ef4444'} />
-                                                <stop offset="100%" stopColor={summary.scoreColor === 'green' ? '#34d399' : summary.scoreColor === 'yellow' ? '#fbbf24' : summary.scoreColor === 'orange' ? '#ef4444' : '#dc2626'} />
+                                                <stop offset="0%" stopColor={summary.scoreColor === 'green' ? '#39ff14' : summary.scoreColor === 'yellow' ? '#fbbf24' : summary.scoreColor === 'orange' ? '#f97316' : '#ef4444'} />
+                                                <stop offset="100%" stopColor={summary.scoreColor === 'green' ? '#00f2ff' : summary.scoreColor === 'yellow' ? '#f59e0b' : summary.scoreColor === 'orange' ? '#ef4444' : '#bc13fe'} />
                                             </linearGradient>
                                         </defs>
                                     </svg>
                                     <div className="absolute inset-0 flex flex-col items-center justify-center rotate-0">
-                                        <span className="text-3xl font-black text-white">{summary.healthScore}</span>
-                                        <span className="text-xs text-gray-400">/100</span>
+                                        <span className="text-4xl font-black text-white italic tracking-tighter">{summary.healthScore}</span>
+                                        <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mt-1">V-MATRIX</span>
                                     </div>
+                                    <div className="absolute inset-0 rounded-full bg-cyber-purple/5 blur-3xl -z-10 animate-pulse" />
                                 </div>
 
                                 <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-3 flex-wrap">
-                                        <h2 className="text-2xl font-black text-white">{summary.scoreLabel}</h2>
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border ${triageBadge(summary.triagePriority)}`}>
+                                    <div className="flex items-center gap-4 mb-6 flex-wrap">
+                                        <h2 className="text-3xl font-black text-white uppercase tracking-tighter italic">{summary.scoreLabel}</h2>
+                                        <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${triageBadge(summary.triagePriority)}`}>
                                             {summary.triagePriority}
                                         </span>
                                     </div>
-                                    <div className="grid grid-cols-3 gap-3 text-center">
-                                        <div className="bg-white/5 rounded-xl p-3">
-                                            <p className="text-2xl font-bold text-white">{summary.totalVisits}</p>
-                                            <p className="text-xs text-gray-500">Total Visits</p>
-                                        </div>
-                                        <div className="bg-white/5 rounded-xl p-3">
-                                            <p className="text-2xl font-bold text-white">{summary.recentVisits}</p>
-                                            <p className="text-xs text-gray-500">Last 3 Months</p>
-                                        </div>
-                                        <div className="bg-white/5 rounded-xl p-3">
-                                            <p className="text-lg font-bold text-white">{summary.lastVisitDate ? new Date(summary.lastVisitDate).toLocaleDateString() : 'N/A'}</p>
-                                            <p className="text-xs text-gray-500">Last Visit</p>
-                                        </div>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        {[
+                                            { label: 'Total Visits', val: summary.totalVisits },
+                                            { label: 'Last 3M', val: summary.recentVisits },
+                                            { label: 'Last Node', val: summary.lastVisitDate ? new Date(summary.lastVisitDate).toLocaleDateString().toUpperCase() : 'N/A' }
+                                        ].map((s, i) => (
+                                            <div key={i} className="bg-brand-dark-900 border border-white/5 rounded-2xl p-4 shadow-xl">
+                                                <p className="text-[10px] font-black text-white italic tracking-tight">{s.val}</p>
+                                                <p className="text-[8px] font-bold text-gray-600 uppercase tracking-widest mt-1">{s.label}</p>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -138,13 +161,15 @@ const AIHealthSummary = () => {
 
                         {/* Triage reasons */}
                         {summary.triageReasons?.length > 0 && (
-                            <div className="rounded-2xl bg-yellow-500/10 border border-yellow-500/20 p-5">
-                                <h3 className="text-sm font-bold text-yellow-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <ExclamationTriangleIcon className="h-4 w-4" /> Clinical Indicators
+                            <div className="glass-card-modern p-6 border border-yellow-500/10 bg-yellow-500/5">
+                                <h3 className="text-[10px] font-bold text-yellow-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3 italic">
+                                    <ExclamationTriangleIcon className="h-4 w-4" /> CLINICAL PATTERN MATCHES
                                 </h3>
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-3 ml-7">
                                     {summary.triageReasons.map((r, i) => (
-                                        <span key={i} className="px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-300 text-xs font-mono">{r}</span>
+                                        <span key={i} className="px-4 py-1.5 rounded-xl bg-brand-dark-950 border border-yellow-500/10 text-[9px] font-bold text-yellow-500/70 uppercase tracking-widest">
+                                            {r}
+                                        </span>
                                     ))}
                                 </div>
                             </div>
@@ -152,14 +177,14 @@ const AIHealthSummary = () => {
 
                         {/* Warnings */}
                         {summary.warnings?.length > 0 && (
-                            <div className="rounded-2xl bg-red-500/10 border border-red-500/20 p-5">
-                                <h3 className="text-sm font-bold text-red-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <ExclamationTriangleIcon className="h-4 w-4" /> Things to Watch
+                            <div className="glass-card-modern p-6 border border-red-500/10 bg-red-500/5">
+                                <h3 className="text-[10px] font-bold text-red-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-3 italic">
+                                    <ExclamationTriangleIcon className="h-4 w-4" /> CRITICAL INDICATORS
                                 </h3>
-                                <ul className="space-y-2">
+                                <ul className="space-y-3 ml-7">
                                     {summary.warnings.map((w, i) => (
-                                        <li key={i} className="flex items-start gap-2 text-sm text-red-300">
-                                            <span className="mt-1 w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
+                                        <li key={i} className="flex items-start gap-4 text-[10px] font-bold text-red-300 uppercase tracking-widest leading-relaxed italic">
+                                            <span className="mt-1 w-1.5 h-1.5 rounded-full bg-red-500/50 shadow-[0_0_10px_rgba(239,68,68,0.5)] flex-shrink-0" />
                                             {w}
                                         </li>
                                     ))}
@@ -169,14 +194,14 @@ const AIHealthSummary = () => {
 
                         {/* Positive insights */}
                         {summary.insights?.length > 0 && (
-                            <div className="rounded-2xl bg-green-500/10 border border-green-500/20 p-5">
-                                <h3 className="text-sm font-bold text-green-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <CheckCircleIcon className="h-4 w-4" /> Positive Findings
+                            <div className="glass-card-modern p-6 border border-cyber-green/10 bg-cyber-green/5">
+                                <h3 className="text-[10px] font-bold text-cyber-green uppercase tracking-[0.2em] mb-4 flex items-center gap-3 italic">
+                                    <CheckCircleIcon className="h-4 w-4" /> OPTIMAL PARAMETERS
                                 </h3>
-                                <ul className="space-y-2">
+                                <ul className="space-y-3 ml-7">
                                     {summary.insights.map((ins, i) => (
-                                        <li key={i} className="flex items-start gap-2 text-sm text-green-300">
-                                            <CheckCircleIcon className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                        <li key={i} className="flex items-start gap-4 text-[10px] font-bold text-cyber-green uppercase tracking-widest leading-relaxed italic opacity-80">
+                                            <CheckCircleIcon className="h-4 w-4 text-cyber-green/50 flex-shrink-0" />
                                             {ins}
                                         </li>
                                     ))}
@@ -186,24 +211,27 @@ const AIHealthSummary = () => {
 
                         {/* Conditions on record */}
                         {summary.diagnoses?.length > 0 && (
-                            <div className="rounded-2xl bg-white/5 border border-white/10 p-5">
-                                <h3 className="text-sm font-bold text-purple-400 uppercase tracking-widest mb-3 flex items-center gap-2">
-                                    <HeartIcon className="h-4 w-4" /> Conditions on Record
+                            <div className="glass-card-modern p-6 border border-white/5">
+                                <h3 className="text-[10px] font-bold text-cyber-purple uppercase tracking-[0.2em] mb-4 flex items-center gap-3 italic">
+                                    <HeartIcon className="h-4 w-4" /> ARCHIVED CONDITIONS
                                 </h3>
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-wrap gap-3 ml-7">
                                     {summary.diagnoses.map((d, i) => (
-                                        <span key={i} className="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-300 text-sm">{d}</span>
+                                        <span key={i} className="px-4 py-2 rounded-xl bg-brand-dark-900 border border-white/5 text-[10px] font-black text-gray-400 uppercase tracking-widest italic hover:border-cyber-purple/30 transition-all duration-300">
+                                            {d}
+                                        </span>
                                     ))}
                                 </div>
                             </div>
                         )}
 
                         {/* Disclaimer */}
-                        <div className="rounded-xl bg-white/5 border border-white/10 p-4 flex items-start gap-3">
-                            <InformationCircleIcon className="h-5 w-5 text-gray-500 flex-shrink-0 mt-0.5" />
-                            <p className="text-xs text-gray-500 leading-relaxed">
-                                This summary is generated from your recorded medical data and is intended to help you understand your health history.
-                                It is not a medical diagnosis. Always consult your doctor for medical advice.
+                        <div className="p-6 rounded-2xl bg-brand-dark-900 border border-white/5 border-l-cyber-blue/50 border-l-4 flex items-start gap-4">
+                            <InformationCircleIcon className="h-5 w-5 text-cyber-blue flex-shrink-0" />
+                            <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
+                                NEURAL ARCHIVE DATA: THIS REPORT IS AUTOMATED BASED ON RECORDED BIOMETRIC LOGS. 
+                                IT DOES NOT CONSTITUTE A PRIMARY CLINICAL DIAGNOSIS. 
+                                CROSS-REFERENCE ALL FINDINGS WITH A HUMAN PRACTITIONER.
                             </p>
                         </div>
                     </div>

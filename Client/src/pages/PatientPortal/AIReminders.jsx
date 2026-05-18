@@ -61,55 +61,80 @@ const AIReminders = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-            <div className="max-w-4xl mx-auto px-4 py-8">
-                <button onClick={() => navigate('/patient/dashboard')} className="mb-6 flex items-center gap-2 text-gray-400 hover:text-white transition">
-                    <ArrowLeftIcon className="h-5 w-5" /> Back to Dashboard
+        <div className="min-h-screen bg-brand-dark-950 text-gray-200">
+            {/* Futuristic Background */}
+            <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyber-purple/5 blur-[120px] rounded-full" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-cyber-blue/5 blur-[120px] rounded-full" />
+            </div>
+
+            <div className="max-w-4xl mx-auto px-4 py-8 relative z-10">
+                {/* Back Button */}
+                <button 
+                    onClick={() => navigate('/patient/dashboard')} 
+                    className="mb-8 flex items-center space-x-3 text-gray-500 hover:text-white group transition-all duration-300"
+                >
+                    <div className="p-2 rounded-xl bg-brand-dark-900 border border-white/5 group-hover:border-cyber-purple/30 transition-all">
+                        <ArrowLeftIcon className="h-4 w-4 group-hover:-translate-x-1 transition" />
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em]">Return to Core</span>
                 </button>
 
                 {/* Header */}
-                <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] mb-8">
-                    <div className="rounded-2xl bg-slate-900/80 backdrop-blur-xl p-6 flex justify-between items-center flex-wrap gap-4">
-                        <div className="flex items-center gap-3">
-                            <BellAlertIcon className="h-8 w-8 text-yellow-400" />
+                <div className="glass-card-modern p-8 mb-10 border border-white/5">
+                    <div className="flex justify-between items-center flex-wrap gap-6">
+                        <div className="flex items-center space-x-6">
+                            <div className="relative w-16 h-16">
+                                <div className="absolute inset-0 rounded-2xl bg-yellow-500/20 blur-xl animate-pulse" />
+                                <div className="relative w-16 h-16 rounded-2xl bg-brand-dark-900 border border-yellow-500/30 flex items-center justify-center shadow-2xl">
+                                    <BellAlertIcon className="h-8 w-8 text-yellow-400" />
+                                </div>
+                            </div>
                             <div>
-                                <h1 className="text-2xl font-bold text-white">Reminders & Medications</h1>
-                                <p className="text-gray-400 text-sm">Follow-up appointments and active prescriptions from your records</p>
+                                <h1 className="text-3xl font-black text-white uppercase tracking-tighter italic">Neural Protocol Feed</h1>
+                                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 mt-1">
+                                    Active prescriptions and follow-up synchronization
+                                </p>
                             </div>
                         </div>
-                        <button onClick={load} className="p-2 rounded-xl bg-white/10 hover:bg-white/20 transition">
-                            <ArrowPathIcon className="h-5 w-5 text-gray-400" />
+                        <button 
+                            onClick={load} 
+                            className="p-3 rounded-xl bg-brand-dark-900 border border-white/5 hover:border-yellow-500/30 text-gray-500 hover:text-yellow-400 transition-all duration-300 shadow-xl"
+                        >
+                            <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
                         </button>
                     </div>
                 </div>
 
                 {/* Urgent banner */}
                 {data?.urgentMessage && (
-                    <div className={`rounded-xl p-4 border mb-6 flex items-center gap-3 ${
+                    <div className={`glass-card-modern p-6 border mb-10 flex items-center gap-6 animate-pulse ${
                         data.overdueCount > 0
-                            ? 'bg-red-500/15 border-red-500/30'
-                            : 'bg-yellow-500/15 border-yellow-500/30'
+                            ? 'border-red-500/20 bg-red-500/5'
+                            : 'border-yellow-500/20 bg-yellow-500/5'
                     }`}>
-                        <ExclamationTriangleIcon className={`h-6 w-6 flex-shrink-0 ${data.overdueCount > 0 ? 'text-red-400' : 'text-yellow-400'}`} />
-                        <p className={`font-semibold text-sm ${data.overdueCount > 0 ? 'text-red-300' : 'text-yellow-300'}`}>
-                            {data.urgentMessage}
+                        <div className={`p-3 rounded-xl bg-brand-dark-950 border ${data.overdueCount > 0 ? 'border-red-500/30' : 'border-yellow-500/30'} shadow-2xl`}>
+                            <ExclamationTriangleIcon className={`h-6 w-6 ${data.overdueCount > 0 ? 'text-red-400' : 'text-yellow-400'}`} />
+                        </div>
+                        <p className={`text-sm font-black uppercase tracking-widest italic ${data.overdueCount > 0 ? 'text-red-300' : 'text-yellow-300'}`}>
+                            {data.urgentMessage.toUpperCase()}
                         </p>
                     </div>
                 )}
 
                 {/* Tabs */}
-                <div className="flex gap-2 mb-6">
+                <div className="flex rounded-2xl bg-brand-dark-950 p-1.5 mb-10 border border-white/5 w-fit">
                     {[
-                        { key: 'followups',   label: `Follow-ups (${data?.followUps?.length || 0})` },
-                        { key: 'medications', label: `Medications (${data?.medications?.length || 0})` }
+                        { key: 'followups',   label: `Sync Appointments (${data?.followUps?.length || 0})` },
+                        { key: 'medications', label: `Active Protocols (${data?.medications?.length || 0})` }
                     ].map(tab => (
                         <button
                             key={tab.key}
                             onClick={() => setActiveTab(tab.key)}
-                            className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                            className={`px-8 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
                                 activeTab === tab.key
-                                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                                    : 'bg-white/5 text-gray-400 hover:text-white border border-white/10'
+                                    ? 'bg-brand-dark-800 text-white shadow-lg border border-white/10'
+                                    : 'text-gray-500 hover:text-gray-300'
                             }`}
                         >
                             {tab.label}
@@ -119,51 +144,53 @@ const AIReminders = () => {
 
                 {/* ── FOLLOW-UPS TAB ── */}
                 {activeTab === 'followups' && (
-                    <div className="space-y-4">
+                    <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
                         {data?.followUps?.length > 0 ? data.followUps.map((f, i) => {
                             const s = statusStyle(f.status);
                             const Icon = s.icon;
                             return (
-                                <div key={i} className={`rounded-xl border p-5 ${s.bg}`}>
-                                    <div className="flex justify-between items-start flex-wrap gap-3 mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg ${s.bg}`}>
-                                                <Icon className={`h-5 w-5 ${s.text}`} />
+                                <div key={i} className={`glass-card-modern p-8 border transition-all duration-500 hover:scale-[1.01] ${s.bg}`}>
+                                    <div className="flex justify-between items-start flex-wrap gap-6 mb-8">
+                                        <div className="flex items-center gap-6">
+                                            <div className={`w-14 h-14 rounded-2xl bg-brand-dark-950 border flex items-center justify-center shadow-xl ${s.badge}`}>
+                                                <Icon className={`h-7 w-7 ${s.text}`} />
                                             </div>
                                             <div>
-                                                <p className="font-bold text-white text-sm">{f.forCondition}</p>
-                                                <p className="text-xs text-gray-400">{f.provider}</p>
+                                                <h3 className="text-xl font-black text-white uppercase tracking-tighter italic mb-1">{f.forCondition}</h3>
+                                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">PROV: {f.provider.toUpperCase()}</p>
                                             </div>
                                         </div>
-                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border ${s.badge}`}>
-                                            {f.status}
+                                        <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${s.badge}`}>
+                                            STATUS_{f.status}
                                         </span>
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-3 mb-3">
-                                        <div className="bg-white/5 rounded-lg p-3">
-                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Appointment Date</p>
-                                            <p className={`font-bold text-sm ${s.text}`}>{new Date(f.date).toLocaleDateString()}</p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                                        <div className="bg-brand-dark-950/50 rounded-2xl p-6 border border-white/5">
+                                            <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-2">APPOINTMENT_TIMESTAMP</p>
+                                            <p className={`text-xl font-black italic tracking-tighter ${s.text}`}>{new Date(f.date).toLocaleDateString().toUpperCase()}</p>
                                         </div>
-                                        <div className="bg-white/5 rounded-lg p-3">
-                                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Time Until</p>
-                                            <p className={`font-bold text-sm ${s.text}`}>{formatDaysUntil(f.daysUntil)}</p>
+                                        <div className="bg-brand-dark-950/50 rounded-2xl p-6 border border-white/5">
+                                            <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-2">TELEMETRY_COUNTDOWN</p>
+                                            <p className={`text-xl font-black italic tracking-tighter ${s.text}`}>{formatDaysUntil(f.daysUntil).toUpperCase()}</p>
                                         </div>
                                     </div>
 
                                     {f.instructions && (
-                                        <div className="flex items-start gap-2 p-3 rounded-lg bg-white/5">
-                                            <InformationCircleIcon className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
-                                            <p className="text-xs text-blue-300">{f.instructions}</p>
+                                        <div className="flex items-start gap-4 p-5 rounded-2xl bg-brand-dark-900 border border-white/5 border-l-cyber-blue border-l-4">
+                                            <InformationCircleIcon className="h-5 w-5 text-cyber-blue flex-shrink-0 mt-0.5" />
+                                            <p className="text-[10px] font-black text-white uppercase tracking-widest italic leading-relaxed">{f.instructions}</p>
                                         </div>
                                     )}
                                 </div>
                             );
                         }) : (
-                            <div className="text-center py-12 bg-white/5 rounded-xl border border-white/10">
-                                <CheckCircleIcon className="h-12 w-12 text-green-400 mx-auto mb-3" />
-                                <p className="text-white font-semibold">No follow-up appointments found</p>
-                                <p className="text-gray-500 text-sm mt-1">Follow-up reminders will appear here when your doctor schedules them</p>
+                            <div className="glass-card-modern py-20 text-center border border-white/5">
+                                <div className="w-20 h-20 rounded-3xl bg-brand-dark-950 border border-cyber-green/30 flex items-center justify-center mx-auto mb-6 shadow-2xl animate-pulse">
+                                    <CheckCircleIcon className="h-10 w-10 text-cyber-green" />
+                                </div>
+                                <h3 className="text-xl font-black text-white uppercase tracking-tighter italic mb-2">Queue Clear</h3>
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">No scheduled follow-up protocols identified.</p>
                             </div>
                         )}
                     </div>
@@ -171,33 +198,33 @@ const AIReminders = () => {
 
                 {/* ── MEDICATIONS TAB ── */}
                 {activeTab === 'medications' && (
-                    <div className="space-y-4">
+                    <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-500">
                         {data?.medications?.length > 0 ? (
                             <>
-                                <div className="rounded-xl bg-blue-500/10 border border-blue-500/20 p-4 flex items-start gap-3">
-                                    <InformationCircleIcon className="h-5 w-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                                    <p className="text-xs text-blue-300 leading-relaxed">
-                                        These medications were prescribed across your recent visits. Always follow your doctor's instructions
-                                        and do not stop or change medications without consulting your healthcare provider.
+                                <div className="p-6 rounded-2xl bg-brand-dark-900 border border-white/5 border-l-cyber-purple/50 border-l-4 flex items-start gap-4 mb-8">
+                                    <InformationCircleIcon className="h-5 w-5 text-cyber-purple flex-shrink-0" />
+                                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
+                                        PROTOCOL_ADVISORY: THESE BIO-CHEMICAL AGENTS WERE RECORDED IN RECENT CLINICAL ENCOUNTERS. 
+                                        FOLLOW PRESCRIBED DOSAGE SEQUENCES EXACTLY. DO NOT DE-TERMINATE WITHOUT PRACTITIONER CONSENT.
                                     </p>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     {data.medications.map((med, i) => (
-                                        <div key={i} className="rounded-xl bg-white/5 border border-white/10 p-4 hover:border-purple-500/30 transition-all duration-200">
-                                            <div className="flex items-start gap-3">
-                                                <div className="p-2 rounded-lg bg-purple-500/20 flex-shrink-0">
-                                                    <BeakerIcon className="h-5 w-5 text-purple-400" />
+                                        <div key={i} className="glass-card-modern p-6 border border-white/5 hover:border-cyber-purple/30 transition-all duration-300 group">
+                                            <div className="flex items-start gap-6">
+                                                <div className="w-14 h-14 rounded-2xl bg-brand-dark-950 border border-white/5 flex items-center justify-center shadow-xl group-hover:border-cyber-purple/30 transition-all duration-500">
+                                                    <BeakerIcon className="h-7 w-7 text-cyber-purple group-hover:scale-110 transition-transform duration-500" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="font-bold text-white text-sm truncate">{med.name}</p>
-                                                    <p className="text-xs text-gray-400 mt-0.5">For: {med.forCondition}</p>
-                                                    <p className="text-xs text-gray-500 mt-0.5">
-                                                        Prescribed: {new Date(med.prescribedAt).toLocaleDateString()}
-                                                    </p>
-                                                    {med.hospital && (
-                                                        <p className="text-xs text-gray-600 mt-0.5">{med.hospital}</p>
-                                                    )}
+                                                    <h3 className="text-lg font-black text-white uppercase tracking-tighter italic truncate">{med.name}</h3>
+                                                    <p className="text-[10px] font-bold text-cyber-blue uppercase tracking-widest mt-1">FOR: {med.forCondition.toUpperCase()}</p>
+                                                    <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
+                                                        <p className="text-[8px] font-bold text-gray-700 uppercase tracking-widest">INIT: {new Date(med.prescribedAt).toLocaleDateString().toUpperCase()}</p>
+                                                        {med.hospital && (
+                                                            <p className="text-[8px] font-bold text-gray-700 uppercase tracking-widest">{med.hospital.toUpperCase()}</p>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -205,21 +232,24 @@ const AIReminders = () => {
                                 </div>
                             </>
                         ) : (
-                            <div className="text-center py-12 bg-white/5 rounded-xl border border-white/10">
-                                <BeakerIcon className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-                                <p className="text-white font-semibold">No medications on record</p>
-                                <p className="text-gray-500 text-sm mt-1">Prescribed medications will appear here after your visits</p>
+                            <div className="glass-card-modern py-20 text-center border border-white/5">
+                                <div className="w-20 h-20 rounded-3xl bg-brand-dark-950 border border-white/5 flex items-center justify-center mx-auto mb-6 shadow-2xl">
+                                    <BeakerIcon className="h-10 w-10 text-gray-700" />
+                                </div>
+                                <h3 className="text-xl font-black text-white uppercase tracking-tighter italic mb-2">No Active Protocols</h3>
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">No bio-chemical prescriptions found in recent archives.</p>
                             </div>
                         )}
                     </div>
                 )}
 
                 {/* Disclaimer */}
-                <div className="mt-6 rounded-xl bg-white/5 border border-white/10 p-4 flex items-start gap-3">
-                    <InformationCircleIcon className="h-5 w-5 text-gray-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-xs text-gray-500 leading-relaxed">
-                        Reminders are extracted from your medical records. Follow-up dates are set by your healthcare provider.
-                        Always contact your clinic directly to confirm or reschedule appointments.
+                <div className="mt-10 p-6 rounded-2xl bg-brand-dark-900 border border-white/5 border-l-cyber-blue border-l-4 flex items-start gap-4">
+                    <InformationCircleIcon className="h-5 w-5 text-cyber-blue flex-shrink-0" />
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest leading-relaxed">
+                        SYNCHRONIZATION DISCLAIMER: REMINDERS ARE DERIVED FROM ARCHIVED CLINICAL LOGS. 
+                        APPOINTMENT TIMESTAMPS ARE SUBJECT TO FACILITY VALIDATION. 
+                        DIRECT CONTACT WITH THE NODE PROVIDER IS MANDATORY FOR PROTOCOL CHANGES.
                     </p>
                 </div>
             </div>
