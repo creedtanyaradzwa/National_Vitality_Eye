@@ -231,8 +231,8 @@ const MapView = () => {
             setInsightsLoading(true);
             try {
                 const [insightsRes, analyticsRes] = await Promise.all([
-                    getDiseaseInsights(selectedDisease),
-                    getDiseaseAnalytics(selectedDisease)
+                    getDiseaseInsights(selectedDisease, timePeriod),
+                    getDiseaseAnalytics(selectedDisease, timePeriod)
                 ]);
                 setDiseaseInsights(insightsRes.data);
                 setDiseaseAnalytics(analyticsRes.data);
@@ -243,7 +243,7 @@ const MapView = () => {
             }
         };
         loadDiseaseInsights();
-    }, [selectedDisease]);
+    }, [selectedDisease, timePeriod]);
 
     const mapHotspot = useMemo(() => {
         if (mapSummary?.hotspot) {

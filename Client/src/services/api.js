@@ -55,6 +55,15 @@ export const createMedicalRecord = (data) => API.post('/medical-records', data);
 export const updateMedicalRecord = (id, data) => API.patch(`/medical-records/${id}`, data);
 export const deleteMedicalRecord = (id) => API.delete(`/medical-records/${id}`);
 export const getHospitalStaff = () => API.get('/medical-records/staff');
+export const uploadRadiologyImages = (patientId, studyType, files) => {
+    const formData = new FormData();
+    formData.append('patientId', patientId);
+    formData.append('studyType', studyType || 'radiology');
+    (files || []).forEach((file) => formData.append('images', file));
+    return API.post('/medical-records/upload/radiology-images', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+};
 
 // ============ STATISTICS ============
 export const getGlobalSummary = () => API.get('/medical-records/stats/summary');
@@ -90,7 +99,10 @@ export const getProvinceStats = (period = 'all', disease = '') => {
     });
 };
 // GET deep analytics for a specific disease
-export const getDiseaseAnalytics = (disease) => API.get(`/medical-records/stats/disease-analytics/${encodeURIComponent(disease)}`);
+export const getDiseaseAnalytics = (disease, period = 'all') => {
+    const params = new URLSearchParams({ period });
+    return API.get(`/medical-records/stats/disease-analytics/${encodeURIComponent(disease)}?${params}`);
+};
 export const getMonthlyTrends = () => API.get('/medical-records/stats/monthly-trends');
 export const getGrowthRate    = () => API.get('/medical-records/stats/growth-rate');
 export const getPrevalence    = () => API.get('/medical-records/stats/prevalence');
@@ -101,7 +113,10 @@ export const predictDisease = (data) => API.post('/ai/predict', data);
 export const getAlerts = () => API.get('/ai/alerts');
 export const getPatientRisk = (patientId) => API.get(`/ai/risk/${patientId}`);
 export const getDiseaseTrends = (disease) => API.get(`/medical-records/stats/disease-trends/${encodeURIComponent(disease)}`);
-export const getDiseaseInsights = (disease) => API.get(`/ai/disease-insights/${encodeURIComponent(disease)}`);
+export const getDiseaseInsights = (disease, period = 'all') => {
+    const params = new URLSearchParams({ period });
+    return API.get(`/ai/disease-insights/${encodeURIComponent(disease)}?${params}`);
+};
 export const getAIStats = () => API.get('/ai/stats');
 export const getPatientTriage = (patientId) => API.get(`/ai/patient-triage/${patientId}`);
 export const predictTriage = (data) => API.post('/ai/predict-triage', data);

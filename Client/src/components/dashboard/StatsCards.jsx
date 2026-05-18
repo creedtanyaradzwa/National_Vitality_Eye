@@ -1,4 +1,5 @@
 import React from 'react';
+import { toGrowthIndex, clampPercent } from '../../utils/analyticsHelpers';
 import { 
     UserGroupIcon, 
     DocumentTextIcon, 
@@ -101,16 +102,19 @@ const StatsCards = ({ stats, diseaseStats, selectedDisease }) => {
 
                         {/* Monthly growth */}
                         <div className="bg-brand-dark-800/60 rounded-xl p-3 border border-white/5">
-                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Growth</p>
+                            <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Outbreak index</p>
                             <div className="flex items-center gap-1">
-                                {diseaseStats.growthRate > 0
+                                {(diseaseStats.growthIndex ?? toGrowthIndex(diseaseStats.growthRate)) >= 55
                                     ? <ArrowTrendingUpIcon className="h-3.5 w-3.5 text-red-400 flex-shrink-0" />
                                     : <ArrowTrendingDownIcon className="h-3.5 w-3.5 text-green-400 flex-shrink-0" />}
-                                <p className={`text-xl font-black ${diseaseStats.growthRate > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                                    {diseaseStats.growthRate > 0 ? '+' : ''}{diseaseStats.growthRate}%
+                                <p className={`text-xl font-black ${
+                                    (diseaseStats.growthIndex ?? 50) >= 65 ? 'text-red-400' :
+                                    (diseaseStats.growthIndex ?? 50) <= 40 ? 'text-green-400' : 'text-white'
+                                }`}>
+                                    {clampPercent(diseaseStats.growthIndex ?? toGrowthIndex(diseaseStats.growthRate))}/100
                                 </p>
                             </div>
-                            <p className="text-[9px] text-gray-600 mt-0.5">vs prev month</p>
+                            <p className="text-[9px] text-gray-600 mt-0.5">50 = stable (0–100)</p>
                         </div>
 
                         {/* Recovery rate */}

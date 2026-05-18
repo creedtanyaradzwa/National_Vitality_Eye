@@ -72,8 +72,32 @@ function periodDateWindows(period = 'all') {
                 previousEnd: new Date(now.getTime() - 365 * day)
             };
         default:
-            return { currentStart: null, previousStart: null, previousEnd: null };
+            return {
+                currentStart: null,
+                previousStart: null,
+                previousEnd: null,
+                growthCurrentStart: new Date(now.getTime() - 30 * day),
+                growthPreviousStart: new Date(now.getTime() - 60 * day),
+                growthPreviousEnd: new Date(now.getTime() - 30 * day)
+            };
     }
+}
+
+/** Mongo match for current period totals vs prior window (for growth). */
+function periodMatches(baseMatch, period = 'all') {
+    const w = periodDateWindows(period);
+    const current = w.currentStart
+        ? { ...baseMatch, visitDate: { $gte: w.currentStart } }
+        : { ...baseMatch };
+    const previous = w.previousStart
+        ? { ...baseMatch, visitDate: { $gte: w.previousStart, $lt: w.previousEnd } }
+        : (w.growthPreviousStart
+            ? { ...baseMatch, visitDate: { $gte: w.growthPreviousStart, $lt: w.growthPreviousEnd } }
+            : null);
+    const growthCurrent = w.growthCurrentStart
+        ? { ...baseMatch, visitDate: { $gte: w.growthCurrentStart } }
+        : current;
+    return { current, previous, growthCurrent };
 }
 
 function riskLevelFromCasesAndGrowth(total, growthIndex) {
@@ -447,6 +471,7 @@ function buildDataDrivenRecommendations(ctx) {
                 reason: `${v.sampleSize} BMI values in records.`
             });
         }
+    }
     if (demographics) {
         if (demographics.child > 0) {
             pushRec(recs, {
@@ -602,6 +627,113 @@ function patternToRecommendationContext(pattern, diseaseName, extras = {}) {
 }
 
 /**
+ * Disease analytics payload for a disease + time period (map, insights sidebar).
+ */
+async function buildDiseasePeriodAnalytics({ MedicalRecord, baseMatch, period = 'all', diseaseLabel = '' }) {
+    const { current, previous, growthCurrent } = periodMatches(baseMatch, period);
+
+    const [provinces, outcomes, visitTypes, symptoms, vitals, monthlyTrend,
+           currentPeriodCount, previousPeriodCount, totalInPeriod] = await Promise.all([
+        MedicalRecord.aggregate([{ $match: current }, { $group: { _id: '$province', count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
+        MedicalRecord.aggregate([{ $match: current }, { $group: { _id: '$disposition', count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
+        MedicalRecord.aggregate([{ $match: current }, { $group: { _id: '$visitType', count: { $sum: 1 } } }]),
+        MedicalRecord.aggregate([
+            { $match: { ...current, symptoms: { $exists: true, $ne: [] } } },
+            { $unwind: '$symptoms' },
+            { $group: { _id: '$symptoms', count: { $sum: 1 } } },
+            { $sort: { count: -1 } }
+        ]),
+        MedicalRecord.aggregate([
+            { $match: current },
+            { $group: {
+                _id: null,
+                avgTemperature: { $avg: '$vitalSigns.temperature' },
+                avgHeartRate: { $avg: '$vitalSigns.heartRate' },
+                avgSystolic: { $avg: '$vitalSigns.bloodPressure.systolic' },
+                avgDiastolic: { $avg: '$vitalSigns.bloodPressure.diastolic' },
+                avgOxygenSat: { $avg: '$vitalSigns.oxygenSaturation' },
+                avgRespiratoryRate: { $avg: '$vitalSigns.respiratoryRate' },
+                avgBMI: { $avg: '$vitalSigns.bmi' },
+                count: { $sum: 1 }
+            }}
+        ]),
+        MedicalRecord.aggregate([
+            { $match: current },
+            { $group: { _id: { year: { $year: '$visitDate' }, month: { $month: '$visitDate' } }, count: { $sum: 1 } } },
+            { $sort: { '_id.year': 1, '_id.month': 1 } }
+        ]),
+        MedicalRecord.countDocuments(growthCurrent),
+        previous ? MedicalRecord.countDocuments(previous) : Promise.resolve(0),
+        MedicalRecord.countDocuments(current)
+    ]);
+
+    let growthRate = rawGrowthPercent(currentPeriodCount, previousPeriodCount);
+    const totalRecords = await MedicalRecord.countDocuments();
+    const totalOutcomes = outcomes.reduce((s, o) => s + o.count, 0);
+
+    const provinceBreakdown = provinces.map((p) => ({
+        province: p._id,
+        count: p.count,
+        percentage: totalInPeriod > 0 ? clampPercent((p.count / totalInPeriod) * 100) : 0
+    }));
+    const primaryHotspotInfo = resolvePrimaryHotspots(provinceBreakdown);
+    const projections = buildMonthlyProjections(monthlyTrend, 3);
+    const trendInsight = generateTrendInsight(monthlyTrend, projections, diseaseLabel);
+
+    const outcomesMap = outcomes.reduce((acc, o) => {
+        acc[o._id || 'Unknown'] = {
+            count: o.count,
+            percentage: totalOutcomes > 0 ? clampPercent((o.count / totalOutcomes) * 100) : 0
+        };
+        return acc;
+    }, {});
+
+    const topSymptomsList = symptoms.map((s) => ({
+        symptom: s._id,
+        count: s.count,
+        percentage: totalInPeriod > 0 ? clampPercent((s.count / totalInPeriod) * 100) : 0
+    }));
+
+    const visitTypesList = visitTypes.map((v) => ({
+        type: v._id || 'Unknown',
+        count: v.count,
+        percentage: totalInPeriod > 0 ? clampPercent((v.count / totalInPeriod) * 100) : 0
+    }));
+
+    const v0 = vitals[0];
+    const vitalsProfile = v0 && v0.count >= 1 ? {
+        temperature: v0.avgTemperature ? Math.round(v0.avgTemperature * 10) / 10 : null,
+        heartRate: v0.avgHeartRate ? Math.round(v0.avgHeartRate) : null,
+        bloodPressure: v0.avgSystolic ? { systolic: Math.round(v0.avgSystolic), diastolic: Math.round(v0.avgDiastolic) } : null,
+        oxygenSaturation: v0.avgOxygenSat ? Math.round(v0.avgOxygenSat * 10) / 10 : null,
+        respiratoryRate: v0.avgRespiratoryRate ? Math.round(v0.avgRespiratoryRate) : null,
+        bmi: v0.avgBMI ? Math.round(v0.avgBMI * 10) / 10 : null,
+        sampleSize: v0.count
+    } : null;
+
+    return {
+        totalCases: totalInPeriod,
+        growthRate,
+        growthIndex: toGrowthIndex(growthRate),
+        prevalenceShare: totalRecords > 0 ? clampPercent((totalInPeriod / totalRecords) * 100) : 0,
+        currentPeriodCases: currentPeriodCount,
+        previousPeriodCases: previousPeriodCount,
+        provinceBreakdown,
+        primaryHotspots: primaryHotspotInfo.hotspots,
+        hotspot: primaryHotspotInfo.label,
+        hotspotCases: primaryHotspotInfo.maxCount,
+        outcomes: outcomesMap,
+        visitTypes: visitTypesList,
+        topSymptoms: topSymptomsList,
+        monthlyTrend,
+        projections,
+        trendInsight,
+        vitalsProfile,
+        period
+    };
+}
+
+/**
  * Build map-ready province rows + summary for a disease/period filter.
  * @param {object} opts - { MedicalRecord, matchFilter, period }
  */
@@ -615,7 +747,9 @@ async function buildMapProvinceStats({ MedicalRecord, matchFilter = {}, period =
 
     const previousMatch = windows.previousStart
         ? { ...baseMatch, visitDate: { $gte: windows.previousStart, $lt: windows.previousEnd } }
-        : null;
+        : (windows.growthPreviousStart
+            ? { ...baseMatch, visitDate: { $gte: windows.growthPreviousStart, $lt: windows.growthPreviousEnd } }
+            : null);
 
     const [currentByProvince, previousByProvince, diseaseByProvince, totalCount] = await Promise.all([
         MedicalRecord.aggregate([
@@ -712,6 +846,8 @@ module.exports = {
     clampPercent,
     toGrowthIndex,
     rawGrowthPercent,
+    periodMatches,
+    buildDiseasePeriodAnalytics,
     buildMapProvinceStats,
     periodDateWindows,
     resolvePrimaryHotspots,

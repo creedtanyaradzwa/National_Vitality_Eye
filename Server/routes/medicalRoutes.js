@@ -8,14 +8,13 @@ const { hasPermission, isApproved } = require("../middleware/rbac");
 const { uploadMedicalImages } = require("../middleware/upload");
 const { predictTriagePriority } = require("../utils/triageAI");
 const { normaliseDisease } = require("../utils/normalise");
+const { buildPatientSnapshot, normalizeVitalSigns } = require("../utils/vitalSigns");
 const {
     clampPercent,
-    buildMonthlyProjections,
-    generateTrendInsight,
     buildDiseaseProfileFromData,
-    resolvePrimaryHotspots,
-    toGrowthIndex,
-    buildMapProvinceStats
+    buildMapProvinceStats,
+    buildDiseasePeriodAnalytics,
+    periodMatches
 } = require("../utils/analyticsHelpers");
 const fs = require("fs");
 const path = require("path");
@@ -107,30 +106,59 @@ router.get("/stats/summary", hasPermission("view:analytics"), async (req, res) =
     }
 });
 
-// GET system load factor
+// GET system load factor — all indices 0–100, DB-calculated
 router.get("/stats/system-load", hasPermission("view:analytics"), async (req, res) => {
     try {
-        const filter = {};
         const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-        const [totalStaff, activeStaff, totalPatients, recentRecords, emergencyRecords] = await Promise.all([
-            User.countDocuments({ role: { $in: ['doctor', 'nurse'] } }),
+        const [
+            totalStaff,
+            activeStaffIds,
+            totalPatients,
+            recentRecords,
+            emergencyRecords,
+            completeRecords
+        ] = await Promise.all([
+            User.countDocuments({ role: { $in: ['doctor', 'nurse', 'data_entry'] }, isActive: { $ne: false } }),
             MedicalRecord.distinct('createdBy', { visitDate: { $gte: thirtyDaysAgo } }),
-            Patient.countDocuments({}),
+            Patient.countDocuments({ isActive: { $ne: false } }),
             MedicalRecord.countDocuments({ visitDate: { $gte: sevenDaysAgo } }),
-            MedicalRecord.countDocuments({ visitType: 'Emergency', visitDate: { $gte: sevenDaysAgo } })
+            MedicalRecord.countDocuments({ visitType: 'Emergency', visitDate: { $gte: sevenDaysAgo } }),
+            MedicalRecord.countDocuments({
+                visitDate: { $gte: sevenDaysAgo },
+                disease: { $exists: true, $nin: [null, ''] },
+                'vitalSigns.temperature': { $exists: true, $ne: null },
+                'vitalSigns.bloodPressure.systolic': { $exists: true, $ne: null }
+            })
         ]);
 
-        const engagement = totalStaff > 0 ? Math.round((activeStaff.length / totalStaff) * 100) : 0;
-        const capacity = Math.min(100, Math.round((recentRecords / ((totalStaff || 1) * 35)) * 100));
-        
+        const activeStaffCount = activeStaffIds.length;
+        const personnelEngagement = clampPercent(
+            totalStaff > 0 ? (activeStaffCount / totalStaff) * 100 : 0
+        );
+        const clinicalCapacity = clampPercent(
+            (recentRecords / Math.max(totalStaff || 1, 1) / 35) * 100
+        );
+        const emergencyLoadIndex = clampPercent(
+            recentRecords > 0 ? (emergencyRecords / recentRecords) * 100 : 0
+        );
+        const recordCompletenessIndex = clampPercent(
+            recentRecords > 0 ? (completeRecords / recentRecords) * 100 : 0
+        );
+        const weeklyRecordsPerStaff = activeStaffCount > 0
+            ? Math.round((recentRecords / activeStaffCount) * 10) / 10
+            : recentRecords;
+
         res.json({
-            personnelEngagement: engagement,
-            clinicalCapacity: capacity,
+            personnelEngagement,
+            clinicalCapacity,
+            emergencyLoadIndex,
+            recordCompletenessIndex,
             staffingRatio: `1:${totalStaff > 0 ? Math.round(totalPatients / totalStaff) : totalPatients}`,
-            responseTime: `${Math.round(10 + ((recentRecords > 0 ? (emergencyRecords / recentRecords) : 0) * 20))}m`,
-            activeStaffCount: activeStaff.length,
+            weeklyRecordsPerStaff,
+            recordsLast7Days: recentRecords,
+            activeStaffCount,
             totalStaffCount: totalStaff
         });
     } catch (error) {
@@ -191,10 +219,11 @@ router.get("/stats/by-province", hasPermission("view:analytics"), async (req, re
     }
 });
 
-// GET disease analytics (Deep Insight) — includes proper growth rate
+// GET disease analytics — respects ?period=30days|90days|year|all
 router.get("/stats/disease-analytics/:disease", hasPermission("view:analytics"), async (req, res) => {
     try {
         const raw = decodeURIComponent(req.params.disease);
+        const period = req.query.period || 'all';
         const norm = normaliseDisease(raw);
         const baseMatch = {
             $or: [
@@ -204,140 +233,38 @@ router.get("/stats/disease-analytics/:disease", hasPermission("view:analytics"),
             ]
         };
 
-        // Date windows for growth rate: last 30 days vs the 30 days before that
-        const now = new Date();
-        const thirtyDaysAgo  = new Date(now.getTime() - 30  * 24 * 60 * 60 * 1000);
-        const sixtyDaysAgo   = new Date(now.getTime() - 60  * 24 * 60 * 60 * 1000);
+        const analytics = await buildDiseasePeriodAnalytics({
+            MedicalRecord,
+            baseMatch,
+            period,
+            diseaseLabel: raw
+        });
 
-        const [provinces, outcomes, visitTypes, symptoms, vitals, monthlyTrend,
-               currentPeriodCount, previousPeriodCount] = await Promise.all([
-            MedicalRecord.aggregate([{ $match: baseMatch }, { $group: { _id: "$province", count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
-            MedicalRecord.aggregate([{ $match: baseMatch }, { $group: { _id: "$disposition", count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
-            MedicalRecord.aggregate([{ $match: baseMatch }, { $group: { _id: "$visitType", count: { $sum: 1 } } }]),
-            MedicalRecord.aggregate([
-                { $match: { ...baseMatch, symptoms: { $exists: true, $ne: [] } } },
-                { $unwind: "$symptoms" },
-                { $group: { _id: "$symptoms", count: { $sum: 1 } } },
-                { $sort: { count: -1 } }
-            ]),
-            MedicalRecord.aggregate([
-                { $match: baseMatch },
-                { $group: {
-                    _id: null,
-                    avgTemperature:     { $avg: "$vitalSigns.temperature" },
-                    avgHeartRate:       { $avg: "$vitalSigns.heartRate" },
-                    avgSystolic:        { $avg: "$vitalSigns.bloodPressure.systolic" },
-                    avgDiastolic:       { $avg: "$vitalSigns.bloodPressure.diastolic" },
-                    avgOxygenSat:       { $avg: "$vitalSigns.oxygenSaturation" },
-                    avgRespiratoryRate: { $avg: "$vitalSigns.respiratoryRate" },
-                    avgBMI:             { $avg: "$vitalSigns.bmi" },
-                    count: { $sum: 1 }
-                }}
-            ]),
-            // Monthly trend for chart (last 24 months, sorted oldest→newest)
-            MedicalRecord.aggregate([
-                { $match: baseMatch },
-                { $group: { _id: { year: { $year: "$visitDate" }, month: { $month: "$visitDate" } }, count: { $sum: 1 } } },
-                { $sort: { "_id.year": 1, "_id.month": 1 } }
-            ]),
-            // Current 30-day window
-            MedicalRecord.countDocuments({ $or: baseMatch.$or, visitDate: { $gte: thirtyDaysAgo } }),
-            // Previous 30-day window
-            MedicalRecord.countDocuments({ $or: baseMatch.$or, visitDate: { $gte: sixtyDaysAgo, $lt: thirtyDaysAgo } })
-        ]);
-
-        // Growth rate: (current30 - prev30) / prev30 * 100
-        // Allow negative (improvement) — do NOT clamp to 0
-        const total = await MedicalRecord.countDocuments({ $or: baseMatch.$or });
-        let growthRate = 0;
-        if (previousPeriodCount > 0) {
-            growthRate = Math.round(((currentPeriodCount - previousPeriodCount) / previousPeriodCount) * 100);
-        } else if (currentPeriodCount > 0) {
-            growthRate = 100; // New cases with no prior baseline = 100% growth
-        }
-
-        const totalOutcomes = outcomes.reduce((s, o) => s + o.count, 0);
-        const totalRecords = await MedicalRecord.countDocuments();
-        const prevalenceShare = totalRecords > 0 ? clampPercent((total / totalRecords) * 100) : 0;
-
-        const projections = buildMonthlyProjections(monthlyTrend, 3);
-        const trendInsight = generateTrendInsight(monthlyTrend, projections, raw);
-
-        const provinceBreakdown = provinces.map(p => ({
-            province: p._id,
-            count: p.count,
-            percentage: total > 0 ? clampPercent((p.count / total) * 100) : 0
-        }));
-        const topSymptomsList = symptoms.map(s => ({
-            symptom: s._id,
-            count: s.count,
-            percentage: total > 0 ? clampPercent((s.count / total) * 100) : 0
-        }));
-        const outcomesMap = outcomes.reduce((acc, o) => {
-            acc[o._id || 'Unknown'] = {
-                count: o.count,
-                percentage: totalOutcomes > 0 ? clampPercent((o.count / totalOutcomes) * 100) : 0
-            };
-            return acc;
-        }, {});
-        const visitTypesList = visitTypes.map(v => ({
-            type: v._id || 'Unknown',
-            count: v.count,
-            percentage: total > 0 ? clampPercent((v.count / total) * 100) : 0
-        }));
-
+        const { current } = periodMatches(baseMatch, period);
         const yearlyAgg = await MedicalRecord.aggregate([
-            { $match: baseMatch },
-            { $group: { _id: { year: { $year: "$visitDate" } }, count: { $sum: 1 } } },
-            { $sort: { "_id.year": 1 } }
+            { $match: current },
+            { $group: { _id: { year: { $year: '$visitDate' } }, count: { $sum: 1 } } },
+            { $sort: { '_id.year': 1 } }
         ]);
         const yearlyTrend = yearlyAgg.map((y) => ({ year: y._id.year, count: y.count }));
 
-        const primaryHotspotInfo = resolvePrimaryHotspots(provinceBreakdown);
-
         const diseaseProfile = buildDiseaseProfileFromData({
-            monthlyTrend,
-            provinceBreakdown,
-            topSymptoms: topSymptomsList,
-            outcomes: outcomesMap,
-            total,
-            growthRate,
-            currentPeriodCount,
-            previousPeriodCount
+            monthlyTrend: analytics.monthlyTrend,
+            provinceBreakdown: analytics.provinceBreakdown,
+            topSymptoms: analytics.topSymptoms,
+            outcomes: analytics.outcomes,
+            total: analytics.totalCases,
+            growthRate: analytics.growthRate,
+            currentPeriodCount: analytics.currentPeriodCases,
+            previousPeriodCount: analytics.previousPeriodCases
         });
 
         res.json({
             disease: raw,
-            totalCases: total,
-            primaryHotspots: primaryHotspotInfo.hotspots,
-            hotspot: primaryHotspotInfo.label,
-            hotspotCases: primaryHotspotInfo.maxCount,
-            growthRate,
-            growthIndex: toGrowthIndex(growthRate),
-            prevalenceShare,
-            currentPeriodCases:  currentPeriodCount,
-            previousPeriodCases: previousPeriodCount,
-            provinceBreakdown,
-            outcomes: outcomesMap,
-            visitTypes: visitTypesList,
-            topSymptoms: topSymptomsList,
-            monthlyTrend,
-            projections,
-            trendInsight,
+            period,
+            ...analytics,
             yearlyTrend,
             diseaseProfile,
-            vitalsProfile: vitals[0] ? {
-                temperature:      vitals[0].avgTemperature     ? Math.round(vitals[0].avgTemperature * 10) / 10 : null,
-                heartRate:        vitals[0].avgHeartRate        ? Math.round(vitals[0].avgHeartRate) : null,
-                bloodPressure: {
-                    systolic:  vitals[0].avgSystolic  ? Math.round(vitals[0].avgSystolic)  : null,
-                    diastolic: vitals[0].avgDiastolic ? Math.round(vitals[0].avgDiastolic) : null
-                },
-                oxygenSaturation: vitals[0].avgOxygenSat       ? Math.round(vitals[0].avgOxygenSat * 10) / 10 : null,
-                respiratoryRate:  vitals[0].avgRespiratoryRate  ? Math.round(vitals[0].avgRespiratoryRate) : null,
-                bmi:              vitals[0].avgBMI              ? Math.round(vitals[0].avgBMI * 10) / 10 : null,
-                sampleSize: vitals[0].count
-            } : null,
             timestamp: new Date()
         });
     } catch (error) {
@@ -508,18 +435,59 @@ router.get("/staff", async (req, res) => {
     }
 });
 
+// POST radiology image upload (before /:id routes)
+router.post("/upload/radiology-images", hasPermission("create:records"), (req, res) => {
+    uploadMedicalImages(req, res, (err) => {
+        if (err) {
+            return res.status(400).json({ error: err.message || 'Image upload failed' });
+        }
+        try {
+            const images = (req.files || []).map((f) => {
+                const normalized = f.path.replace(/\\/g, '/');
+                const url = normalized.includes('uploads/')
+                    ? `/uploads/${normalized.split('uploads/')[1]}`
+                    : `/uploads/medical-images/${f.filename}`;
+                return {
+                    filename: f.filename,
+                    originalName: f.originalname,
+                    path: f.path,
+                    url,
+                    fileSize: f.size,
+                    mimeType: f.mimetype,
+                    uploadedAt: new Date(),
+                    uploadedBy: req.user._id
+                };
+            });
+            res.json({ images });
+        } catch (e) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+});
+
 // POST new record
 router.post("/", hasPermission("create:records"), async (req, res) => {
     try {
         const patient = await Patient.findById(req.body.patientId);
         if (!patient) return res.status(404).json({ error: "Patient not found" });
-        
+
+        let vitalSigns;
+        try {
+            vitalSigns = normalizeVitalSigns(req.body.vitalSigns || {});
+        } catch (vitalErr) {
+            return res.status(400).json({ error: vitalErr.message });
+        }
+
+        const visitDate = req.body.visitDate ? new Date(req.body.visitDate) : new Date();
         const record = new MedicalRecord({
             ...req.body,
+            vitalSigns,
+            patientSnapshot: buildPatientSnapshot(patient, visitDate),
             createdBy: req.user._id,
             doctorId: req.user._id,
-            hospital: req.user.hospitalName,
-            province: req.user.province
+            hospital: req.body.hospital || req.user.hospitalName,
+            province: req.body.province || patient.province || req.user.province,
+            district: req.body.district || patient.district
         });
         await record.save();
         
@@ -572,7 +540,23 @@ router.patch("/:id", hasPermission("edit:records"), async (req, res) => {
         delete updateData._id;
         delete updateData.createdBy;
         delete updateData.patientId;
-        
+
+        if (updateData.vitalSigns) {
+            try {
+                updateData.vitalSigns = normalizeVitalSigns(updateData.vitalSigns);
+            } catch (vitalErr) {
+                return res.status(400).json({ error: vitalErr.message });
+            }
+        }
+
+        const patient = await Patient.findById(record.patientId);
+        if (patient) {
+            updateData.patientSnapshot = buildPatientSnapshot(
+                patient,
+                updateData.visitDate ? new Date(updateData.visitDate) : record.visitDate
+            );
+        }
+
         record.set(updateData);
         record.updatedBy = req.user._id;
         await record.save();

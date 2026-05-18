@@ -3,9 +3,9 @@ const {
     normaliseDisease,
     normaliseSymptoms,
     normaliseHospital,
-    normaliseProvince,
-    normaliseCondition
+    normaliseProvince
 } = require("../utils/normalise");
+const { roundTemperature } = require("../utils/vitalSigns");
 
 const medicalRecordSchema = new mongoose.Schema({
     // ============ PATIENT REFERENCE ============
@@ -13,6 +13,35 @@ const medicalRecordSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Patient",
         required: true
+    },
+
+    /** Point-in-time copy of patient demographics at visit (audit / reporting) */
+    patientSnapshot: {
+        nationalId: String,
+        firstName: String,
+        lastName: String,
+        dateOfBirth: Date,
+        gender: { type: String, enum: ["Male", "Female", "Other"] },
+        ageAtVisit: Number,
+        contactInfo: {
+            phone: String,
+            email: String,
+            address: String,
+            emergencyContact: {
+                name: String,
+                phone: String,
+                relationship: String
+            }
+        },
+        patientProvince: String,
+        district: String,
+        ward: String,
+        insuranceInfo: {
+            provider: String,
+            policyNumber: String,
+            memberId: String,
+            coverageType: String
+        }
     },
     
     // ============ VISIT INFORMATION ============
@@ -55,7 +84,7 @@ const medicalRecordSchema = new mongoose.Schema({
     
     // ============ VITAL SIGNS ============
     vitalSigns: {
-        temperature: Number,
+        temperature: { type: Number, required: [true, 'Temperature is required'] },
         bloodPressure: {
             systolic: Number,
             diastolic: Number
@@ -241,8 +270,7 @@ const medicalRecordSchema = new mongoose.Schema({
 // Ensures consistent casing/spacing for all free-text fields so that
 // "MALARIA", "malaria fever", "Malaria" all resolve to the same disease key
 // in analytics, AI, and search.
-medicalRecordSchema.pre('save', function (next) {
-    // Disease
+medicalRecordSchema.pre('save', async function () {
     if (this.disease) {
         this.disease = normaliseDisease(this.disease);
     }
@@ -256,7 +284,6 @@ medicalRecordSchema.pre('save', function (next) {
         }));
     }
 
-    // Symptoms
     if (this.symptoms?.length) {
         this.symptoms = normaliseSymptoms(this.symptoms);
     }
@@ -267,17 +294,17 @@ medicalRecordSchema.pre('save', function (next) {
         }));
     }
 
-    // Hospital
     if (this.hospital) {
         this.hospital = normaliseHospital(this.hospital);
     }
 
-    // Province — keep within the enum; normalise handles abbreviations
     if (this.province) {
         this.province = normaliseProvince(this.province);
     }
 
-    next();
+    if (this.vitalSigns?.temperature != null) {
+        this.vitalSigns.temperature = roundTemperature(this.vitalSigns.temperature);
+    }
 });
 
 module.exports = mongoose.model("MedicalRecord", medicalRecordSchema);

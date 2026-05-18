@@ -31,6 +31,7 @@ import {
     HeartIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { toGrowthIndex, clampPercent } from '../utils/analyticsHelpers';
 
 const Dashboard = () => {
     const [patientCount, setPatientCount]       = useState(0);
@@ -171,6 +172,7 @@ const Dashboard = () => {
         return {
             totalCases:     da.totalCases,
             growthRate:     da.growthRate,
+            growthIndex:    da.growthIndex ?? toGrowthIndex(da.growthRate),
             recoveryRate:   Math.round((discharged / total) * 100),
             admissionRate:  Math.round((admitted   / total) * 100),
             mortalityRate:  Math.round((deceased   / total) * 100),
@@ -343,9 +345,9 @@ const Dashboard = () => {
                         <div className="flex items-end justify-between">
                             <div>
                                 <p className="text-4xl font-black text-white tracking-tighter">
-                                    {diseaseStats?.growthRate || 0}%
+                                    {diseaseStats?.growthIndex ?? 50}<span className="text-lg text-gray-500">/100</span>
                                 </p>
-                                <p className="text-xs text-gray-500 mt-1">Growth trajectory vs previous window</p>
+                                <p className="text-xs text-gray-500 mt-1">Outbreak index (50 = stable, 0–100 scale)</p>
                             </div>
                             <div className="w-24 h-12 flex items-end gap-1 pb-1">
                                 {[40, 60, 45, 70, 85, 60, 95].map((h, i) => (
@@ -368,7 +370,7 @@ const Dashboard = () => {
                             <div className="w-full h-1.5 bg-brand-dark-800 rounded-full overflow-hidden">
                                 <div 
                                     className={`h-full transition-all duration-1000 ${diseaseStats?.riskLevel === 'CRITICAL' ? 'bg-red-500' : 'bg-cyber-blue'}`}
-                                    style={{ width: `${diseaseStats?.growthRate > 0 ? Math.min(diseaseStats.growthRate * 2, 100) : 5}%` }}
+                                    style={{ width: `${clampPercent(diseaseStats?.growthIndex ?? 50)}%` }}
                                 />
                             </div>
                         </div>
@@ -390,24 +392,24 @@ const Dashboard = () => {
                         <div>
                             <div className="flex justify-between items-end mb-1">
                                 <p className="text-xs text-gray-400 font-medium">Personnel Engagement</p>
-                                <p className="text-sm font-bold text-white">{systemLoad?.personnelEngagement || 0}%</p>
+                                <p className="text-sm font-bold text-white">{clampPercent(systemLoad?.personnelEngagement ?? 0)}%</p>
                             </div>
                             <div className="w-full h-1 bg-brand-dark-800 rounded-full overflow-hidden">
                                 <div 
                                     className="h-full bg-cyber-purple transition-all duration-1000" 
-                                    style={{ width: `${systemLoad?.personnelEngagement || 0}%` }}
+                                    style={{ width: `${clampPercent(systemLoad?.personnelEngagement ?? 0)}%` }}
                                 />
                             </div>
                         </div>
                         <div>
                             <div className="flex justify-between items-end mb-1">
                                 <p className="text-xs text-gray-400 font-medium">Clinical Capacity (Avg)</p>
-                                <p className="text-sm font-bold text-white">{systemLoad?.clinicalCapacity || 0}%</p>
+                                <p className="text-sm font-bold text-white">{clampPercent(systemLoad?.clinicalCapacity ?? 0)}%</p>
                             </div>
                             <div className="w-full h-1 bg-brand-dark-800 rounded-full overflow-hidden">
                                 <div 
                                     className="h-full bg-cyber-blue transition-all duration-1000" 
-                                    style={{ width: `${systemLoad?.clinicalCapacity || 0}%` }}
+                                    style={{ width: `${clampPercent(systemLoad?.clinicalCapacity ?? 0)}%` }}
                                 />
                             </div>
                         </div>
@@ -419,8 +421,9 @@ const Dashboard = () => {
                             <p className="text-lg font-black text-white">{systemLoad?.staffingRatio || '1:0'}</p>
                         </div>
                         <div>
-                            <p className="text-[10px] text-gray-500 font-bold uppercase">Response Time</p>
-                            <p className="text-lg font-black text-white">{systemLoad?.responseTime || '0m'}</p>
+                            <p className="text-[10px] text-gray-500 font-bold uppercase">Record completeness</p>
+                            <p className="text-lg font-black text-white">{systemLoad?.recordCompletenessIndex ?? 0}/100</p>
+                            <p className="text-[9px] text-gray-600 mt-0.5">7-day records with vitals + diagnosis</p>
                         </div>
                     </div>
                 </div>

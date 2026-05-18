@@ -21,7 +21,9 @@ const {
     buildDataDrivenRecommendations,
     patternToRecommendationContext,
     resolvePrimaryHotspots,
-    toGrowthIndex
+    toGrowthIndex,
+    buildDiseasePeriodAnalytics,
+    periodMatches
 } = require("../utils/analyticsHelpers");
 
 // All AI routes require authentication and approval
@@ -280,6 +282,8 @@ router.get("/disease-insights/:disease", hasPermission("view:analytics"), async 
     }
     
     const rawDisease = decodeURIComponent(req.params.disease);
+    const period = req.query.period || 'all';
+
     // Try exact match in patterns first, then fuzzy
     let pattern = realTimeAI.diseasePatterns.get(rawDisease.toLowerCase());
     let key = rawDisease.toLowerCase();
@@ -288,8 +292,9 @@ router.get("/disease-insights/:disease", hasPermission("view:analytics"), async 
         key = findDiseaseKey(realTimeAI.diseasePatterns, rawDisease);
         pattern = key ? realTimeAI.diseasePatterns.get(key) : null;
     }
-    
-    if (!pattern) {
+
+    // When ?period= is sent (e.g. MapView), use live DB aggregates so KPIs match the map filter
+    if (!pattern || req.query.period != null) {
         try {
             const norm = normaliseDisease(rawDisease);
             const diseaseFilter = {
@@ -299,54 +304,26 @@ router.get("/disease-insights/:disease", hasPermission("view:analytics"), async 
                     { disease: { $regex: new RegExp(`^${rawDisease.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } }
                 ]
             };
+            const { current } = periodMatches(diseaseFilter, period);
             const now = new Date();
-            const thirtyAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-            const sixtyAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
 
-            const [records, currentCount, prevCount, monthlyTrend, provinces, outcomes, visitTypes, symptoms, vitals] = await Promise.all([
-                MedicalRecord.find(diseaseFilter).populate('patientId', 'dateOfBirth').select('province disposition patientId').lean(),
-                MedicalRecord.countDocuments({ ...diseaseFilter, visitDate: { $gte: thirtyAgo } }),
-                MedicalRecord.countDocuments({ ...diseaseFilter, visitDate: { $gte: sixtyAgo, $lt: thirtyAgo } }),
-                MedicalRecord.aggregate([
-                    { $match: diseaseFilter },
-                    { $group: { _id: { year: { $year: "$visitDate" }, month: { $month: "$visitDate" } }, count: { $sum: 1 } } },
-                    { $sort: { "_id.year": 1, "_id.month": 1 } },
-
-                ]),
-                MedicalRecord.aggregate([{ $match: diseaseFilter }, { $group: { _id: "$province", count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
-                MedicalRecord.aggregate([{ $match: diseaseFilter }, { $group: { _id: "$disposition", count: { $sum: 1 } } }]),
-                MedicalRecord.aggregate([{ $match: diseaseFilter }, { $group: { _id: "$visitType", count: { $sum: 1 } } }]),
-                MedicalRecord.aggregate([
-                    { $match: { ...diseaseFilter, symptoms: { $exists: true, $ne: [] } } },
-                    { $unwind: "$symptoms" },
-                    { $group: { _id: "$symptoms", count: { $sum: 1 } } },
-                    { $sort: { count: -1 } },
-
-                ]),
-                MedicalRecord.aggregate([
-                    { $match: diseaseFilter },
-                    { $group: {
-                        _id: null,
-                        avgTemperature: { $avg: "$vitalSigns.temperature" },
-                        avgHeartRate: { $avg: "$vitalSigns.heartRate" },
-                        avgSystolic: { $avg: "$vitalSigns.bloodPressure.systolic" },
-                        avgDiastolic: { $avg: "$vitalSigns.bloodPressure.diastolic" },
-                        avgOxygenSat: { $avg: "$vitalSigns.oxygenSaturation" },
-                        avgRespiratoryRate: { $avg: "$vitalSigns.respiratoryRate" },
-                        avgBMI: { $avg: "$vitalSigns.bmi" },
-                        count: { $sum: 1 }
-                    }}
-                ])
+            const [analytics, records] = await Promise.all([
+                buildDiseasePeriodAnalytics({
+                    MedicalRecord,
+                    baseMatch: diseaseFilter,
+                    period,
+                    diseaseLabel: rawDisease
+                }),
+                MedicalRecord.find(current)
+                    .populate('patientId', 'dateOfBirth')
+                    .select('province disposition patientId')
+                    .lean()
             ]);
 
-            if (!records.length) {
+            const total = analytics.totalCases;
+            if (total === 0) {
                 return res.status(404).json({ error: `No records found for: ${rawDisease}` });
             }
-
-            const total = await MedicalRecord.countDocuments({ $or: diseaseFilter.$or });
-            let growthRate = 0;
-            if (prevCount > 0) growthRate = Math.round(((currentCount - prevCount) / prevCount) * 100);
-            else if (currentCount > 0) growthRate = 100;
 
             const ageGroups = { child: 0, adult: 0, elderly: 0 };
             let ageKnown = 0;
@@ -369,43 +346,22 @@ router.get("/disease-insights/:disease", hasPermission("view:analytics"), async 
                 )
                 : null;
 
-            const provinceBreakdown = provinces.map(p => ({
-                province: p._id,
-                count: p.count,
-                percentage: total > 0 ? clampPercent((p.count / total) * 100) : 0
-            }));
-            const primaryHotspotInfo = resolvePrimaryHotspots(provinceBreakdown);
-            const hotspot = primaryHotspotInfo.label;
-            const totalOutcomes = outcomes.reduce((s, o) => s + o.count, 0);
-            const outcomesMap = outcomes.reduce((acc, o) => {
-                acc[o._id || 'Unknown'] = {
-                    count: o.count,
-                    percentage: totalOutcomes > 0 ? clampPercent((o.count / totalOutcomes) * 100) : 0
-                };
-                return acc;
-            }, {});
-            const topSymptoms = symptoms.map(s => ({
-                symptom: s._id,
-                count: s.count,
-                percentage: total > 0 ? clampPercent((s.count / total) * 100) : 0
-            }));
-            const visitTypesList = visitTypes.map(v => ({
-                type: v._id || 'Unknown',
-                count: v.count,
-                percentage: total > 0 ? clampPercent((v.count / total) * 100) : 0
-            }));
-            const v0 = vitals[0];
-            const vitalsProfile = v0 && v0.count >= 1 ? {
-                temperature: v0.avgTemperature ? Math.round(v0.avgTemperature * 10) / 10 : null,
-                heartRate: v0.avgHeartRate ? Math.round(v0.avgHeartRate) : null,
-                bloodPressure: v0.avgSystolic ? { systolic: Math.round(v0.avgSystolic), diastolic: Math.round(v0.avgDiastolic) } : null,
-                oxygenSaturation: v0.avgOxygenSat ? Math.round(v0.avgOxygenSat * 10) / 10 : null,
-                respiratoryRate: v0.avgRespiratoryRate ? Math.round(v0.avgRespiratoryRate) : null,
-                bmi: v0.avgBMI ? Math.round(v0.avgBMI * 10) / 10 : null,
-                sampleSize: v0.count
-            } : (v0?.count > 0 ? { sampleSize: v0.count } : null);
+            const {
+                growthRate,
+                provinceBreakdown,
+                outcomes: outcomesMap,
+                topSymptoms,
+                visitTypes: visitTypesList,
+                vitalsProfile,
+                monthlyTrend,
+                projections,
+                hotspot,
+                primaryHotspots,
+                hotspotCases,
+                currentPeriodCases: currentCount,
+                previousPeriodCases: prevCount
+            } = analytics;
 
-            const projections = buildMonthlyProjections(monthlyTrend, 3);
             const deceased = outcomesMap.Deceased?.count || outcomesMap.deceased?.count || 0;
             const mortalityRate = total > 0 ? clampPercent((deceased / total) * 100) : 0;
             const primaryAgeGroup = demographics
@@ -425,22 +381,23 @@ router.get("/disease-insights/:disease", hasPermission("view:analytics"), async 
                 vitalsProfile,
                 monthlyTrend,
                 demographics,
-                hotspot: primaryHotspotInfo.label,
-                primaryHotspots: primaryHotspotInfo.hotspots
+                hotspot,
+                primaryHotspots
             };
 
             return res.json({
                 disease: rawDisease,
+                period,
                 source: 'database',
                 summary: {
                     growthRate,
-                    growthIndex: toGrowthIndex(growthRate),
+                    growthIndex: analytics.growthIndex,
                     hotspot,
-                    primaryHotspots: primaryHotspotInfo.hotspots,
-                    hotspotCases: primaryHotspotInfo.maxCount,
+                    primaryHotspots,
+                    hotspotCases,
                     riskLevel: growthRate > 20 || mortalityRate > 5 ? 'CRITICAL' : growthRate > 10 ? 'HIGH' : 'MODERATE',
                     primaryAgeGroup,
-                    trendInsight: generateTrendInsight(monthlyTrend, projections, rawDisease)
+                    trendInsight: analytics.trendInsight
                 },
                 demographics,
                 diseaseProfile: buildDiseaseProfileFromData({

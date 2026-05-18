@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getPatients, getMedicalRecords, getPatientRecords, createMedicalRecord, updateMedicalRecord, deleteMedicalRecord, getHospitalStaff } from '../services/api';
+import {
+    getPatients,
+    getMedicalRecords,
+    getPatientRecords,
+    createMedicalRecord,
+    updateMedicalRecord,
+    deleteMedicalRecord,
+    getHospitalStaff,
+    uploadRadiologyImages
+} from '../services/api';
 import { useAuth } from '../context/useAuth';
 import { useDataRefresh } from '../context/useDataRefresh';
 import { 
@@ -31,6 +40,13 @@ import {
     CommandLineIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import {
+    roundTemperature,
+    formatTemperature,
+    buildVitalDisplayRows,
+    statusColorClass
+} from '../utils/vitalSigns';
+import ClinicalInvestigationsForm from '../components/medical/ClinicalInvestigationsForm';
 
 const MedicalRecords = () => {
     const navigate = useNavigate();
@@ -69,10 +85,24 @@ const MedicalRecords = () => {
         disease: '',
         prescribedMedications: [],
         medicationInput: '',
+        prescriptions: [],
+        prescriptionInput: {
+            medication: '',
+            dosage: '',
+            frequency: '',
+            route: 'Oral',
+            duration: '',
+            notes: ''
+        },
         treatmentPlan: '',
         disposition: 'Discharged',
         dischargeInstructions: '',
         province: '',
+        district: '',
+        department: '',
+        historyOfPresentIllness: '',
+        doctorNotes: '',
+        nursingNotes: '',
         notes: '',
         taggedUsers: [],
         physicalExam: {
@@ -212,10 +242,17 @@ const MedicalRecords = () => {
             disease: '',
             prescribedMedications: [],
             medicationInput: '',
+            prescriptions: [],
+            prescriptionInput: { medication: '', dosage: '', frequency: '', route: 'Oral', duration: '', notes: '' },
             treatmentPlan: '',
             disposition: 'Discharged',
             dischargeInstructions: '',
             province: selectedPatient.province || currentUser?.province || '',
+            district: selectedPatient.district || '',
+            department: '',
+            historyOfPresentIllness: '',
+            doctorNotes: '',
+            nursingNotes: '',
             notes: '',
             taggedUsers: [],
             physicalExam: {
@@ -268,10 +305,24 @@ const MedicalRecords = () => {
             disease: record.disease || '',
             prescribedMedications: record.prescribedMedications || [],
             medicationInput: '',
+            prescriptions: record.treatmentPlan?.medications?.length
+                ? record.treatmentPlan.medications
+                : (record.prescribedMedications || []).map((m) => ({
+                    medication: typeof m === 'string' ? m : m.medication,
+                    dosage: '', frequency: '', route: 'Oral', duration: '', notes: ''
+                })),
+            prescriptionInput: { medication: '', dosage: '', frequency: '', route: 'Oral', duration: '', notes: '' },
             treatmentPlan: record.treatmentPlan?.plan || '',
-            disposition: record.disposition || 'Discharged',
+            disposition: ['Discharged', 'Admitted', 'Transferred', 'Left Against Medical Advice', 'Deceased'].includes(record.disposition)
+                ? record.disposition
+                : 'Discharged',
             dischargeInstructions: record.dischargeInstructions || '',
             province: record.province || selectedPatient?.province || '',
+            district: record.district || record.patientSnapshot?.district || '',
+            department: record.department || '',
+            historyOfPresentIllness: record.historyOfPresentIllness || '',
+            doctorNotes: record.doctorNotes || '',
+            nursingNotes: record.nursingNotes || '',
             notes: record.notes || '',
             taggedUsers: record.taggedUsers?.map(u => u._id || u) || [],
             physicalExam: record.physicalExam || {
@@ -295,7 +346,9 @@ const MedicalRecords = () => {
                 previewImages: []
             },
             vitalSigns: {
-                temperature: record.vitalSigns?.temperature || '',
+                temperature: record.vitalSigns?.temperature != null
+                    ? formatTemperature(record.vitalSigns.temperature)
+                    : '',
                 bloodPressureSystolic: record.vitalSigns?.bloodPressure?.systolic || '',
                 bloodPressureDiastolic: record.vitalSigns?.bloodPressure?.diastolic || '',
                 heartRate: record.vitalSigns?.heartRate || '',
@@ -370,8 +423,157 @@ const MedicalRecords = () => {
         }));
     };
 
+    const handleAddPrescription = () => {
+        const p = formData.prescriptionInput;
+        if (!p.medication?.trim()) {
+            toast.error('Medication name is required');
+            return;
+        }
+        const entry = {
+            medication: p.medication.trim(),
+            dosage: p.dosage?.trim() || '',
+            frequency: p.frequency?.trim() || '',
+            route: p.route || 'Oral',
+            duration: p.duration?.trim() || '',
+            notes: p.notes?.trim() || '',
+            prescribedBy: formData.doctorName
+        };
+        setFormData((prev) => ({
+            ...prev,
+            prescriptions: [...prev.prescriptions, entry],
+            prescribedMedications: [...prev.prescribedMedications, p.medication.trim()],
+            prescriptionInput: { medication: '', dosage: '', frequency: '', route: 'Oral', duration: '', notes: '' }
+        }));
+    };
+
+    const handleRemovePrescription = (index) => {
+        setFormData((prev) => ({
+            ...prev,
+            prescriptions: prev.prescriptions.filter((_, i) => i !== index),
+            prescribedMedications: prev.prescribedMedications.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleAddLabTest = () => {
+        const t = formData.labTestInput;
+        if (!t.testName?.trim()) {
+            toast.error('Lab test name is required');
+            return;
+        }
+        setFormData((prev) => ({
+            ...prev,
+            labTests: [...prev.labTests, {
+                testName: t.testName.trim(),
+                result: t.result?.trim() || '',
+                referenceRange: t.referenceRange?.trim() || '',
+                abnormal: !!t.abnormal,
+                orderedDate: new Date().toISOString(),
+                notes: ''
+            }],
+            labTestInput: { testName: '', result: '', referenceRange: '', abnormal: false }
+        }));
+    };
+
+    const handleRemoveLabTest = (index) => {
+        setFormData((prev) => ({
+            ...prev,
+            labTests: prev.labTests.filter((_, i) => i !== index)
+        }));
+    };
+
+    const handleRadiologyFiles = (e) => {
+        const files = Array.from(e.target.files || []);
+        const previews = files.map((file) => ({
+            file,
+            preview: URL.createObjectURL(file),
+            name: file.name
+        }));
+        setFormData((prev) => ({
+            ...prev,
+            radiologyInput: {
+                ...prev.radiologyInput,
+                previewImages: [...prev.radiologyInput.previewImages, ...previews]
+            }
+        }));
+        e.target.value = '';
+    };
+
+    const handleRemoveRadiologyPreview = (index) => {
+        setFormData((prev) => {
+            const removed = prev.radiologyInput.previewImages[index];
+            if (removed?.preview) URL.revokeObjectURL(removed.preview);
+            return {
+                ...prev,
+                radiologyInput: {
+                    ...prev.radiologyInput,
+                    previewImages: prev.radiologyInput.previewImages.filter((_, i) => i !== index)
+                }
+            };
+        });
+    };
+
+    const handleAddRadiology = () => {
+        const r = formData.radiologyInput;
+        if (!r.studyType?.trim()) {
+            toast.error('Radiology study type is required');
+            return;
+        }
+        const pendingFiles = (r.previewImages || []).filter((p) => p.file).map((p) => p.file);
+        const existingImages = (r.previewImages || []).filter((p) => p.url).map((p) => ({
+            url: p.url,
+            originalName: p.name || 'image',
+            filename: p.filename
+        }));
+        setFormData((prev) => ({
+            ...prev,
+            radiology: [...prev.radiology, {
+                studyType: r.studyType.trim(),
+                bodyPart: r.bodyPart?.trim() || '',
+                findings: r.findings?.trim() || '',
+                impression: r.impression?.trim() || '',
+                images: existingImages,
+                _pendingFiles: pendingFiles,
+                reportDate: new Date().toISOString(),
+                orderedBy: prev.doctorName
+            }],
+            radiologyInput: { studyType: '', bodyPart: '', findings: '', impression: '', previewImages: [] }
+        }));
+    };
+
+    const handleRemoveRadiology = (index) => {
+        setFormData((prev) => ({
+            ...prev,
+            radiology: prev.radiology.filter((_, i) => i !== index)
+        }));
+    };
+
+    const resolveRadiologyStudies = async (studies, patientId) => {
+        const resolved = [];
+        for (const study of studies) {
+            const { _pendingFiles, ...rest } = study;
+            const entry = { ...rest };
+            if (_pendingFiles?.length) {
+                setUploadingImages(true);
+                try {
+                    const uploadRes = await uploadRadiologyImages(patientId, entry.studyType, _pendingFiles);
+                    entry.images = [...(entry.images || []), ...(uploadRes.data?.images || [])];
+                } finally {
+                    setUploadingImages(false);
+                }
+            }
+            resolved.push(entry);
+        }
+        return resolved;
+    };
+
     const handleVitalChange = (field, value) => {
-        const newVitals = { ...formData.vitalSigns, [field]: value };
+        let nextValue = value;
+        if (field === 'temperature' && value !== '') {
+            const rounded = roundTemperature(value);
+            if (rounded != null) nextValue = rounded.toFixed(1);
+        }
+
+        const newVitals = { ...formData.vitalSigns, [field]: nextValue };
         
         if (field === 'weight' || field === 'height') {
             const bmi = calculateBMI(
@@ -394,7 +596,26 @@ const MedicalRecords = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (formData.vitalSigns.temperature === '' || formData.vitalSigns.temperature == null) {
+            toast.error('Temperature is required');
+            return;
+        }
+
+        const temp = roundTemperature(formData.vitalSigns.temperature);
+        if (temp == null) {
+            toast.error('Enter a valid temperature');
+            return;
+        }
         
+        let radiologyStudies;
+        try {
+            radiologyStudies = await resolveRadiologyStudies(formData.radiology, formData.patientId);
+        } catch (uploadErr) {
+            toast.error(uploadErr.response?.data?.error || 'Failed to upload radiology images');
+            return;
+        }
+
         const recordData = {
             patientId: formData.patientId,
             hospital: formData.hospital,
@@ -404,23 +625,29 @@ const MedicalRecords = () => {
             symptoms: formData.symptoms,
             primaryDiagnosis: { name: formData.primaryDiagnosis },
             disease: formData.disease,
-            prescribedMedications: formData.prescribedMedications,
+            prescribedMedications: formData.prescriptions.map((p) => p.medication),
             treatmentPlan: {
-                plan: formData.treatmentPlan
+                plan: formData.treatmentPlan,
+                medications: formData.prescriptions
             },
             disposition: formData.disposition,
             dischargeInstructions: formData.dischargeInstructions,
             province: formData.province,
+            district: formData.district,
+            department: formData.department,
+            historyOfPresentIllness: formData.historyOfPresentIllness,
+            doctorNotes: formData.doctorNotes,
+            nursingNotes: formData.nursingNotes,
             notes: formData.notes,
             taggedUsers: formData.taggedUsers,
             physicalExam: formData.physicalExam,
             differentialDiagnosis: formData.differentialDiagnosis,
             investigations: {
                 labTests: formData.labTests,
-                radiology: formData.radiology
+                radiology: radiologyStudies
             },
             vitalSigns: {
-                temperature: formData.vitalSigns.temperature ? parseFloat(formData.vitalSigns.temperature) : null,
+                temperature: temp,
                 bloodPressure: {
                     systolic: formData.vitalSigns.bloodPressureSystolic ? parseInt(formData.vitalSigns.bloodPressureSystolic) : null,
                     diastolic: formData.vitalSigns.bloodPressureDiastolic ? parseInt(formData.vitalSigns.bloodPressureDiastolic) : null
@@ -446,10 +673,17 @@ const MedicalRecords = () => {
             
             refreshData();
             setShowModal(false);
-            const response = await getPatientRecords(selectedPatient._id);
-            setRecords(response.data);
+            const patientId = selectedPatient?._id || formData.patientId;
+            if (patientId) {
+                const response = await getPatientRecords(patientId);
+                setRecords(response.data);
+            } else {
+                const response = await getMedicalRecords(page, limit);
+                setRecords(response.data.records);
+            }
         } catch (error) {
-            toast.error(error.response?.data?.error || 'Operation failed');
+            const msg = error.response?.data?.error || error.message || 'Operation failed';
+            toast.error(msg);
         }
     };
 
@@ -714,25 +948,77 @@ const MedicalRecords = () => {
                                                                 <HeartIcon className="h-4 w-4 mr-3" />
                                                                 Biometric Telemetry
                                                             </h4>
-                                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                                                {[
-                                                                    { label: 'TEMP', value: `${record.vitalSigns?.temperature}°C`, status: 'NOMINAL' },
-                                                                    { label: 'BP', value: `${record.vitalSigns?.bloodPressure?.systolic}/${record.vitalSigns?.bloodPressure?.diastolic}`, status: 'NOMINAL' },
-                                                                    { label: 'HR', value: `${record.vitalSigns?.heartRate} BPM`, status: 'STABLE' },
-                                                                    { label: 'SPO2', value: `${record.vitalSigns?.oxygenSaturation}%`, status: 'NOMINAL' }
-                                                                ].map((v, i) => (
+                                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                                                {buildVitalDisplayRows(record.vitalSigns).map((v, i) => (
                                                                     <div key={i} className="p-4 rounded-2xl bg-brand-dark-950 border border-white/5 hover:border-cyber-green/30 transition-colors group">
                                                                         <p className="text-[8px] font-bold text-gray-700 uppercase tracking-widest mb-1 group-hover:text-cyber-green transition-colors">{v.label}</p>
                                                                         <p className="text-lg font-bold text-white tracking-tighter mb-2">{v.value}</p>
                                                                         <div className="flex items-center space-x-1.5">
-                                                                            <div className="w-1 h-1 rounded-full bg-cyber-green" />
-                                                                            <span className="text-[7px] font-bold text-cyber-green uppercase tracking-widest">{v.status}</span>
+                                                                            <div className={`w-1 h-1 rounded-full ${
+                                                                                v.color === 'red' ? 'bg-red-500' :
+                                                                                v.color === 'orange' ? 'bg-orange-500' :
+                                                                                v.color === 'yellow' ? 'bg-yellow-500' :
+                                                                                v.color === 'green' ? 'bg-cyber-green' : 'bg-gray-500'
+                                                                            }`} />
+                                                                            <span className={`text-[7px] font-bold uppercase tracking-widest ${statusColorClass(v.color)}`}>{v.status}</span>
                                                                         </div>
                                                                     </div>
                                                                 ))}
                                                             </div>
                                                         </div>
                                                     </div>
+
+                                                    {(record.treatmentPlan?.medications?.length > 0 || record.investigations?.labTests?.length > 0 || record.investigations?.radiology?.length > 0) && (
+                                                        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                            {record.treatmentPlan?.medications?.length > 0 && (
+                                                                <div>
+                                                                    <h4 className="text-[10px] font-bold uppercase text-cyber-blue mb-3">Prescriptions</h4>
+                                                                    <ul className="space-y-2 text-xs text-gray-300">
+                                                                        {record.treatmentPlan.medications.map((rx, i) => (
+                                                                            <li key={i} className="p-2 rounded-lg bg-brand-dark-950 border border-white/5">
+                                                                                <span className="font-bold text-white">{rx.medication}</span>
+                                                                                {[rx.dosage, rx.frequency, rx.route].filter(Boolean).length > 0 && (
+                                                                                    <span className="text-gray-500"> — {[rx.dosage, rx.frequency, rx.route].filter(Boolean).join(' · ')}</span>
+                                                                                )}
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
+                                                            {record.investigations?.labTests?.length > 0 && (
+                                                                <div>
+                                                                    <h4 className="text-[10px] font-bold uppercase text-cyber-purple mb-3">Lab tests</h4>
+                                                                    <ul className="space-y-2 text-xs text-gray-300">
+                                                                        {record.investigations.labTests.map((t, i) => (
+                                                                            <li key={i} className="p-2 rounded-lg bg-brand-dark-950 border border-white/5">
+                                                                                {t.testName}: {t.result || 'pending'}
+                                                                                {t.abnormal && <span className="text-red-400 ml-1">ABNORMAL</span>}
+                                                                            </li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
+                                                            {record.investigations?.radiology?.length > 0 && (
+                                                                <div>
+                                                                    <h4 className="text-[10px] font-bold uppercase text-cyan-400 mb-3">Radiology</h4>
+                                                                    {record.investigations.radiology.map((s, i) => (
+                                                                        <div key={i} className="p-2 mb-2 rounded-lg bg-brand-dark-950 border border-white/5 text-xs">
+                                                                            <p className="font-bold text-white">{s.studyType}{s.bodyPart ? ` · ${s.bodyPart}` : ''}</p>
+                                                                            {s.images?.length > 0 && (
+                                                                                <div className="flex flex-wrap gap-1 mt-2">
+                                                                                    {s.images.map((img, j) => (
+                                                                                        <a key={j} href={img.url} target="_blank" rel="noreferrer" className="block w-12 h-12 rounded overflow-hidden border border-white/10">
+                                                                                            <img src={img.url} alt={img.originalName || 'scan'} className="w-full h-full object-cover" />
+                                                                                        </a>
+                                                                                    ))}
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
 
                                                     {/* Action Controls */}
                                                     <div className="mt-10 pt-8 border-t border-white/5 flex justify-end space-x-4">
@@ -886,11 +1172,47 @@ const MedicalRecords = () => {
                                                         <option value="Inpatient">Inpatient</option>
                                                         <option value="Emergency">Emergency</option>
                                                         <option value="Telemedicine">Telemedicine</option>
+                                                        <option value="Follow-up">Follow-up</option>
+                                                        <option value="Consultation">Consultation</option>
+                                                        <option value="Home Visit">Home Visit</option>
                                                     </select>
                                                 </div>
                                             </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Department</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.department}
+                                                    onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                                                    className="w-full bg-brand-dark-950 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white outline-none focus:border-cyber-blue/30 transition-all"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">District</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.district}
+                                                    onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                                                    className="w-full bg-brand-dark-950 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white outline-none focus:border-cyber-blue/30 transition-all"
+                                                />
+                                            </div>
                                         </div>
                                     </section>
+
+                                    {selectedPatient && (
+                                        <section className="p-6 rounded-2xl bg-brand-dark-950/80 border border-white/5">
+                                            <h3 className="text-[10px] font-bold text-cyber-purple uppercase tracking-[0.3em] mb-4">Patient data (saved on record)</h3>
+                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                                                <div><p className="text-gray-600 uppercase text-[9px]">National ID</p><p className="text-white font-bold">{selectedPatient.nationalId}</p></div>
+                                                <div><p className="text-gray-600 uppercase text-[9px]">Gender</p><p className="text-white font-bold">{selectedPatient.gender}</p></div>
+                                                <div><p className="text-gray-600 uppercase text-[9px]">Phone</p><p className="text-white font-bold">{selectedPatient.contactInfo?.phone || '—'}</p></div>
+                                                <div><p className="text-gray-600 uppercase text-[9px]">Emergency contact</p><p className="text-white font-bold">{selectedPatient.contactInfo?.emergencyContact?.name || '—'}</p></div>
+                                                <div className="md:col-span-2"><p className="text-gray-600 uppercase text-[9px]">Address</p><p className="text-white font-bold">{selectedPatient.contactInfo?.address || '—'}</p></div>
+                                                <div><p className="text-gray-600 uppercase text-[9px]">Ward</p><p className="text-white font-bold">{selectedPatient.ward || '—'}</p></div>
+                                                <div><p className="text-gray-600 uppercase text-[9px]">Insurance</p><p className="text-white font-bold">{selectedPatient.insuranceInfo?.provider || '—'}</p></div>
+                                            </div>
+                                        </section>
+                                    )}
 
                                     {/* Symptoms Section */}
                                     <section>
@@ -959,8 +1281,8 @@ const MedicalRecords = () => {
                                                 >
                                                     <option value="Discharged">Discharged</option>
                                                     <option value="Admitted">Admitted</option>
-                                                    <option value="Referred">Referred</option>
-                                                    <option value="Follow-up">Follow-up</option>
+                                                    <option value="Transferred">Transferred</option>
+                                                    <option value="Left Against Medical Advice">Left Against Medical Advice</option>
                                                     <option value="Deceased">Deceased</option>
                                                 </select>
                                             </div>
@@ -984,7 +1306,7 @@ const MedicalRecords = () => {
                                         </h3>
                                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                             {[
-                                                { label: 'TEMP (°C)', field: 'temperature', type: 'number', step: '0.1' },
+                                                { label: 'TEMP (°C) *', field: 'temperature', type: 'number', step: '0.1', required: true },
                                                 { label: 'SYSTOLIC', field: 'bloodPressureSystolic', type: 'number' },
                                                 { label: 'DIASTOLIC', field: 'bloodPressureDiastolic', type: 'number' },
                                                 { label: 'HEART RATE', field: 'heartRate', type: 'number' },
@@ -998,12 +1320,63 @@ const MedicalRecords = () => {
                                                     <input
                                                         type={v.type}
                                                         step={v.step}
+                                                        required={v.required}
                                                         value={formData.vitalSigns[v.field]}
                                                         onChange={(e) => handleVitalChange(v.field, e.target.value)}
+                                                        onBlur={v.field === 'temperature' ? (e) => handleVitalChange('temperature', e.target.value) : undefined}
                                                         className="w-full bg-brand-dark-950 border border-white/5 rounded-xl py-3 px-4 text-sm text-white outline-none focus:border-cyber-blue/30 transition-all"
                                                     />
                                                 </div>
                                             ))}
+                                        </div>
+                                    </section>
+
+                                    <ClinicalInvestigationsForm
+                                        formData={formData}
+                                        setFormData={setFormData}
+                                        uploadingImages={uploadingImages}
+                                        onAddPrescription={handleAddPrescription}
+                                        onRemovePrescription={handleRemovePrescription}
+                                        onAddLabTest={handleAddLabTest}
+                                        onRemoveLabTest={handleRemoveLabTest}
+                                        onRadiologyFiles={handleRadiologyFiles}
+                                        onRemoveRadiologyPreview={handleRemoveRadiologyPreview}
+                                        onAddRadiology={handleAddRadiology}
+                                        onRemoveRadiology={handleRemoveRadiology}
+                                    />
+
+                                    <section>
+                                        <h3 className="text-[10px] font-bold text-cyber-blue uppercase tracking-[0.3em] mb-6 flex items-center">
+                                            <div className="w-2 h-2 bg-cyber-blue rounded-full mr-3 animate-pulse" />
+                                            CLINICAL_NOTES
+                                        </h3>
+                                        <div className="space-y-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">History of present illness</label>
+                                                <textarea
+                                                    value={formData.historyOfPresentIllness}
+                                                    onChange={(e) => setFormData({ ...formData, historyOfPresentIllness: e.target.value })}
+                                                    className="w-full bg-brand-dark-950 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white outline-none focus:border-cyber-blue/30 min-h-[80px]"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Doctor notes</label>
+                                                    <textarea
+                                                        value={formData.doctorNotes}
+                                                        onChange={(e) => setFormData({ ...formData, doctorNotes: e.target.value })}
+                                                        className="w-full bg-brand-dark-950 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white outline-none focus:border-cyber-blue/30 min-h-[80px]"
+                                                    />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Nursing notes</label>
+                                                    <textarea
+                                                        value={formData.nursingNotes}
+                                                        onChange={(e) => setFormData({ ...formData, nursingNotes: e.target.value })}
+                                                        className="w-full bg-brand-dark-950 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white outline-none focus:border-cyber-blue/30 min-h-[80px]"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </section>
 
