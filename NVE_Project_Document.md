@@ -1,8 +1,6 @@
 ﻿# National Vitality Eye — Zimbabwe National Health Intelligence System
 
-**by**
 
-**ENIFA**
 
 Project submitted for review for the
 
