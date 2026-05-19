@@ -52,7 +52,7 @@ const Dashboard = () => {
     const [diseaseTrends, setDiseaseTrends]         = useState([]);
     const [diseaseLoading, setDiseaseLoading]       = useState(false);
 
-    const { activeAlerts } = useAlerts();
+    const { activeAlerts, subscribeToRooms } = useAlerts();
     const { refreshTrigger, refreshData } = useDataRefresh();
 
     // ── Load system-wide data ──────────────────────────────────────────────
@@ -109,6 +109,20 @@ const Dashboard = () => {
     useEffect(() => {
         loadDashboardData();
     }, [refreshTrigger]);                           // eslint-disable-line
+
+    // ── Subscribe to 'all-alerts' room and listen for AI stats updates ────
+    // When a new medical record is saved anywhere, the server emits 'ai-update'
+    // via WebSocket. We use that signal to silently refresh the dashboard stats.
+    useEffect(() => {
+        subscribeToRooms(['all-alerts']);
+
+        const handleAIUpdate = () => {
+            // Silently refresh top-level stats without showing a loading spinner
+            loadDashboardData();
+        };
+        window.addEventListener('ai-stats-update', handleAIUpdate);
+        return () => window.removeEventListener('ai-stats-update', handleAIUpdate);
+    }, []);                                         // eslint-disable-line
 
     // ── Load per-disease data whenever selection changes ──────────────────
     useEffect(() => {

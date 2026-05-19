@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const Patient = require("../models/Patient");
 const MedicalRecord = require("../models/MedicalRecord");
+const User = require("../models/User");
 const { predictTriagePriority } = require("../utils/triageAI");
 
 // ── Shared helper: verify patient JWT and return patient doc ──────────────

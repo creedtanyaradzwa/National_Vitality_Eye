@@ -98,6 +98,33 @@ export const AlertProvider = ({ children }) => {
             toast.success(data.message);
         });
 
+        // AI stats update — refresh the AI status indicator
+        newSocket.on('ai-update', (data) => {
+            // Dispatch a custom event so any component can react
+            window.dispatchEvent(new CustomEvent('ai-stats-update', { detail: data }));
+        });
+
+        // System status — show toast for critical AI events
+        newSocket.on('system-status', (data) => {
+            if (data.status === 'error') {
+                toast.error(`AI System: ${data.message}`, { duration: 6000 });
+            } else if (data.status === 'active') {
+                console.log('🤖 AI System Online');
+            }
+        });
+
+        // Alert acknowledged by another user — update local state
+        newSocket.on('alert-acknowledged', ({ alertId }) => {
+            setActiveAlerts(prev => prev.map(a =>
+                a.id === alertId ? { ...a, acknowledged: true } : a
+            ));
+        });
+
+        // New case in a disease room (requires subscription via 'subscribe' event)
+        newSocket.on('new-case', (data) => {
+            window.dispatchEvent(new CustomEvent('new-disease-case', { detail: data }));
+        });
+
         return () => {
             if (newSocket) {
                 newSocket.disconnect();
@@ -111,6 +138,19 @@ export const AlertProvider = ({ children }) => {
         }
     };
 
+    // Subscribe to province/disease/patient rooms for targeted events
+    const subscribeToRooms = (topics) => {
+        if (socketRef.current && socketRef.current.connected) {
+            socketRef.current.emit('subscribe', topics);
+        }
+    };
+
+    const unsubscribeFromRooms = (topics) => {
+        if (socketRef.current && socketRef.current.connected) {
+            socketRef.current.emit('unsubscribe', topics);
+        }
+    };
+
     const clearAlerts = () => {
         setAlerts([]);
     };
@@ -120,6 +160,8 @@ export const AlertProvider = ({ children }) => {
         activeAlerts,
         connected,
         acknowledgeAlert,
+        subscribeToRooms,
+        unsubscribeFromRooms,
         clearAlerts
     };
 

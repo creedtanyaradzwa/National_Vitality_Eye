@@ -91,6 +91,13 @@ const patientSchema = new mongoose.Schema({
             timestamp: Date,
             ipAddress: String,
             userAgent: String
+        }],
+        // Staff members the patient has explicitly granted full record access to.
+        // A provider must have created or been tagged in at least one of the
+        // patient's records before they can be added here.
+        trustedProviders: [{
+            userId:    { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+            grantedAt: { type: Date, default: Date.now }
         }]
     },
     

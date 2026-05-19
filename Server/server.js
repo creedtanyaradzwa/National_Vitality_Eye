@@ -15,6 +15,7 @@ const aiFeaturesRoutes = require("./routes/aiFeaturesRoutes");
 const { router: realTimeAIRoutes, setAIInstance } = require("./routes/realTimeAIRoutes");
 const ContinuousLearner = require("./ai/continuousLearner");
 const AlertEmitter = require("./ai/alertEmitter");
+const RealTimeLearner = require("./ai/realTimeLearner");
 const MedicalRecord = require("./models/MedicalRecord");
 
 const app = express();
@@ -57,6 +58,56 @@ io.use((socket, next) => {
 });
 
 global.io = io;
+
+// ============ SOCKET.IO CONNECTION HANDLER ============
+io.on('connection', (socket) => {
+    console.log(`🔌 Client connected: ${socket.user?.firstName} ${socket.user?.lastName} (${socket.user?.role})`);
+
+    // Send welcome event with current active alerts so the client
+    // can populate its state immediately without an HTTP round-trip
+    const currentAlerts = alertEmitter ? alertEmitter.getActiveAlerts() : [];
+    socket.emit('welcome', {
+        message: 'Connected to National Vitality Eye',
+        activeAlerts: currentAlerts,
+        timestamp: new Date()
+    });
+
+    // ── Room subscriptions ──────────────────────────────────────────
+    // Allow clients to subscribe to province-specific or disease-specific rooms
+    socket.on('subscribe', (topics) => {
+        if (!Array.isArray(topics)) return;
+        topics.forEach(topic => {
+            if (
+                topic.startsWith('province-') ||
+                topic.startsWith('disease-') ||
+                topic.startsWith('patient-') ||
+                topic === 'all-alerts'
+            ) {
+                socket.join(topic);
+                console.log(`📡 ${socket.user?.firstName} joined room: ${topic}`);
+            }
+        });
+    });
+
+    socket.on('unsubscribe', (topics) => {
+        if (!Array.isArray(topics)) return;
+        topics.forEach(topic => socket.leave(topic));
+    });
+
+    // ── Alert acknowledgement ───────────────────────────────────────
+    socket.on('acknowledge-alert', ({ alertId }) => {
+        if (!alertId) return;
+        if (alertEmitter) {
+            alertEmitter.acknowledgeAlert(alertId, socket.user?._id);
+            console.log(`✅ Alert ${alertId} acknowledged by ${socket.user?.firstName}`);
+        }
+    });
+
+    // ── Disconnect ──────────────────────────────────────────────────
+    socket.on('disconnect', (reason) => {
+        console.log(`🔌 Client disconnected: ${socket.user?.firstName} — ${reason}`);
+    });
+});
 
 // ============ MIDDLEWARE ============
 app.use(cors());
@@ -122,7 +173,15 @@ async function initializeAI() {
         // Store references
         realTimeAI = ai;
         alertEmitter = emitter;
-        
+
+        // ── Start RealTimeLearner so MongoDB change stream watches for new records ──
+        // This is what makes the AI update in real time as new records are saved,
+        // and what triggers outbreak detection and 'new-case' WebSocket events.
+        const rtLearner = new RealTimeLearner(io, emitter);
+        rtLearner.start().catch(err =>
+            console.error("❌ RealTimeLearner start error:", err.message)
+        );
+
         // Set in the routes module
         setAIInstance(ai, emitter);
         

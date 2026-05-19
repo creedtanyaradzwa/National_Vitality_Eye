@@ -22,25 +22,37 @@ const path = require("path");
 // ============ HELPER FUNCTIONS ============
 
 /**
- * Generates a MongoDB filter based on user role and permissions
- * Ensures users only see records they are authorized to access
+ * Generates a MongoDB filter based on user role and permissions.
+ * Ensures users only see records they are authorized to access.
+ *
+ * Access is granted when ANY of these is true:
+ *  1. User is admin
+ *  2. User created the record
+ *  3. User is tagged in the record
+ *  4. The patient has added this user to their trustedProviders list
+ *     (patient-initiated full-access grant from the patient portal)
  */
-function getRecordAccessFilter(user) {
-    if (!user) return { _id: null }; // Deny all if no user
-    
-    // System Admins can see everything
-    if (user.role === "admin") return {};
-    
-    // Patients can only see their own records
-    if (user.role === "patient") return { patientId: user._id };
-    
-    // Staff (Doctors, Nurses, etc.) see records they created or are tagged in
-    return {
-        $or: [
-            { createdBy: user._id },
-            { taggedUsers: user._id }
-        ]
-    };
+async function getRecordAccessFilter(user) {
+    if (!user) return { _id: null };
+    if (user.role === 'admin') return {};
+    if (user.role === 'patient') return { patientId: user._id };
+
+    // Find all patients who have explicitly trusted this provider
+    const trustedPatients = await Patient.find(
+        { 'portalAccount.trustedProviders.userId': user._id },
+        { _id: 1 }
+    ).lean();
+    const trustedPatientIds = trustedPatients.map(p => p._id);
+
+    const conditions = [
+        { createdBy: user._id },
+        { taggedUsers: user._id }
+    ];
+    if (trustedPatientIds.length > 0) {
+        conditions.push({ patientId: { $in: trustedPatientIds } });
+    }
+
+    return { $or: conditions };
 }
 
 /**
@@ -395,7 +407,7 @@ router.get("/", hasPermission("view:records"), async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
-        const filter = getRecordAccessFilter(req.user);
+        const filter = await getRecordAccessFilter(req.user);
         
         console.log(`[GET /medical-records] User: ${req.user?._id} (${req.user?.role})`);
         console.log(`[GET /medical-records] Filter:`, JSON.stringify(filter));
@@ -507,7 +519,7 @@ router.get("/:id", hasPermission("view:records"), async (req, res) => {
     try {
         console.log(`[GET /medical-records/${req.params.id}] User: ${req.user?._id} (${req.user?.role})`);
         
-        const filter = { _id: req.params.id, ...getRecordAccessFilter(req.user) };
+        const filter = { _id: req.params.id, ...await getRecordAccessFilter(req.user) };
         console.log(`[GET /medical-records/${req.params.id}] Access Filter:`, JSON.stringify(filter));
 
         const record = await MedicalRecord.findOne(filter)
@@ -533,7 +545,7 @@ router.get("/:id", hasPermission("view:records"), async (req, res) => {
 // PATCH update record
 router.patch("/:id", hasPermission("edit:records"), async (req, res) => {
     try {
-        const record = await MedicalRecord.findOne({ _id: req.params.id, ...getRecordAccessFilter(req.user) });
+        const record = await MedicalRecord.findOne({ _id: req.params.id, ...await getRecordAccessFilter(req.user) });
         if (!record) return res.status(404).json({ error: "Record not found" });
         
         const updateData = { ...req.body };
@@ -577,7 +589,7 @@ router.patch("/:id", hasPermission("edit:records"), async (req, res) => {
 // DELETE record
 router.delete("/:id", hasPermission("delete:records"), async (req, res) => {
     try {
-        const record = await MedicalRecord.findOneAndDelete({ _id: req.params.id, ...getRecordAccessFilter(req.user) });
+        const record = await MedicalRecord.findOneAndDelete({ _id: req.params.id, ...await getRecordAccessFilter(req.user) });
         if (!record) return res.status(404).json({ error: "Record not found" });
         res.json({ message: "Record deleted" });
     } catch (error) {
@@ -588,7 +600,7 @@ router.delete("/:id", hasPermission("delete:records"), async (req, res) => {
 // GET patient history
 router.get("/patient/:patientId", hasPermission("view:records"), async (req, res) => {
     try {
-        const records = await MedicalRecord.find({ patientId: req.params.patientId, ...getRecordAccessFilter(req.user) })
+        const records = await MedicalRecord.find({ patientId: req.params.patientId, ...await getRecordAccessFilter(req.user) })
             .sort({ visitDate: -1 })
             .populate("patientId", "firstName lastName nationalId")
             .populate("doctorId", "firstName lastName")

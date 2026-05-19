@@ -12,6 +12,7 @@ import {
     getAllDiseases,
     getPrevalence
 } from '../services/api';
+import { useAlerts } from '../context/AlertProvider';
 import {
     mergeDiseaseLists,
     clampPercent,
@@ -78,6 +79,7 @@ import toast from 'react-hot-toast';
 const Analytics = () => {
     const { hasPermission } = useAuth();
     const { refreshTrigger } = useDataRefresh();
+    const { subscribeToRooms, unsubscribeFromRooms } = useAlerts();
     const canViewAnalytics = hasPermission('view:analytics');
     
     const [topDiseases, setTopDiseases] = useState([]);
@@ -168,6 +170,37 @@ const Analytics = () => {
             }
         };
         loadDiseaseTrends();
+
+        // Subscribe to the disease room so we receive 'new-case' WebSocket events
+        // for this disease in real time
+        if (selectedDisease) {
+            subscribeToRooms([`disease-${selectedDisease}`]);
+        }
+        return () => {
+            if (selectedDisease) {
+                unsubscribeFromRooms([`disease-${selectedDisease}`]);
+            }
+        };
+    }, [selectedDisease]);
+
+    // Reload disease data when a new case arrives via WebSocket
+    useEffect(() => {
+        const handler = (e) => {
+            if (e.detail?.disease === selectedDisease) {
+                // Refresh disease-specific data silently
+                if (selectedDisease) {
+                    Promise.allSettled([
+                        getDiseaseTrends(selectedDisease),
+                        getDiseaseAnalytics(selectedDisease)
+                    ]).then(([trendsRes, analyticsRes]) => {
+                        if (trendsRes.status === 'fulfilled') setDiseaseTrends(trendsRes.value.data || []);
+                        if (analyticsRes.status === 'fulfilled') setDiseaseAnalytics(analyticsRes.value.data);
+                    });
+                }
+            }
+        };
+        window.addEventListener('new-disease-case', handler);
+        return () => window.removeEventListener('new-disease-case', handler);
     }, [selectedDisease]);
 
     useEffect(() => {

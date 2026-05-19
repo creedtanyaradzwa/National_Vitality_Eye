@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet';
 import { getProvinceStats, getAllDiseases, getDiseaseInsights, getDiseaseAnalytics } from '../services/api';
 import { useAuth } from '../context/useAuth';
 import { useDataRefresh } from '../context/useDataRefresh';
+import { useAlerts } from '../context/AlertProvider';
 import L from 'leaflet';
 import { 
     MapIcon, 
@@ -179,6 +180,7 @@ const MapController = ({ center, zoom }) => {
 const MapView = () => {
     const { hasPermission } = useAuth();
     const { refreshTrigger } = useDataRefresh();
+    const { subscribeToRooms, unsubscribeFromRooms } = useAlerts();
     const canViewAnalytics = hasPermission('view:analytics');
     
     const [provinceStats, setProvinceStats] = useState([]);
@@ -339,6 +341,38 @@ const MapView = () => {
             loadMapData();
         }
     }, [canViewAnalytics, refreshTrigger, timePeriod, selectedDisease, loadMapData]);
+
+    // Subscribe to province rooms so province-specific WebSocket alerts are received.
+    // Also listen for new-case events to reload map data when a new record arrives.
+    useEffect(() => {
+        const PROVINCES = [
+            'Harare', 'Bulawayo', 'Manicaland', 'Mashonaland Central',
+            'Mashonaland East', 'Mashonaland West', 'Masvingo',
+            'Matabeleland North', 'Matabeleland South', 'Midlands'
+        ];
+        const rooms = PROVINCES.map(p => `province-${p}`);
+        if (selectedDisease && selectedDisease !== 'All Diseases') {
+            rooms.push(`disease-${selectedDisease}`);
+        }
+        subscribeToRooms(rooms);
+
+        const handleNewCase = (e) => {
+            // Reload map data when a new case arrives for the selected disease
+            if (
+                !selectedDisease ||
+                selectedDisease === 'All Diseases' ||
+                e.detail?.disease === selectedDisease
+            ) {
+                loadMapData();
+            }
+        };
+        window.addEventListener('new-disease-case', handleNewCase);
+
+        return () => {
+            unsubscribeFromRooms(rooms);
+            window.removeEventListener('new-disease-case', handleNewCase);
+        };
+    }, [selectedDisease]);                          // eslint-disable-line
 
     const getProvinceColor = useCallback((provinceName) => {
         const province = provinceStats.find((p) => p._id === provinceName);
