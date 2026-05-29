@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './context/AuthProvider';
-import AlertProvider from './context/AlertProvider';
-import { DataRefreshProvider } from './context/DataRefreshProvider';
-import { useAuth } from './context/useAuth';
+import { AuthProvider, useAuth } from './context/AuthProvider.jsx';
+import AlertProvider from './context/AlertProvider.jsx';
+import DataRefreshProvider from './context/DataRefreshProvider.jsx';
 import Navbar from './components/layout/Navbar';
 import Welcome from './pages/Welcome';
 import Login from './pages/Login';
@@ -15,6 +14,7 @@ import MedicalRecords from './pages/MedicalRecords';
 import AIPredictor from './pages/AIPredictor';
 import Analytics from './pages/Analytics';
 import MapView from './pages/MapView';
+import CareHub from './pages/CareHub';
 import Admin from './pages/Admin';
 import Alerts from './pages/Alerts';
 import Register from './pages/Register';
@@ -34,8 +34,10 @@ import AIHealthSummary from './pages/PatientPortal/AIHealthSummary';
 import AIVitalsInsights from './pages/PatientPortal/AIVitalsInsights';
 import AIReminders from './pages/PatientPortal/AIReminders';
 import AISymptomChecker from './pages/PatientPortal/AISymptomChecker';
+import TrustedProviders from './pages/PatientPortal/TrustedProviders';
+import CitizenSurveillance from './pages/PatientPortal/CitizenSurveillance';
 
-const ProtectedRoute = ({ children }) => {
+export function ProtectedRoute({ children }) {
     const { isAuthenticated, loading } = useAuth();
     
     if (loading) {
@@ -63,13 +65,13 @@ const ProtectedRoute = ({ children }) => {
             </div>
         </div>
     );
-};
+}
 
 // Patient Portal Protected Route
-const PatientProtectedRoute = ({ children }) => {
+export function PatientProtectedRoute({ children }) {
     const token = localStorage.getItem('patientToken');
-    const [isAuthenticated, setIsAuthenticated] = React.useState(!!token);
-    const [loading, setLoading] = React.useState(false);
+    const [isAuthenticated, setIsAuthenticated] = useState(!!token);
+    const [loading, setLoading] = useState(false);
     
     if (loading) {
         return (
@@ -83,10 +85,10 @@ const PatientProtectedRoute = ({ children }) => {
         return <Navigate to="/patient/login" />;
     }
     
-    return <>{children}</>;
-};
+    return <React.Fragment>{children}</React.Fragment>;
+}
 
-function AppRoutes() {
+export function AppRoutes() {
     return (
         <Routes>
             {/* Public Routes */}
@@ -104,7 +106,6 @@ function AppRoutes() {
                     <PatientDashboard />
                 </PatientProtectedRoute>
             } />
-            {/* ADD THESE MISSING ROUTES */}
             <Route path="/patient/records" element={
                 <PatientProtectedRoute>
                     <PatientMedicalRecords />
@@ -136,6 +137,16 @@ function AppRoutes() {
                     <AISymptomChecker />
                 </PatientProtectedRoute>
             } />
+            <Route path="/patient/trusted-providers" element={
+                <PatientProtectedRoute>
+                    <TrustedProviders />
+                </PatientProtectedRoute>
+            } />
+            <Route path="/patient/surveillance" element={
+                <PatientProtectedRoute>
+                    <CitizenSurveillance />
+                </PatientProtectedRoute>
+            } />
             <Route path="/patient/profile-details" element={
                 <PatientProtectedRoute>
                     <PatientDetailsPage />
@@ -144,6 +155,7 @@ function AppRoutes() {
             
             {/* Admin/Doctor Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/care-hub" element={<ProtectedRoute><CareHub /></ProtectedRoute>} />
             <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />
             <Route path="/records" element={<ProtectedRoute><MedicalRecords /></ProtectedRoute>} />
             <Route path="/ai-predictor" element={<ProtectedRoute><AIPredictor /></ProtectedRoute>} />
@@ -152,11 +164,14 @@ function AppRoutes() {
             <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
             <Route path="/alerts" element={<ProtectedRoute><Alerts /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            
+            {/* Fallback Route */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
     );
 }
 
-function App() {
+export function App() {
     return (
         <BrowserRouter>
             <AuthProvider>

@@ -2,8 +2,8 @@
 import { openDB } from 'idb';
 
 // IndexedDB setup
-const DB_NAME = 'vitality-eye-offline';
-const DB_VERSION = 4 ; // Incremented version to force schema update
+const DB_NAME = 'vitality-eye-offline-v3';
+const DB_VERSION = 8; 
 const STORE_NAME = 'pending-operations';
 
 let db = null;

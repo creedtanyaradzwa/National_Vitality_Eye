@@ -10,8 +10,8 @@ import {
     getGlobalSummary,
     getSystemLoad
 } from '../services/api';
-import { useAlerts } from '../context/AlertProvider';
-import { useDataRefresh } from '../context/useDataRefresh';
+import { useAlerts } from '../context/AlertProvider.jsx';
+import { useDataRefresh } from '../context/DataRefreshProvider.jsx';
 import StatsCards from '../components/dashboard/StatsCards';
 import RecentAlerts from '../components/dashboard/RecentAlerts';
 import DiseaseChart from '../components/dashboard/DiseaseChart';
@@ -31,8 +31,9 @@ import {
     HeartIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
-import { toGrowthIndex, clampPercent } from '../utils/analyticsHelpers';
+import { toGrowthIndex, clampPercent } from '../utils/analyticsHelpers.js';
 
+// Force refresh to resolve export error
 const Dashboard = () => {
     const [patientCount, setPatientCount]       = useState(0);
     const [totalCases, setTotalCases]           = useState(0);

@@ -28,11 +28,11 @@ import {
     MONTH_LABELS,
     TOP_DISEASE_LIMIT,
     PROJECTION_HORIZON
-} from '../utils/analyticsHelpers';
-import { useAuth } from '../context/useAuth';
+} from '../utils/analyticsHelpers.js';
+import { useAuth } from '../context/AuthProvider';
 
 const NO_DATA = 'Insufficient recorded data to display this metric.';
-import { useDataRefresh } from '../context/useDataRefresh';
+import { useDataRefresh } from '../context/DataRefreshProvider.jsx';
 import {
     ChartBarIcon,
     MapIcon,

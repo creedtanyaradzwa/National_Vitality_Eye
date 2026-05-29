@@ -118,6 +118,9 @@ export const getDiseaseInsights = (disease, period = 'all') => {
     return API.get(`/ai/disease-insights/${encodeURIComponent(disease)}?${params}`);
 };
 export const getAIStats = () => API.get('/ai/stats');
+export const getClinicalSnapshot = (patientId) => API.get(`/ai/clinical-snapshot/${patientId}`);
+export const getAnomalyDetection = (patientId, currentVitals = {}) => API.post(`/ai/anomaly-detection/${patientId}`, { currentVitals });
+export const getSimilarPatients = (patientId, limit = 10) => API.post(`/ai/similar-patients/${patientId}`, { limit });
 export const getPatientTriage = (patientId) => API.get(`/ai/patient-triage/${patientId}`);
 export const predictTriage = (data) => API.post('/ai/predict-triage', data);
 export const refreshAI = () => API.post('/ai/refresh');
@@ -200,5 +203,13 @@ export const reactivatePatient = (id) =>
     API.patch(`/patients/admin/${id}/reactivate`);
 export const getPatientAuditLog = (id) => 
     API.get(`/patients/admin/${id}/audit`);
+
+// ============ HANDOVERS & CARE HUB ============
+export const getHospitalHandovers = () => API.get('/api/handovers/my-hospital');
+export const getPatientHandovers = (patientId) => API.get(`/api/handovers/patient/${patientId}`);
+export const createHandover = (data) => API.post('/api/handovers', data);
+export const completeHandoverTask = (handoverId, taskId, status = 'Completed') => 
+    API.patch(`/api/handovers/${handoverId}/task/${taskId}`, { status });
+export const getPendingTaskCount = () => API.get('/api/handovers/pending-count');
 
 export default API;

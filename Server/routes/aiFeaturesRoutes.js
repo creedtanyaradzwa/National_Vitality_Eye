@@ -5,9 +5,36 @@ const MedicalRecord = require("../models/MedicalRecord");
 const { protect } = require("../middleware/auth");
 const { hasPermission, isApproved } = require("../middleware/rbac");
 const { predictTriagePriority } = require("../utils/triageAI");
+const { generateClinicalSnapshot, getQuickMetrics } = require("../utils/snapshotAI");
 
 // All routes require authentication
 router.use(protect, isApproved);
+
+// ============ CLINICAL SNAPSHOT (Gap: Information Sifting) ============
+
+router.get("/clinical-snapshot/:patientId", hasPermission("view:records"), async (req, res) => {
+    try {
+        const patient = await Patient.findById(req.params.patientId);
+        if (!patient) return res.status(404).json({ error: "Patient not found" });
+
+        // Get recent records (last 5 for enough context)
+        const records = await MedicalRecord.find({ patientId: req.params.patientId })
+            .sort({ visitDate: -1 })
+            .limit(5);
+
+        const summary = generateClinicalSnapshot(patient, records);
+        const quickMetrics = getQuickMetrics(records);
+
+        res.json({
+            summary,
+            quickMetrics,
+            timestamp: new Date()
+        });
+    } catch (error) {
+        console.error("Clinical snapshot error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
 
 // ============ PREDICTIVE TRIAGE ============
 

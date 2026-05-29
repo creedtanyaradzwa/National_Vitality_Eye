@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { login as loginApi, getProfile } from '../services/api';
 import toast from 'react-hot-toast';
-import { AuthContext } from './AuthContext';
 
-export const AuthProvider = ({ children }) => {
+// Create context
+const AuthContext = createContext(undefined);
+
+function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [token, setToken] = useState(() => {
@@ -104,4 +106,16 @@ export const AuthProvider = ({ children }) => {
             {children}
         </AuthContext.Provider>
     );
+}
+
+// Export a robust hook
+const useAuth = () => {
+    const context = useContext(AuthContext);
+    if (context === undefined) {
+        throw new Error('useAuth must be used within an AuthProvider');
+    }
+    return context;
 };
+
+export { AuthProvider, useAuth, AuthContext };
+export default AuthProvider;

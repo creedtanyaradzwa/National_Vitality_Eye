@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, GeoJSON, useMap } from 'react-leaflet';
 import { getProvinceStats, getAllDiseases, getDiseaseInsights, getDiseaseAnalytics } from '../services/api';
-import { useAuth } from '../context/useAuth';
-import { useDataRefresh } from '../context/useDataRefresh';
+import { useAuth } from '../context/AuthProvider';
+import { useDataRefresh } from '../context/DataRefreshProvider.jsx';
 import { useAlerts } from '../context/AlertProvider';
 import L from 'leaflet';
 import { 
@@ -41,7 +41,7 @@ import {
     TOP_DISEASE_LIMIT,
     MONTH_LABELS,
     PROJECTION_HORIZON
-} from '../utils/analyticsHelpers';
+} from '../utils/analyticsHelpers.js';
 
 // Fix for default marker icons
 delete L.Icon.Default.prototype._getIconUrl;

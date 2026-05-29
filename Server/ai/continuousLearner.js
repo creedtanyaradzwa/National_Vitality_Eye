@@ -156,6 +156,8 @@ class ContinuousLearner {
             this.diseasePatterns.set(disease, {
                 count: 0,
                 symptoms: new Map(),
+
+                
                 provinces: new Map(),
                 monthlyTrend: new Array(12).fill(0),
                 yearlyTrend: new Map(),

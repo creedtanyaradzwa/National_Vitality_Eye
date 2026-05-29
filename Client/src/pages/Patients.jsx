@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPatients, createPatient, updatePatient, deletePatient, getPatientByNationalId } from '../services/api';
-import { useAuth } from '../context/useAuth';
-import { useDataRefresh } from '../context/useDataRefresh';
+import { useAuth } from '../context/AuthProvider';
+import { useDataRefresh } from '../context/DataRefreshProvider.jsx';
 import { 
     PlusIcon, 
     MagnifyingGlassIcon, 

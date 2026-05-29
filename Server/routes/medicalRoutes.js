@@ -611,4 +611,34 @@ router.get("/patient/:patientId", hasPermission("view:records"), async (req, res
     }
 });
 
+// GET vitals history for a patient
+router.get("/patient/:patientId/vitals-history", hasPermission("view:records"), async (req, res) => {
+    try {
+        const records = await MedicalRecord.find(
+            { patientId: req.params.patientId, ...await getRecordAccessFilter(req.user) },
+            { visitDate: 1, visitType: 1, vitalSigns: 1, hospital: 1 }
+        ).sort({ visitDate: 1 });
+        res.json(records);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// GET latest vital signs for a patient
+router.get("/patient/:patientId/latest-vitals", hasPermission("view:records"), async (req, res) => {
+    try {
+        const record = await MedicalRecord.findOne(
+            { 
+                patientId: req.params.patientId, 
+                ...await getRecordAccessFilter(req.user),
+                'vitalSigns.temperature': { $ne: null }
+            },
+            { visitDate: 1, vitalSigns: 1, hospital: 1 }
+        ).sort({ visitDate: -1 });
+        res.json(record);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

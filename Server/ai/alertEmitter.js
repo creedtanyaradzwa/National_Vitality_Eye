@@ -75,6 +75,23 @@ class AlertEmitter {
         });
     }
 
+    // Simulated Public Health Broadcast (WhatsApp/USSD) - Gap B
+    sendPublicBroadcast({ area, disease, recommendations }) {
+        const broadcastData = {
+            id: `broadcast-${Date.now()}`,
+            area,
+            disease,
+            recommendations,
+            timestamp: new Date(),
+            channels: ['WhatsApp', 'USSD', 'Citizen-Portal']
+        };
+
+        console.log(`📡 BROADCASTING to citizens in ${area}: ${disease} risk. Recommendations: ${recommendations.join(', ')}`);
+        
+        // Emit to the citizen portal specifically
+        this.io.emit('public-broadcast', broadcastData);
+    }
+
     // Client subscription management
     subscribe(clientId, topics) {
         if (!this.subscribers.has(clientId)) {

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserGroupIcon, UserIcon, MapPinIcon, CalendarIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { getSimilarPatients } from '../../services/api';
 import toast from 'react-hot-toast';
 
 const SimilarPatients = ({ patientId }) => {
@@ -9,18 +10,10 @@ const SimilarPatients = ({ patientId }) => {
     const findSimilarPatients = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5000/api/ai-features/similar-patients/${patientId}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ limit: 10 })
-            });
-            const data = await response.json();
-            setSimilarPatients(data);
+            const response = await getSimilarPatients(patientId, 10);
+            setSimilarPatients(response.data);
         } catch (error) {
+            console.error('Similar patients error:', error);
             toast.error('Failed to find similar patients');
         } finally {
             setLoading(false);
@@ -94,7 +87,7 @@ const SimilarPatients = ({ patientId }) => {
                                     <div className="flex justify-between items-start mb-2">
                                         <div className="flex items-center space-x-2">
                                             <UserIcon className="h-5 w-5 text-purple-400" />
-                                            <p className="font-semibold text-white">{patient.patient.name}</p>
+                                            <p className="font-semibold text-white">Patient Profile</p>
                                         </div>
                                         <div className="flex items-center space-x-2">
                                             <span className={`text-lg font-bold ${getSimilarityColor(patient.similarity)}`}>
@@ -109,11 +102,11 @@ const SimilarPatients = ({ patientId }) => {
                                     <div className="grid grid-cols-2 gap-2 text-sm mt-2">
                                         <div className="flex items-center space-x-1 text-gray-400">
                                             <UserIcon className="h-3 w-3" />
-                                            <span>{patient.patient.age} years</span>
+                                            <span>{patient.ageGroup}</span>
                                         </div>
                                         <div className="flex items-center space-x-1 text-gray-400">
                                             <MapPinIcon className="h-3 w-3" />
-                                            <span>{patient.patient.province}</span>
+                                            <span>{patient.province}</span>
                                         </div>
                                         {patient.lastVisit && (
                                             <div className="flex items-center space-x-1 text-gray-400">

@@ -10,8 +10,8 @@ import {
     getHospitalStaff,
     uploadRadiologyImages
 } from '../services/api';
-import { useAuth } from '../context/useAuth';
-import { useDataRefresh } from '../context/useDataRefresh';
+import { useAuth } from '../context/AuthProvider';
+import { useDataRefresh } from '../context/DataRefreshProvider.jsx';
 import { 
     PlusIcon, 
     MagnifyingGlassIcon, 

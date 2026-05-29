@@ -5,9 +5,11 @@ import {
     getAllUsers, 
     toggleUserStatus, 
     changeUserRole, 
-    getUserDocuments 
+    getUserDocuments,
+    refreshAI,
+    getAIStatus
 } from '../services/api';
-import { useAuth } from '../context/useAuth';
+import { useAuth } from '../context/AuthProvider';
 import PatientManagement from '../components/admin/PatientManagement';
 import {
     UserGroupIcon,
@@ -25,7 +27,8 @@ import {
     MagnifyingGlassIcon,
     XMarkIcon,
     ClipboardIcon,
-    UsersIcon
+    UsersIcon,
+    CpuChipIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -51,6 +54,8 @@ const Admin = () => {
         name: '', 
         role: '' 
     });
+    const [aiStats, setAiStats] = useState(null);
+    const [refreshingAI, setRefreshingAI] = useState(false);
     const [lastUpdated, setLastUpdated] = useState(new Date());
 
     // Tabs configuration
@@ -58,6 +63,7 @@ const Admin = () => {
         { id: 'pending', label: 'Pending Approvals', icon: UserGroupIcon },
         { id: 'all', label: 'All Users', icon: UsersIcon },
         { id: 'patients', label: 'Patient Management', icon: UserGroupIcon },
+        { id: 'ai', label: 'AI Control', icon: CpuChipIcon },
     ];
 
     const loadData = useCallback(async () => {
@@ -69,10 +75,13 @@ const Admin = () => {
             } else if (activeTab === 'all') {
                 const response = await getAllUsers();
                 setAllUsers(response.data);
+            } else if (activeTab === 'ai') {
+                const response = await getAIStatus();
+                setAiStats(response.data);
             }
             setLastUpdated(new Date());
         } catch {
-            toast.error('Failed to load users');
+            toast.error('Failed to load data');
         } finally {
             setLoading(false);
         }
@@ -161,6 +170,24 @@ const Admin = () => {
             setShowDocuments(true);
         } catch {
             toast.error('Failed to load documents');
+        }
+    };
+
+    const handleRefreshAI = async () => {
+        if (!window.confirm("Are you sure you want to refresh the AI model? This will retrain the patterns from current medical records.")) return;
+        
+        setRefreshingAI(true);
+        try {
+            const res = await refreshAI();
+            toast.success(res.data.message || 'AI Model Refreshed Successfully');
+            // Reload status
+            const response = await getAIStatus();
+            setAiStats(response.data);
+            setLastUpdated(new Date());
+        } catch (error) {
+            toast.error(error.response?.data?.error || 'Failed to refresh AI');
+        } finally {
+            setRefreshingAI(false);
         }
     };
 
@@ -264,6 +291,60 @@ const Admin = () => {
             {/* Patient Management Tab */}
             {activeTab === 'patients' ? (
                 <PatientManagement />
+            ) : activeTab === 'ai' ? (
+                <div className="space-y-6">
+                    <div className="rounded-2xl overflow-hidden bg-gradient-to-r from-cyan-500 to-blue-500 p-[1px]">
+                        <div className="rounded-2xl bg-slate-900/90 backdrop-blur-xl p-8 text-center">
+                            <CpuChipIcon className="h-16 w-16 text-cyan-400 mx-auto mb-4" />
+                            <h2 className="text-2xl font-bold text-white mb-2">Clinical Intelligence Control</h2>
+                            <p className="text-gray-400 max-w-lg mx-auto mb-8">
+                                Force the AI to retrain its models based on the latest medical records. 
+                                This updates disease patterns, province weights, and outbreak detection thresholds.
+                            </p>
+                            
+                            <div className="flex justify-center mb-10">
+                                <button 
+                                    onClick={handleRefreshAI}
+                                    disabled={refreshingAI}
+                                    className={`flex items-center space-x-3 px-8 py-4 rounded-2xl font-black uppercase tracking-[0.2em] transition-all ${
+                                        refreshingAI 
+                                            ? 'bg-gray-800 text-gray-500 cursor-not-allowed' 
+                                            : 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-xl shadow-cyan-500/20 hover:scale-[1.02] hover:shadow-cyan-500/30'
+                                    }`}
+                                >
+                                    {refreshingAI ? (
+                                        <>
+                                            <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                                            <span>Rebuilding Neural Map...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CpuChipIcon className="h-5 w-5" />
+                                            <span>Initialize Pattern Refresh</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
+                            {aiStats && (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+                                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Diseases Tracked</p>
+                                        <p className="text-3xl font-black text-white">{aiStats.diseasesTracked || 0}</p>
+                                    </div>
+                                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Training Pool</p>
+                                        <p className="text-3xl font-black text-white">{aiStats.recordsProcessed || 0}</p>
+                                    </div>
+                                    <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">AI Version</p>
+                                        <p className="text-3xl font-black text-white">v3.2.0-LTS</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
             ) : (
                 <>
                     {/* Search Bar */}

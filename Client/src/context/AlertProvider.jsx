@@ -1,23 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
 import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
-import { useAuth } from './useAuth';
+import { AuthContext } from './AuthProvider.jsx';
 
 // Create context
-const AlertContext = React.createContext(undefined);
-
-// Custom hook for using alerts - MUST BE EXPORTED
-export const useAlerts = () => {
-    const context = React.useContext(AlertContext);
-    if (context === undefined) {
-        throw new Error('useAlerts must be used within an AlertProvider');
-    }
-    return context;
-};
+const AlertContext = createContext(undefined);
 
 // Alert Provider Component
-export const AlertProvider = ({ children }) => {
-    const { token, isAuthenticated } = useAuth();
+function AlertProvider({ children }) {
+    const auth = useContext(AuthContext);
+    const token = auth?.token;
+    const isAuthenticated = auth?.isAuthenticated;
     const [alerts, setAlerts] = useState([]);
     const [activeAlerts, setActiveAlerts] = useState([]);
     const [connected, setConnected] = useState(false);
@@ -36,10 +29,15 @@ export const AlertProvider = ({ children }) => {
 
         console.log('🔌 Attempting WebSocket connection...');
 
-        // Use window.location.hostname to connect to the same host
         const socketUrl = window.location.hostname === 'localhost' 
             ? 'http://localhost:5000' 
             : `http://${window.location.hostname}:5000`;
+
+        // If socket exists and is connected, don't reconnect
+        if (socketRef.current?.connected) {
+            console.log('♻️ WebSocket already connected');
+            return;
+        }
 
         const newSocket = io(socketUrl, {
             query: { token },
@@ -47,7 +45,8 @@ export const AlertProvider = ({ children }) => {
             reconnection: true,
             reconnectionAttempts: 10,
             reconnectionDelay: 1000,
-            timeout: 20000
+            timeout: 20000,
+            autoConnect: true
         });
 
         socketRef.current = newSocket;
@@ -66,7 +65,6 @@ export const AlertProvider = ({ children }) => {
             setConnected(false);
             console.log('❌ WebSocket disconnected:', reason);
             if (reason === "io server disconnect") {
-                // the disconnection was initiated by the server, you need to reconnect manually
                 newSocket.connect();
             }
         });
@@ -98,13 +96,10 @@ export const AlertProvider = ({ children }) => {
             toast.success(data.message);
         });
 
-        // AI stats update — refresh the AI status indicator
         newSocket.on('ai-update', (data) => {
-            // Dispatch a custom event so any component can react
             window.dispatchEvent(new CustomEvent('ai-stats-update', { detail: data }));
         });
 
-        // System status — show toast for critical AI events
         newSocket.on('system-status', (data) => {
             if (data.status === 'error') {
                 toast.error(`AI System: ${data.message}`, { duration: 6000 });
@@ -113,14 +108,12 @@ export const AlertProvider = ({ children }) => {
             }
         });
 
-        // Alert acknowledged by another user — update local state
         newSocket.on('alert-acknowledged', ({ alertId }) => {
             setActiveAlerts(prev => prev.map(a =>
                 a.id === alertId ? { ...a, acknowledged: true } : a
             ));
         });
 
-        // New case in a disease room (requires subscription via 'subscribe' event)
         newSocket.on('new-case', (data) => {
             window.dispatchEvent(new CustomEvent('new-disease-case', { detail: data }));
         });
@@ -138,7 +131,6 @@ export const AlertProvider = ({ children }) => {
         }
     };
 
-    // Subscribe to province/disease/patient rooms for targeted events
     const subscribeToRooms = (topics) => {
         if (socketRef.current && socketRef.current.connected) {
             socketRef.current.emit('subscribe', topics);
@@ -170,6 +162,16 @@ export const AlertProvider = ({ children }) => {
             {children}
         </AlertContext.Provider>
     );
+}
+
+// Custom hook for using alerts
+const useAlerts = () => {
+    const context = useContext(AlertContext);
+    if (context === undefined) {
+        throw new Error('useAlerts must be used within an AlertProvider');
+    }
+    return context;
 };
 
+export { AlertProvider, useAlerts, AlertContext };
 export default AlertProvider;

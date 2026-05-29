@@ -1,5 +1,5 @@
 import React from 'react';
-import { toGrowthIndex, clampPercent } from '../../utils/analyticsHelpers';
+import { toGrowthIndex, clampPercent } from '../../utils/analyticsHelpers.js';
 import { 
     UserGroupIcon, 
     DocumentTextIcon, 

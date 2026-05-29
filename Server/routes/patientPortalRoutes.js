@@ -810,4 +810,106 @@ router.post("/ai/symptom-check", async (req, res) => {
     }
 });
 
+// ── 6. TRUSTED PROVIDERS MANAGEMENT ─────────────────────────
+
+// GET currently trusted providers
+router.get("/trusted-providers", async (req, res) => {
+    try {
+        const patient = await getPatientFromToken(req);
+        const trustedIds = (patient.portalAccount?.trustedProviders || []).map(p => p.userId);
+        
+        const trusted = await User.find({ _id: { $in: trustedIds } })
+            .select("firstName lastName role position hospitalName");
+
+        // Map grantedAt date
+        const trustedWithDate = trusted.map(u => {
+            const entry = patient.portalAccount.trustedProviders.find(p => p.userId.toString() === u._id.toString());
+            return {
+                ...u.toObject(),
+                grantedAt: entry?.grantedAt
+            };
+        });
+
+        res.json({ trusted: trustedWithDate });
+    } catch (err) {
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// GET providers eligible to be trusted
+// (Any provider who has created a record for this patient or been tagged in one)
+router.get("/trusted-providers/eligible", async (req, res) => {
+    try {
+        const patient = await getPatientFromToken(req);
+        
+        // Find all records for this patient
+        const records = await MedicalRecord.find({ patientId: patient._id })
+            .select("createdBy doctorId taggedUsers");
+
+        const providerIds = new Set();
+        records.forEach(r => {
+            if (r.createdBy) providerIds.add(r.createdBy.toString());
+            if (r.doctorId) providerIds.add(r.doctorId.toString());
+            (r.taggedUsers || []).forEach(u => providerIds.add(u.toString()));
+        });
+
+        // Filter out those already trusted
+        const trustedIds = (patient.portalAccount?.trustedProviders || []).map(p => p.userId.toString());
+        const eligibleIds = Array.from(providerIds).filter(id => !trustedIds.includes(id));
+
+        const eligible = await User.find({ _id: { $in: eligibleIds }, approvalStatus: "approved" })
+            .select("firstName lastName role position hospitalName");
+
+        res.json({ eligible });
+    } catch (err) {
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// POST grant access to a provider
+router.post("/trusted-providers/:userId", async (req, res) => {
+    try {
+        const patient = await getPatientFromToken(req);
+        const userId = req.params.userId;
+
+        // Verify provider exists
+        const provider = await User.findById(userId);
+        if (!provider) return res.status(404).json({ error: "Provider not found" });
+
+        // Check if already trusted
+        if (patient.portalAccount.trustedProviders.some(p => p.userId.toString() === userId)) {
+            return res.status(400).json({ error: "Provider is already trusted" });
+        }
+
+        patient.portalAccount.trustedProviders.push({ userId, grantedAt: new Date() });
+        await patient.save();
+
+        res.json({ message: `Access granted to ${provider.firstName} ${provider.lastName}` });
+    } catch (err) {
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
+// DELETE revoke access from a provider
+router.delete("/trusted-providers/:userId", async (req, res) => {
+    try {
+        const patient = await getPatientFromToken(req);
+        const userId = req.params.userId;
+
+        const initialLength = patient.portalAccount.trustedProviders.length;
+        patient.portalAccount.trustedProviders = patient.portalAccount.trustedProviders.filter(
+            p => p.userId.toString() !== userId
+        );
+
+        if (patient.portalAccount.trustedProviders.length === initialLength) {
+            return res.status(404).json({ error: "Provider not found in trusted list" });
+        }
+
+        await patient.save();
+        res.json({ message: "Access revoked successfully" });
+    } catch (err) {
+        res.status(err.status || 500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

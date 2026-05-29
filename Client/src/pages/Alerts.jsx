@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getAlerts, refreshAI } from '../services/api';
 import { useAlerts } from "../context/AlertProvider";
-import { useAuth } from '../context/useAuth';
+import { useAuth } from '../context/AuthProvider';
 import { 
     BellIcon, 
     ExclamationTriangleIcon, 

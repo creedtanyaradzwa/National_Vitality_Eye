@@ -11,7 +11,8 @@ const authRoutes = require("./routes/authRoutes");
 const patientRoutes = require("./routes/patientRoutes");
 const medicalRoutes = require("./routes/medicalRoutes");
 const patientPortalRoutes = require("./routes/patientPortalRoutes");
-const aiFeaturesRoutes = require("./routes/aiFeaturesRoutes");
+const handoverRoutes = require("./routes/handoverRoutes");
+const citizenReportRoutes = require("./routes/citizenReportRoutes");
 const { router: realTimeAIRoutes, setAIInstance } = require("./routes/realTimeAIRoutes");
 const ContinuousLearner = require("./ai/continuousLearner");
 const AlertEmitter = require("./ai/alertEmitter");
@@ -119,12 +120,13 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use(express.static(path.join(__dirname, "public")));
 
 // ============ ROUTES ============
+app.use("/api/handovers", handoverRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/patients", patientRoutes);
 app.use("/medical-records", medicalRoutes);
+app.use("/api/patient/surveillance", citizenReportRoutes);
 app.use("/ai", realTimeAIRoutes);
 app.use("/api/patient", patientPortalRoutes);
-app.use("/api/ai-features", aiFeaturesRoutes);
 
 // ============ PUBLIC ENDPOINTS ============
 app.get("/health", (req, res) => {

@@ -11,7 +11,7 @@ import {
     updateVitalSigns,
     addRiskFactor
 } from '../services/api';
-import { useAuth } from '../context/useAuth';
+import { useAuth } from '../context/AuthProvider';
 import {
     UserIcon,
     EnvelopeIcon,
@@ -40,6 +40,7 @@ import SpecialNeeds from '../components/patients/SpecialNeeds';
 import VitalsTrend from '../components/patients/VitalsTrend';
 import AnomalyDetection from '../components/ai/AnomalyDetection';
 import SimilarPatients from '../components/ai/SimilarPatients';
+import ClinicalSnapshot from '../components/ai/ClinicalSnapshot';
 
 const PatientDetailsPage = () => {
     const { id } = useParams();
@@ -425,6 +426,9 @@ const PatientDetailsPage = () => {
             {/* Overview Tab */}
             {activeTab === 'overview' && (
                 <div className="space-y-6">
+                    {/* AI Clinical Snapshot - Information Sifting Gap Fix */}
+                    <ClinicalSnapshot patientId={id} />
+
                     {/* AI Predictive Triage Priority Card */}
                     <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-cyber-blue to-cyber-purple p-[1px] group">
                         <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]"></div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/useAuth';
+import { useAuth } from '../context/AuthProvider';
 import { getProfile, changePassword } from '../services/api';
 import { 
     UserIcon, 

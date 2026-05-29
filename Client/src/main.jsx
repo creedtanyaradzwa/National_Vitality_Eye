@@ -21,7 +21,5 @@ if ('serviceWorker' in navigator) {
 initOfflineDB().catch(console.error);
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-    <React.StrictMode>
-        <App />
-    </React.StrictMode>
+    <App />
 );

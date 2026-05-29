@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ExclamationTriangleIcon, CheckCircleIcon, HeartIcon, BeakerIcon } from '@heroicons/react/24/outline';
+import { getAnomalyDetection } from '../../services/api';
 import toast from 'react-hot-toast';
 
 const AnomalyDetection = ({ patientId, vitalsHistory, currentVitals }) => {
@@ -9,18 +10,10 @@ const AnomalyDetection = ({ patientId, vitalsHistory, currentVitals }) => {
     const detectAnomalies = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5000/api/ai-features/anomaly-detection/${patientId}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ currentVitals })
-            });
-            const data = await response.json();
-            setAnomalies(data);
+            const response = await getAnomalyDetection(patientId, currentVitals);
+            setAnomalies(response.data);
         } catch (error) {
+            console.error('Anomaly detection error:', error);
             toast.error('Failed to detect anomalies');
         } finally {
             setLoading(false);
