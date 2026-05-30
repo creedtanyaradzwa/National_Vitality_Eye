@@ -32,7 +32,7 @@ export const changeUserRole = (userId, newRole) => API.patch(`/api/auth/admin/us
 export const getUserDocuments = (userId) => API.get(`/api/auth/admin/users/${userId}/documents`);
 
 // ============ PATIENTS ============
-export const getPatients = (page = 1, limit = 10) => API.get(`/patients?page=${page}&limit=${limit}`);
+export const getPatients = (page = 1, limit = 10, search = "") => API.get(`/patients?page=${page}&limit=${limit}&search=${search}`);
 export const getPatient = (id) => API.get(`/patients/${id}`);
 export const getPatientByNationalId = (nationalId) => API.get(`/patients/national/${nationalId}`);
 export const createPatient = (data) => API.post('/patients', data);

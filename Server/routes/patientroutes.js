@@ -16,17 +16,35 @@ router.get("/", hasPermission("view:patients"), async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
+        const search = req.query.search || "";
 
         // Security: Filter patients created by user or linked via medical records
         const accessFilter = await getPatientAccessFilter(req.user);
 
+        // Add search logic
+        let query = accessFilter;
+        if (search) {
+            query = {
+                $and: [
+                    accessFilter,
+                    {
+                        $or: [
+                            { firstName: { $regex: search, $options: "i" } },
+                            { lastName: { $regex: search, $options: "i" } },
+                            { nationalId: { $regex: search, $options: "i" } }
+                        ]
+                    }
+                ]
+            };
+        }
+
         const [patients, total] = await Promise.all([
-            Patient.find(accessFilter)
+            Patient.find(query)
                 .select("-clinicalProfile")
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit),
-            Patient.countDocuments(accessFilter)
+            Patient.countDocuments(query)
         ]);
 
         res.json({

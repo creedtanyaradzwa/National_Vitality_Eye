@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { getPatients, createPatient, updatePatient, deletePatient, getPatientByNationalId } from '../services/api';
 import { useAuth } from '../context/AuthProvider';
 import { useDataRefresh } from '../context/DataRefreshProvider.jsx';
@@ -21,6 +21,7 @@ import toast from 'react-hot-toast';
 
 const Patients = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { hasPermission } = useAuth();
     const { refreshData } = useDataRefresh();
     const canEdit = hasPermission('edit:patients');
@@ -29,7 +30,7 @@ const Patients = () => {
     
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState(location.state?.initialSearchTerm || '');
     const [showModal, setShowModal] = useState(false);
     const [editingPatient, setEditingPatient] = useState(null);
     const [page, setPage] = useState(1);
@@ -58,7 +59,7 @@ const Patients = () => {
     const loadPatients = async () => {
         setLoading(true);
         try {
-            const response = await getPatients(page, limit);
+            const response = await getPatients(page, limit, searchTerm);
             setPatients(response.data.patients);
             setTotalPages(response.data.pages);
             setTotalResults(response.data.total);
@@ -69,38 +70,9 @@ const Patients = () => {
         }
     };
 
-    const handleSearch = async () => {
-        if (!searchTerm.trim()) {
-            setPage(1);
-            loadPatients();
-            return;
-        }
-        
-        setLoading(true);
-        try {
-            const response = await getPatientByNationalId(searchTerm);
-            if (response.data) {
-                setPatients([response.data]);
-                setTotalPages(1);
-                setTotalResults(1);
-            } else {
-                setPatients([]);
-                setTotalPages(0);
-                setTotalResults(0);
-                toast.info('No patient found with that National ID');
-            }
-        } catch (error) {
-            if (error.response?.status === 404) {
-                setPatients([]);
-                setTotalPages(0);
-                setTotalResults(0);
-                toast.info('No patient found with that National ID');
-            } else {
-                toast.error('Search failed');
-            }
-        } finally {
-            setLoading(false);
-        }
+    const handleSearch = () => {
+        setPage(1);
+        loadPatients();
     };
 
     const handleInputChange = (e) => {
@@ -241,7 +213,7 @@ const Patients = () => {
                                 <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-cyber-blue transition-colors" />
                                 <input
                                     type="text"
-                                    placeholder="SEARCH NATIONAL ID..."
+                                    placeholder="SEARCH BY NAME OR ID..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}

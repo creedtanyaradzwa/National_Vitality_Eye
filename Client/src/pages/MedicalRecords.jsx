@@ -270,22 +270,34 @@ const MedicalRecords = () => {
         return () => clearTimeout(timer);
     }, [formData.vitalSigns, formData.symptoms]);
 
-    const handleSearch = () => {
+    const handleSearch = async () => {
         if (!searchTerm.trim()) {
             setSelectedPatient(null);
             return;
         }
         
-        const patient = patients.find(p => 
-            p.nationalId === searchTerm || 
-            `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-        
-        if (patient) {
-            setSelectedPatient(patient);
-        } else {
-            toast.info('No patient found');
-            setSelectedPatient(null);
+        setLoading(true);
+        try {
+            const response = await getPatients(1, 10, searchTerm);
+            const results = response.data.patients || [];
+            
+            if (results.length > 0) {
+                // If there's an exact match on National ID, pick it
+                const exactMatch = results.find(p => p.nationalId.toLowerCase() === searchTerm.toLowerCase());
+                setSelectedPatient(exactMatch || results[0]);
+                if (exactMatch || results.length === 1) {
+                    toast.success(`Patient selected: ${results[0].firstName} ${results[0].lastName}`);
+                } else {
+                    toast.info(`Found ${results.length} matches. Selected first one.`);
+                }
+            } else {
+                toast.info('No patient found');
+                setSelectedPatient(null);
+            }
+        } catch {
+            toast.error('Search failed');
+        } finally {
+            setLoading(false);
         }
     };
 

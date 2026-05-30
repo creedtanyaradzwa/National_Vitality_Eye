@@ -37,39 +37,37 @@ const PatientNavbar = () => {
     };
 
     const navLinks = [
-        { path: '/patient/dashboard',         icon: HomeIcon,           label: 'Dashboard' },
-        { path: '/patient/records',            icon: DocumentTextIcon,   label: 'Records' },
-        { path: '/patient/vitals',             icon: HeartIcon,          label: 'Vitals' },
-        { path: '/patient/trusted-providers',  icon: UserGroupIcon,      label: 'Care Team' },
+        { path: '/patient/dashboard',         icon: HomeIcon,           label: 'Home' },
+        { path: '/patient/records',            icon: DocumentTextIcon,   label: 'My Records' },
+        { path: '/patient/vitals',             icon: HeartIcon,          label: 'My Vitals' },
+        { path: '/patient/trusted-providers',  icon: UserGroupIcon,      label: 'My Care Team' },
         { path: '/patient/ai/health-summary',  icon: ChartBarIcon,       label: 'Health Score' },
-        { path: '/patient/ai/vitals-insights', icon: ArrowTrendingUpIcon, label: 'Insights' },
-        { path: '/patient/ai/reminders',       icon: BellAlertIcon,      label: 'Reminders' },
     ];
 
     const isActive = (path) => location.pathname === path;
 
     return (
         <>
-            <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${
+            <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
                 scrolled
-                    ? 'bg-brand-dark-900/90 backdrop-blur-xl border-b border-white/5 shadow-[0_10px_40px_rgba(0,0,0,0.5)]'
+                    ? 'bg-slate-900/80 backdrop-blur-md border-b border-emerald-500/10'
                     : 'bg-transparent'
             }`}>
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="flex justify-between items-center h-16">
                         {/* Logo */}
-                        <Link to="/patient/dashboard" className="flex items-center space-x-3 group">
-                            <div className="relative">
-                                <div className="absolute inset-0 rounded-xl bg-cyber-purple blur-lg opacity-40 group-hover:opacity-60 transition-opacity duration-500" />
-                                <div className="relative w-9 h-9 rounded-xl bg-gradient-to-br from-brand-dark-800 to-brand-dark-950 border border-cyber-purple/30 flex items-center justify-center">
-                                    <SparklesIcon className="h-5 w-5 text-cyber-purple" />
+                        <Link to="/patient/dashboard" className="flex items-center space-x-2.5">
+                            <div className="relative group">
+                                <div className="absolute inset-0 rounded-lg bg-emerald-500 blur-md opacity-20 group-hover:opacity-40 transition-opacity" />
+                                <div className="relative w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
+                                    <SparklesIcon className="h-5 w-5 text-white" />
                                 </div>
                             </div>
-                            <div>
-                                <span className="text-xl font-bold tracking-tight bg-gradient-to-r from-white via-white to-cyber-purple bg-clip-text text-transparent">
-                                    VITALITY<span className="text-cyber-purple">EYE</span>
+                            <div className="flex flex-col">
+                                <span className="text-lg font-bold tracking-tight text-white leading-none">
+                                    Vitality<span className="text-emerald-400">Eye</span>
                                 </span>
-                                <p className="text-[9px] uppercase tracking-[0.2em] text-gray-600 font-bold -mt-0.5">Patient Portal</p>
+                                <span className="text-[10px] text-slate-400 font-medium tracking-wide">Patient Portal</span>
                             </div>
                         </Link>
 
@@ -79,32 +77,31 @@ const PatientNavbar = () => {
                                 <Link
                                     key={link.path}
                                     to={link.path}
-                                    className={`flex items-center space-x-2 px-3 py-2 rounded-xl transition-all duration-300 ${
+                                    className={`flex items-center space-x-2 px-4 py-1.5 rounded-full transition-all duration-200 ${
                                         isActive(link.path)
-                                            ? 'bg-cyber-purple/10 text-cyber-purple border border-cyber-purple/20 shadow-[0_0_15px_rgba(188,19,254,0.1)]'
-                                            : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                                            : 'text-slate-400 hover:text-white hover:bg-white/5'
                                     }`}
                                 >
                                     <link.icon className="h-4 w-4" />
-                                    <span className="text-sm font-medium">{link.label}</span>
+                                    <span className="text-sm font-semibold">{link.label}</span>
                                 </Link>
                             ))}
                         </div>
 
                         {/* Right section */}
                         <div className="flex items-center space-x-4">
-                            {/* Patient name */}
-                            <div className="hidden md:flex items-center space-x-3 pl-4 border-l border-white/5">
+                            <div className="hidden md:flex items-center space-x-4 pl-4 border-l border-white/5">
                                 <div className="text-right">
-                                    <p className="text-sm font-medium text-white">{patient?.firstName} {patient?.lastName}</p>
-                                    <p className="text-[10px] uppercase tracking-wider text-cyber-purple font-bold opacity-80">Patient</p>
+                                    <p className="text-xs font-bold text-white">{patient?.firstName} {patient?.lastName}</p>
+                                    <p className="text-[10px] text-emerald-400/80 font-medium">Account Active</p>
                                 </div>
                                 <button
                                     onClick={handleLogout}
-                                    className="p-2 rounded-xl hover:bg-red-500/10 transition-all duration-300 group"
-                                    title="Sign out"
+                                    className="flex items-center space-x-2 px-3 py-1.5 rounded-lg border border-red-500/20 text-red-400 text-xs font-bold hover:bg-red-500/10 transition-colors"
                                 >
-                                    <ArrowRightOnRectangleIcon className="h-5 w-5 text-gray-500 group-hover:text-red-400" />
+                                    <ArrowRightOnRectangleIcon className="h-4 w-4" />
+                                    <span>Log Out</span>
                                 </button>
                             </div>
 
@@ -132,12 +129,12 @@ const PatientNavbar = () => {
                 }`}>
                     <div className="p-6 border-b border-white/10">
                         <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-cyber-purple to-cyber-blue flex items-center justify-center">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center">
                                 <SparklesIcon className="h-5 w-5 text-white" />
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-white">{patient?.firstName} {patient?.lastName}</p>
-                                <p className="text-xs text-cyber-purple">Patient Portal</p>
+                                <p className="text-sm font-bold text-white">{patient?.firstName} {patient?.lastName}</p>
+                                <p className="text-xs text-emerald-400 font-medium">Patient Portal</p>
                             </div>
                         </div>
                     </div>
@@ -147,24 +144,24 @@ const PatientNavbar = () => {
                                 key={link.path}
                                 to={link.path}
                                 onClick={() => setMobileMenuOpen(false)}
-                                className={`flex items-center space-x-3 px-6 py-3 transition-all duration-300 ${
+                                className={`flex items-center space-x-3 px-6 py-3 transition-all duration-200 ${
                                     isActive(link.path)
-                                        ? 'bg-cyber-purple/20 text-cyber-purple border-l-4 border-cyber-purple'
-                                        : 'text-gray-300 hover:text-white hover:bg-white/5'
+                                        ? 'bg-emerald-500/10 text-emerald-400 border-l-4 border-emerald-500'
+                                        : 'text-slate-400 hover:text-white hover:bg-white/5'
                                 }`}
                             >
                                 <link.icon className="h-5 w-5" />
-                                <span className="text-sm font-medium">{link.label}</span>
+                                <span className="text-sm font-bold">{link.label}</span>
                             </Link>
                         ))}
                     </div>
                     <div className="p-6 border-t border-white/10">
                         <button
                             onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
-                            className="flex items-center space-x-3 text-gray-400 hover:text-red-400 transition-colors duration-300"
+                            className="flex items-center space-x-3 text-slate-400 hover:text-rose-400 transition-colors duration-200"
                         >
                             <ArrowRightOnRectangleIcon className="h-5 w-5" />
-                            <span className="text-sm font-medium">Sign Out</span>
+                            <span className="text-sm font-bold">Log Out</span>
                         </button>
                     </div>
                 </div>

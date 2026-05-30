@@ -103,28 +103,41 @@ const AIPredictor = () => {
 
     const searchPatient = async () => {
         if (!patientSearch.trim()) {
-            toast.error('Please enter a National ID');
+            toast.error('Please enter a name or National ID');
             return;
         }
         
+        setLoading(true);
         try {
-            const response = await getPatientByNationalId(patientSearch);
-            if (response.data) {
-                setSelectedPatient(response.data);
-                setPatientId(response.data._id);
-                toast.success(`Patient found: ${response.data.firstName} ${response.data.lastName}`);
+            const response = await getPatients(1, 10, patientSearch);
+            const results = response.data.patients || [];
+            
+            if (results.length > 0) {
+                // If there's an exact match on National ID, pick it
+                const exactMatch = results.find(p => p.nationalId.toLowerCase() === patientSearch.toLowerCase());
+                const patient = exactMatch || results[0];
                 
-                const riskResponse = await getPatientRisk(response.data._id);
+                setSelectedPatient(patient);
+                setPatientId(patient._id);
+                
+                if (exactMatch || results.length === 1) {
+                    toast.success(`Patient found: ${patient.firstName} ${patient.lastName}`);
+                } else {
+                    toast.info(`Found ${results.length} matches. Selected: ${patient.firstName} ${patient.lastName}`);
+                }
+                
+                const riskResponse = await getPatientRisk(patient._id);
                 setRiskAssessment(riskResponse.data);
-            }
-        } catch (error) {
-            if (error.response?.status === 404) {
+            } else {
                 toast.error('Patient not found');
                 setSelectedPatient(null);
                 setRiskAssessment(null);
-            } else {
-                toast.error('Error searching for patient');
             }
+        } catch (error) {
+            toast.error('Error searching for patient');
+            console.error(error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -281,9 +294,10 @@ const AIPredictor = () => {
                             <div className="flex gap-2">
                                 <input
                                     type="text"
-                                    placeholder="Search by National ID"
+                                    placeholder="Search by Name or National ID"
                                     value={patientSearch}
                                     onChange={(e) => setPatientSearch(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && searchPatient()}
                                     className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
                                 />
                                 <button
@@ -552,13 +566,14 @@ const AIPredictor = () => {
                         </div>
                         
                         <div className="mb-6">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Search Patient by National ID</label>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Search Patient by Name or National ID</label>
                             <div className="flex gap-2">
                                 <input
                                     type="text"
-                                    placeholder="Enter National ID"
+                                    placeholder="Enter name or ID"
                                     value={patientSearch}
                                     onChange={(e) => setPatientSearch(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && searchPatient()}
                                     className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
                                 />
                                 <button

@@ -36,6 +36,7 @@ import AIReminders from './pages/PatientPortal/AIReminders';
 import AISymptomChecker from './pages/PatientPortal/AISymptomChecker';
 import TrustedProviders from './pages/PatientPortal/TrustedProviders';
 import CitizenSurveillance from './pages/PatientPortal/CitizenSurveillance';
+import PatientLayout from './components/layout/PatientLayout';
 
 export function ProtectedRoute({ children }) {
     const { isAuthenticated, loading } = useAuth();
@@ -101,57 +102,23 @@ export function AppRoutes() {
             <Route path="/patient/forgot-password" element={<PatientForgotPassword />} />
             <Route path="/patient/reset-password" element={<PatientResetPassword />} />
             <Route path="/patient/verify" element={<PatientVerify />} />
-            <Route path="/patient/dashboard" element={
+            
+            <Route path="/patient" element={
                 <PatientProtectedRoute>
-                    <PatientDashboard />
+                    <PatientLayout />
                 </PatientProtectedRoute>
-            } />
-            <Route path="/patient/records" element={
-                <PatientProtectedRoute>
-                    <PatientMedicalRecords />
-                </PatientProtectedRoute>
-            } />
-            <Route path="/patient/vitals" element={
-                <PatientProtectedRoute>
-                    <PatientVitals />
-                </PatientProtectedRoute>
-            } />
-            {/* AI Feature Routes */}
-            <Route path="/patient/ai/health-summary" element={
-                <PatientProtectedRoute>
-                    <AIHealthSummary />
-                </PatientProtectedRoute>
-            } />
-            <Route path="/patient/ai/vitals-insights" element={
-                <PatientProtectedRoute>
-                    <AIVitalsInsights />
-                </PatientProtectedRoute>
-            } />
-            <Route path="/patient/ai/reminders" element={
-                <PatientProtectedRoute>
-                    <AIReminders />
-                </PatientProtectedRoute>
-            } />
-            <Route path="/patient/ai/symptom-checker" element={
-                <PatientProtectedRoute>
-                    <AISymptomChecker />
-                </PatientProtectedRoute>
-            } />
-            <Route path="/patient/trusted-providers" element={
-                <PatientProtectedRoute>
-                    <TrustedProviders />
-                </PatientProtectedRoute>
-            } />
-            <Route path="/patient/surveillance" element={
-                <PatientProtectedRoute>
-                    <CitizenSurveillance />
-                </PatientProtectedRoute>
-            } />
-            <Route path="/patient/profile-details" element={
-                <PatientProtectedRoute>
-                    <PatientDetailsPage />
-                </PatientProtectedRoute>
-            } />
+            }>
+                <Route path="dashboard" element={<PatientDashboard />} />
+                <Route path="records" element={<PatientMedicalRecords />} />
+                <Route path="vitals" element={<PatientVitals />} />
+                <Route path="ai/health-summary" element={<AIHealthSummary />} />
+                <Route path="ai/vitals-insights" element={<AIVitalsInsights />} />
+                <Route path="ai/reminders" element={<AIReminders />} />
+                <Route path="ai/symptom-checker" element={<AISymptomChecker />} />
+                <Route path="trusted-providers" element={<TrustedProviders />} />
+                <Route path="surveillance" element={<CitizenSurveillance />} />
+                <Route path="profile-details" element={<PatientDetailsPage />} />
+            </Route>
             
             {/* Admin/Doctor Routes */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

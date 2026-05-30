@@ -49,7 +49,7 @@ const patientSchema = new mongoose.Schema({
     district: String,
     ward: String,
     
-    // ============ CLINICAL PROFILE - SIMPLIFIED ============
+    // ============ CLINICAL PROFILE ============
     clinicalProfile: {
         vitalSigns: mongoose.Schema.Types.Mixed,
         triageStatus: {
@@ -62,7 +62,37 @@ const patientSchema = new mongoose.Schema({
             reasons: [String],
             color: String,
             lastAssessment: Date
-        }
+        },
+        chronicConditions: [{
+            condition: String,
+            diagnosisDate: Date,
+            status: String,
+            notes: String
+        }],
+        allergies: [{
+            allergen: String,
+            reaction: String,
+            severity: String,
+            status: String
+        }],
+        currentMedications: [{
+            medication: String,
+            dosage: String,
+            frequency: String,
+            status: String,
+            prescribedDate: Date
+        }],
+        familyHistory: {
+            mother: [String],
+            father: [String],
+            siblings: [String],
+            other: [String]
+        },
+        riskFactors: [{
+            factor: String,
+            severity: String,
+            notes: String
+        }]
     },
     
     // ============ INSURANCE ============
@@ -118,6 +148,10 @@ const patientSchema = new mongoose.Schema({
     notes: String
     
 }, { timestamps: true });
+
+// ============ INDEXES ============
+patientSchema.index({ firstName: 1, lastName: 1 });
+patientSchema.index({ nationalId: 1 });
 
 // ============ VIRTUAL FIELDS ============
 patientSchema.virtual("fullName").get(function() {

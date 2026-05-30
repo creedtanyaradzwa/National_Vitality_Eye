@@ -25,6 +25,8 @@ const SYMPTOM_SYNONYMS = {
     'difficulty to breathe': 'difficulty breathing',
     'hard to breathe': 'difficulty breathing',
     'respiratory distress': 'difficulty breathing',
+    'wheezing': 'wheezing',
+    'stridor': 'difficulty breathing',
 
     // Fever / temperature
     'high temp': 'fever',
@@ -33,6 +35,8 @@ const SYMPTOM_SYNONYMS = {
     'febrile': 'fever',
     'running temperature': 'fever',
     'running a fever': 'fever',
+    'hot body': 'fever',
+    'body hot': 'fever',
 
     // Pain
     'chest tightness': 'chest pain',
@@ -43,17 +47,22 @@ const SYMPTOM_SYNONYMS = {
     'tummy pain': 'abdominal pain',
     'belly pain': 'abdominal pain',
     'abdo pain': 'abdominal pain',
+    'epigastric pain': 'abdominal pain',
     'back ache': 'back pain',
     'backache': 'back pain',
     'headache': 'headache',
     'head ache': 'headache',
     'migraine': 'headache',
+    'joint pain': 'joint pain',
+    'body ache': 'muscle pain',
+    'muscle pain': 'muscle pain',
 
     // Nausea / vomiting
     'throwing up': 'vomiting',
     'vomit': 'vomiting',
     'nauseous': 'nausea',
     'feeling sick': 'nausea',
+    'puke': 'vomiting',
 
     // Diarrhoea
     'diarrhea': 'diarrhoea',
@@ -61,12 +70,15 @@ const SYMPTOM_SYNONYMS = {
     'loose stools': 'diarrhoea',
     'running stomach': 'diarrhoea',
     'watery stool': 'diarrhoea',
+    'watery diarrhea': 'diarrhoea',
+    'rice water stool': 'diarrhoea',
 
     // Cough
     'coughing': 'cough',
     'dry cough': 'cough',
     'wet cough': 'productive cough',
     'productive cough': 'productive cough',
+    'cough with sputum': 'productive cough',
 
     // Fatigue
     'tiredness': 'fatigue',
@@ -75,6 +87,7 @@ const SYMPTOM_SYNONYMS = {
     'weak': 'fatigue',
     'lethargy': 'fatigue',
     'lethargic': 'fatigue',
+    'no energy': 'fatigue',
 
     // Dizziness
     'dizzy': 'dizziness',
@@ -94,6 +107,7 @@ const SYMPTOM_SYNONYMS = {
     'itching': 'pruritus',
     'itchy skin': 'pruritus',
     'pruritus': 'pruritus',
+    'sores': 'skin lesions',
 
     // Consciousness
     'passed out': 'loss of consciousness',
@@ -120,6 +134,7 @@ const SYMPTOM_SYNONYMS = {
     'blurry eyes': 'blurred vision',
     'vision problems': 'blurred vision',
     'poor vision': 'blurred vision',
+    'loss of vision': 'blindness',
 
     // Weight
     'losing weight': 'weight loss',
@@ -129,15 +144,6 @@ const SYMPTOM_SYNONYMS = {
     // Night sweats
     'night sweating': 'night sweats',
     'sweating at night': 'night sweats',
-
-    // Joint / muscle
-    'joint ache': 'joint pain',
-    'joint aches': 'joint pain',
-    'arthralgia': 'joint pain',
-    'muscle ache': 'muscle pain',
-    'myalgia': 'muscle pain',
-    'body aches': 'muscle pain',
-    'body pain': 'muscle pain',
 
     // Throat
     'sore throat': 'sore throat',
@@ -158,6 +164,13 @@ const SYMPTOM_SYNONYMS = {
     'no appetite': 'loss of appetite',
     'not eating': 'loss of appetite',
     'anorexia': 'loss of appetite',
+
+    // Chronic/Vitals
+    'hbp': 'hypertension',
+    'high bp': 'hypertension',
+    'high blood pressure': 'hypertension',
+    'sugar': 'diabetes',
+    'high sugar': 'diabetes',
 };
 
 // ── Disease synonyms ─────────────────────────────────────────────────────────
@@ -385,15 +398,53 @@ function fuzzyMatch(input, canonicals, threshold = 3) {
 function normaliseSymptom(raw) {
     if (!raw || typeof raw !== 'string') return '';
     const norm = baseNormalise(raw);
-    // Check synonym map first
+    
+    // 1. Direct synonym lookup (exact match after base normalisation)
     if (SYMPTOM_SYNONYMS[norm]) return toTitleCase(SYMPTOM_SYNONYMS[norm]);
-    // Partial match — check if any synonym key is contained in the input
+    
+    // 2. Keyword/Partial match
+    // Check if the input contains a known clinical keyword or vice-versa
     for (const [key, canonical] of Object.entries(SYMPTOM_SYNONYMS)) {
-        if (norm.includes(key) || key.includes(norm)) {
-            return toTitleCase(canonical);
+        // Only trigger keyword match for significant words (length > 3)
+        if (key.length > 3) {
+            if (norm.includes(key) || key.includes(norm)) {
+                return toTitleCase(canonical);
+            }
         }
     }
-    // No synonym — just clean and title-case
+    
+    // 3. Unique Partial Match logic (The "Matches Just One" rule)
+    // If the input matches exactly one canonical symptom, pick it.
+    const canonicals = [...new Set(Object.values(SYMPTOM_SYNONYMS))];
+    const partialMatches = canonicals.filter(c => {
+        const cNorm = c.toLowerCase();
+        return cNorm.includes(norm) || norm.includes(cNorm);
+    });
+
+    if (partialMatches.length === 1) {
+        return toTitleCase(partialMatches[0]);
+    }
+
+    // 4. Clinical Keyword extraction fallback
+    const keywords = {
+        'fever': 'Fever', 'temp': 'Fever', 'hot': 'Fever',
+        'cough': 'Cough', 'hacking': 'Cough',
+        'vomit': 'Vomiting', 'puke': 'Vomiting', 'throwing up': 'Vomiting',
+        'diarrhea': 'Diarrhoea', 'diarrhoea': 'Diarrhoea', 'stomach running': 'Diarrhoea',
+        'pain': 'Pain', 'ache': 'Pain', 'sore': 'Pain',
+        'breath': 'Difficulty Breathing', 'resp': 'Difficulty Breathing',
+        'dizzy': 'Dizziness', 'faint': 'Dizziness',
+        'rash': 'Rash', 'itch': 'Pruritus',
+        'tired': 'Fatigue', 'weak': 'Fatigue',
+        'head': 'Headache', 'migraine': 'Headache',
+        'chest': 'Chest Pain', 'heart': 'Chest Pain'
+    };
+
+    for (const [kw, canonical] of Object.entries(keywords)) {
+        if (norm.includes(kw)) return canonical;
+    }
+    
+    // 4. No match — return cleaned title-case
     return toTitleCase(norm);
 }
 
@@ -477,18 +528,34 @@ function normaliseCondition(raw) {
 
 /**
  * Normalise an array of symptoms.
- * Deduplicates after normalisation.
+ * Now aggressively extracts multiple symptoms from a single string.
+ * "fever and a bad cough" → ["Fever", "Cough"]
  */
 function normaliseSymptoms(arr) {
-    if (!Array.isArray(arr)) return [];
+    if (!arr) return [];
+    const inputs = Array.isArray(arr) ? arr : [arr];
+    const extracted = [];
     const seen = new Set();
-    return arr
-        .map(s => normaliseSymptom(s))
-        .filter(s => {
-            if (!s || seen.has(s)) return false;
-            seen.add(s);
-            return true;
+
+    inputs.forEach(input => {
+        if (!input || typeof input !== 'string') return;
+        
+        // Split by common delimiters: comma, semicolon, " and ", " plus ", " with "
+        const parts = input.split(/[,;]|\s+and\s+|\s+plus\s+|\s+with\s+/i);
+        
+        parts.forEach(part => {
+            const cleanPart = part.trim();
+            if (!cleanPart) return;
+            
+            const normalised = normaliseSymptom(cleanPart);
+            if (normalised && !seen.has(normalised)) {
+                extracted.push(normalised);
+                seen.add(normalised);
+            }
         });
+    });
+
+    return extracted;
 }
 
 /**

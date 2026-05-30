@@ -45,6 +45,8 @@ const CareHub = () => {
     const [showAssignModal, setShowAssignModal] = useState(false);
     const [selectedHandover, setSelectedHandover] = useState(null);
     const [selectedStaff, setSelectedStaff] = useState([]);
+    const [quickSearchTerm, setQuickSearchTerm] = useState('');
+    const [isSearching, setIsSearching] = useState(false);
 
     useEffect(() => {
         loadCareData();
@@ -52,6 +54,30 @@ const CareHub = () => {
             loadStaff();
         }
     }, [currentUser]);
+
+    const handleQuickSearch = async (e) => {
+        if (e.key === 'Enter' && quickSearchTerm.trim()) {
+            setIsSearching(true);
+            try {
+                const response = await getPatients(1, 5, quickSearchTerm);
+                const patientsList = response.data.patients || [];
+                
+                if (patientsList.length === 1) {
+                    navigate('/records', { state: { selectedPatient: patientsList[0] } });
+                    toast.success(`Found patient: ${patientsList[0].firstName} ${patientsList[0].lastName}`);
+                } else if (patientsList.length > 1) {
+                    navigate('/patients', { state: { initialSearchTerm: quickSearchTerm } });
+                    toast.info(`Found ${patientsList.length} matches. Redirecting...`);
+                } else {
+                    toast.error('No citizen found with that ID or name');
+                }
+            } catch (error) {
+                toast.error('Search failed');
+            } finally {
+                setIsSearching(false);
+            }
+        }
+    };
 
     const loadStaff = async () => {
         try {
@@ -442,11 +468,15 @@ const CareHub = () => {
                             <div className="pt-4 border-t border-white/5">
                                 <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-4">Patient Quick Search</p>
                                 <div className="relative">
-                                    <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                    <MagnifyingGlassIcon className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 ${isSearching ? 'text-cyber-blue animate-pulse' : 'text-gray-500'}`} />
                                     <input 
                                         type="text" 
-                                        placeholder="NATIONAL ID..."
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-brand-dark-950 border border-white/5 text-xs text-white focus:border-cyber-blue/30 outline-none"
+                                        placeholder="NAME OR NATIONAL ID..."
+                                        value={quickSearchTerm}
+                                        onChange={(e) => setQuickSearchTerm(e.target.value)}
+                                        onKeyDown={handleQuickSearch}
+                                        disabled={isSearching}
+                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-brand-dark-950 border border-white/5 text-xs text-white focus:border-cyber-blue/30 outline-none disabled:opacity-50"
                                     />
                                 </div>
                             </div>
