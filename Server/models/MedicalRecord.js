@@ -66,8 +66,52 @@ const medicalRecordSchema = new mongoose.Schema({
         enum: ["Emergency", "Outpatient", "Inpatient", "Follow-up", "Consultation", "Home Visit", "Telemedicine"],
         default: "Outpatient"
     },
+    visitStatus: {
+        type: String,
+        enum: ["Draft", "Active", "In Admission", "Discharged", "Finalized"],
+        default: "Active"
+    },
     admissionId: String,
     dischargeDate: Date,
+    
+    // ============ FLUID DYNAMICS (Gap: Fluid I/O Fix) ============
+    ivBag: {
+        totalVolume: Number,    // ml (e.g., 1000)
+        currentVolume: Number,  // ml remaining
+        startTime: Date,
+        dripRate: Number,       // ml/hour (prescribed)
+        fluidType: String,      // e.g., "Ringer's Lactate", "Normal Saline"
+        status: { 
+            type: String, 
+            enum: ["Running", "Paused", "Empty", "Completed"],
+            default: "Completed"
+        }
+    },
+
+    // ============ OBSERVATIONS (Dynamic States / Progress Tracking) ============
+    observations: [{
+        timestamp: { type: Date, default: Date.now },
+        vitalSigns: {
+            temperature: Number,
+            bloodPressure: {
+                systolic: Number,
+                diastolic: Number
+            },
+            heartRate: Number,
+            respiratoryRate: Number,
+            oxygenSaturation: Number,
+            painScore: Number
+        },
+        fluidBalance: {
+            intake: Number, // ml
+            output: Number, // ml
+            type: String // e.g., "IV Fluids", "Oral", "Urine", "Drainage"
+        },
+        symptoms: [String],
+        notes: String,
+        recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        status: String // e.g., "Stable", "Improving", "Deteriorating", "Critical"
+    }],
     
     // ============ PATIENT COMPLAINTS ============
     presentingComplaints: [{

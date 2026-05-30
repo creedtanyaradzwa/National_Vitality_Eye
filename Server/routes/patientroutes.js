@@ -56,7 +56,8 @@ async function getPatientAccessFilter(user) {
     return {
         $or: [
             { createdBy: user._id },
-            { _id: { $in: recordPatients } }
+            { _id: { $in: recordPatients } },
+            { currentHospital: user.hospitalName }
         ]
     };
 }

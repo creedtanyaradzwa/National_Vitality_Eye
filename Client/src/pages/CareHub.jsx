@@ -5,8 +5,11 @@ import {
     getAlerts,
     getGlobalSummary,
     getHospitalHandovers,
-    completeHandoverTask
+    completeHandoverTask,
+    getHospitalStaff,
+    assignHandoverStaff
 } from '../services/api';
+import { useAuth } from '../context/AuthProvider';
 import { 
     HeartIcon, 
     UserGroupIcon, 
@@ -20,12 +23,15 @@ import {
     ChevronRightIcon,
     ChatBubbleLeftRightIcon,
     ArrowPathRoundedSquareIcon,
-    CheckCircleIcon
+    CheckCircleIcon,
+    UserPlusIcon,
+    XMarkIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
 const CareHub = () => {
     const navigate = useNavigate();
+    const { user: currentUser } = useAuth();
     const [stats, setStats] = useState({
         totalPatients: 0,
         highRiskPatients: 0,
@@ -34,11 +40,27 @@ const CareHub = () => {
     });
     const [highPriorityPatients, setHighPriorityPatients] = useState([]);
     const [pendingTasks, setPendingTasks] = useState([]);
+    const [staffMembers, setStaffMembers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [showAssignModal, setShowAssignModal] = useState(false);
+    const [selectedHandover, setSelectedHandover] = useState(null);
+    const [selectedStaff, setSelectedStaff] = useState([]);
 
     useEffect(() => {
         loadCareData();
-    }, []);
+        if (currentUser?.role === 'admin') {
+            loadStaff();
+        }
+    }, [currentUser]);
+
+    const loadStaff = async () => {
+        try {
+            const res = await getHospitalStaff();
+            setStaffMembers(res.data);
+        } catch (err) {
+            console.error("Failed to load staff", err);
+        }
+    };
 
     const loadCareData = async () => {
         setLoading(true);
@@ -90,6 +112,25 @@ const CareHub = () => {
         } catch (err) {
             toast.error('Failed to update task');
         }
+    };
+
+    const handleAssignStaff = async () => {
+        if (!selectedHandover || selectedStaff.length === 0) return;
+        try {
+            await assignHandoverStaff(selectedHandover._id, selectedStaff);
+            toast.success('Staff assigned to transfer successfully');
+            setShowAssignModal(false);
+            setSelectedStaff([]);
+            loadCareData();
+        } catch (err) {
+            toast.error('Failed to assign staff');
+        }
+    };
+
+    const toggleStaffSelection = (id) => {
+        setSelectedStaff(prev => 
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
     };
 
     if (loading) {
@@ -220,15 +261,30 @@ const CareHub = () => {
                                                 </div>
                                             )}
                                         </div>
-                                        <button 
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleCompleteTask(task.handoverId, task._id);
-                                            }}
-                                            className="p-2 rounded-lg bg-white/5 hover:bg-cyber-green/20 hover:text-cyber-green transition-all"
-                                        >
-                                            <CheckCircleIcon className="h-4 w-4" />
-                                        </button>
+                                        <div className="flex gap-2">
+                                            {currentUser?.role === 'admin' && task.type === 'Transfer' && (
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setSelectedHandover(task);
+                                                        setShowAssignModal(true);
+                                                    }}
+                                                    className="p-2 rounded-lg bg-cyber-purple/10 text-cyber-purple hover:bg-cyber-purple hover:text-white transition-all"
+                                                    title="Assign Staff"
+                                                >
+                                                    <UserPlusIcon className="h-4 w-4" />
+                                                </button>
+                                            )}
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleCompleteTask(task.handoverId, task._id);
+                                                }}
+                                                className="p-2 rounded-lg bg-white/5 hover:bg-cyber-green/20 hover:text-cyber-green transition-all"
+                                            >
+                                                <CheckCircleIcon className="h-4 w-4" />
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -240,6 +296,65 @@ const CareHub = () => {
                         </div>
                     )}
                 </div>
+
+                {/* Staff Assignment Modal (For Admins) */}
+                {showAssignModal && (
+                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+                        <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+                            <div className="p-6 border-b border-white/5 flex justify-between items-center">
+                                <div>
+                                    <h2 className="text-xl font-black text-white uppercase tracking-tighter">Assign Clinical Team</h2>
+                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">
+                                        Incoming: {selectedHandover?.patient?.firstName} {selectedHandover?.patient?.lastName}
+                                    </p>
+                                </div>
+                                <button onClick={() => setShowAssignModal(false)} className="p-2 text-gray-500 hover:text-white"><XMarkIcon className="h-6 w-6" /></button>
+                            </div>
+                            
+                            <div className="p-6 space-y-6">
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Select Personnel (Available Specialists)</label>
+                                    <div className="grid grid-cols-1 gap-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                        {staffMembers.map((s) => (
+                                            <label key={s._id} className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
+                                                selectedStaff.includes(s._id)
+                                                ? 'bg-cyber-blue/10 border-cyber-blue/50'
+                                                : 'bg-white/5 border-white/10 hover:border-white/20'
+                                            }`}>
+                                                <div className="flex items-center space-x-3">
+                                                    <input 
+                                                        type="checkbox"
+                                                        checked={selectedStaff.includes(s._id)}
+                                                        onChange={() => toggleStaffSelection(s._id)}
+                                                        className="hidden"
+                                                    />
+                                                    <div className={`h-4 w-4 rounded border flex items-center justify-center ${
+                                                        selectedStaff.includes(s._id) ? 'border-cyber-blue bg-cyber-blue' : 'border-white/30'
+                                                    }`}>
+                                                        {selectedStaff.includes(s._id) && <CheckCircleIcon className="h-3 w-3 text-white" />}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs font-bold text-white">{s.firstName} {s.lastName}</p>
+                                                        <p className="text-[8px] font-black text-gray-500 uppercase">{s.role} - {s.position}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-[8px] font-mono text-cyber-blue/60">{s.hospitalName.substring(0, 10)}...</div>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <button 
+                                    onClick={handleAssignStaff}
+                                    disabled={selectedStaff.length === 0}
+                                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyber-blue to-cyber-purple text-white text-xs font-black uppercase tracking-widest hover:shadow-[0_0_25px_rgba(34,211,238,0.4)] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    Confirm Assignment
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Clinical Priority Queue */}

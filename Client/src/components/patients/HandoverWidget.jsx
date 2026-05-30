@@ -8,7 +8,7 @@ import {
     ChatBubbleLeftRightIcon,
     UserGroupIcon
 } from '@heroicons/react/24/outline';
-import { createHandover, getPatientHandovers, completeHandoverTask, getClinicalStaff } from '../../services/api';
+import { createHandover, getPatientHandovers, completeHandoverTask, getHospitalStaff } from '../../services/api';
 import toast from 'react-hot-toast';
 
 const HandoverWidget = ({ patientId }) => {
@@ -56,7 +56,7 @@ const HandoverWidget = ({ patientId }) => {
 
     const loadStaff = async () => {
         try {
-            const res = await getClinicalStaff();
+            const res = await getHospitalStaff();
             setStaff(res.data);
         } catch (err) {
             console.error('Error loading staff:', err);

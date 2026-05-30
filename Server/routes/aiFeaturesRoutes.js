@@ -5,7 +5,7 @@ const MedicalRecord = require("../models/MedicalRecord");
 const { protect } = require("../middleware/auth");
 const { hasPermission, isApproved } = require("../middleware/rbac");
 const { predictTriagePriority } = require("../utils/triageAI");
-const { generateClinicalSnapshot, getQuickMetrics } = require("../utils/snapshotAI");
+const { generateClinicalSnapshot, generateRecordSnapshot, getQuickMetrics } = require("../utils/snapshotAI");
 
 // All routes require authentication
 router.use(protect, isApproved);
@@ -32,6 +32,23 @@ router.get("/clinical-snapshot/:patientId", hasPermission("view:records"), async
         });
     } catch (error) {
         console.error("Clinical snapshot error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+router.get("/record-snapshot/:recordId", hasPermission("view:records"), async (req, res) => {
+    try {
+        const record = await MedicalRecord.findById(req.params.recordId);
+        if (!record) return res.status(404).json({ error: "Record not found" });
+
+        const summary = generateRecordSnapshot(record);
+
+        res.json({
+            summary,
+            timestamp: new Date()
+        });
+    } catch (error) {
+        console.error("Record snapshot error:", error);
         res.status(500).json({ error: error.message });
     }
 });

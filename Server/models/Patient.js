@@ -38,6 +38,7 @@ const patientSchema = new mongoose.Schema({
     },
     
     // ============ LOCATION ============
+    currentHospital: String, // The facility currently managing the patient
     province: {
         type: String,
         required: true,

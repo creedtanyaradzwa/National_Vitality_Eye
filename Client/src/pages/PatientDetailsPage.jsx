@@ -41,6 +41,8 @@ import VitalsTrend from '../components/patients/VitalsTrend';
 import AnomalyDetection from '../components/ai/AnomalyDetection';
 import SimilarPatients from '../components/ai/SimilarPatients';
 import ClinicalSnapshot from '../components/ai/ClinicalSnapshot';
+import HandoverWidget from '../components/patients/HandoverWidget';
+import FluidBalanceWidget from '../components/patients/FluidBalanceWidget';
 
 const PatientDetailsPage = () => {
     const { id } = useParams();
@@ -127,6 +129,28 @@ const PatientDetailsPage = () => {
 
     const handleUpdateImmunizations = async (data) => {
         await updateClinicalProfileSection('immunizations', data);
+    };
+
+    const handleFluidUpdate = async (newObservation) => {
+        const latestRecord = records[0];
+        if (!latestRecord) return;
+        
+        try {
+            const updatedObservations = [...(latestRecord.observations || []), {
+                ...newObservation,
+                recordedBy: currentUser?.id
+            }];
+            
+            // Re-use the existing update service (assuming it supports partial record updates or we update whole record)
+            const { updateMedicalRecord } = await import('../services/api');
+            await updateMedicalRecord(latestRecord._id, { observations: updatedObservations });
+            
+            toast.success('Fluid intake/output logged');
+            await loadPatientData();
+        } catch (error) {
+            console.error('Fluid log error:', error);
+            toast.error('Failed to log fluid data');
+        }
     };
 
     const handleAddChronicCondition = async (data) => {
@@ -426,8 +450,20 @@ const PatientDetailsPage = () => {
             {/* Overview Tab */}
             {activeTab === 'overview' && (
                 <div className="space-y-6">
+                    {/* Fluid Balance & Rehydration Engine (Gap: Fluid I/O Fix) */}
+                    {(records[0]?.visitStatus === 'In Admission' || records[0]?.visitStatus === 'Active') && (
+                        <FluidBalanceWidget 
+                            patientId={id} 
+                            activeRecord={records[0]} 
+                            onUpdate={handleFluidUpdate} 
+                        />
+                    )}
+
                     {/* AI Clinical Snapshot - Information Sifting Gap Fix */}
                     <ClinicalSnapshot patientId={id} />
+
+                    {/* Handover & Referral Hub (Gap: Siloed Shift Fix) */}
+                    <HandoverWidget patientId={id} />
 
                     {/* AI Predictive Triage Priority Card */}
                     <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-cyber-blue to-cyber-purple p-[1px] group">

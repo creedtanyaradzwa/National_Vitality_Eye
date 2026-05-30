@@ -111,6 +111,38 @@ exports.predictTriagePriority = (vitals, symptoms) => {
         score: totalScore,
         reasons: allReasons,
         color,
+        instructions: getActionableInstructions(totalScore, vitals, allReasons),
+        isCrisis: totalScore >= 7 || symptomAnalysis.risk >= 5,
         timestamp: new Date()
     };
+};
+
+const getActionableInstructions = (score, vitals, reasons) => {
+    const instructions = [];
+    const sbp = vitals?.bloodPressure?.systolic || vitals?.bloodPressureSystolic;
+    const hr = vitals?.heartRate;
+
+    // 1. Hypovolemic Shock / Sepsis logic (Shock Index)
+    if (sbp && hr && hr > sbp) {
+        instructions.push("CRITICAL: High Shock Index detected. Increase IV fluids immediately and prepare for rapid fluid resuscitation.");
+    }
+
+    // 2. Score-based instructions
+    if (score >= 7) {
+        instructions.push("EMERGENCY: Immediate bedside review by Doctor required. Prepare emergency cart and monitor SpO2 continuously.");
+    } else if (score >= 5) {
+        instructions.push("URGENT: Notify Doctor on duty. Increase vital sign frequency to every 15-30 minutes.");
+    }
+
+    // 3. Respiratory distress
+    if (vitals?.oxygenSaturation < 92) {
+        instructions.push("Start oxygen therapy (target 94-98% SpO2) and elevate head of bed.");
+    }
+
+    // Default instruction if none of the above
+    if (instructions.length === 0 && score >= 3) {
+        instructions.push("Monitor closely. Re-evaluate vitals in 60 minutes.");
+    }
+
+    return instructions;
 };

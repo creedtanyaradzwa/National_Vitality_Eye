@@ -8,7 +8,8 @@ import {
     updateMedicalRecord,
     deleteMedicalRecord,
     getHospitalStaff,
-    uploadRadiologyImages
+    uploadRadiologyImages,
+    getRecordSnapshot
 } from '../services/api';
 import { useAuth } from '../context/AuthProvider';
 import { useDataRefresh } from '../context/DataRefreshProvider.jsx';
@@ -37,7 +38,8 @@ import {
     ClockIcon,
     IdentificationIcon,
     ShieldCheckIcon,
-    CommandLineIcon
+    CommandLineIcon,
+    SparklesIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import {
@@ -47,6 +49,8 @@ import {
     statusColorClass
 } from '../utils/vitalSigns';
 import ClinicalInvestigationsForm from '../components/medical/ClinicalInvestigationsForm';
+import ClinicalProgression from '../components/medical/ClinicalProgression';
+import TriageAlert from '../components/ai/TriageAlert';
 
 const MedicalRecords = () => {
     const navigate = useNavigate();
@@ -66,8 +70,14 @@ const MedicalRecords = () => {
     const [editingRecord, setEditingRecord] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [expandedRecord, setExpandedRecord] = useState(null);
+    const [recordSnapshot, setRecordSnapshot] = useState(null);
+    const [loadingSnapshot, setLoadingSnapshot] = useState(false);
     const [uploadingImages, setUploadingImages] = useState(false);
     
+    // Triage State (Gap: Silent Crisis)
+    const [triageData, setTriageData] = useState(null);
+    const [loadingTriage, setLoadingTriage] = useState(false);
+
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalResults, setTotalResults] = useState(0);
@@ -79,6 +89,14 @@ const MedicalRecords = () => {
         doctorName: '',
         visitDate: new Date().toISOString().split('T')[0],
         visitType: 'Outpatient',
+        visitStatus: 'Active',
+        observations: [],
+        newObservation: {
+            timestamp: new Date().toISOString(),
+            vitalSigns: { temperature: '', heartRate: '', bloodPressureSystolic: '', bloodPressureDiastolic: '', oxygenSaturation: '', respiratoryRate: '' },
+            notes: '',
+            status: 'Stable'
+        },
         symptoms: [],
         symptomInput: '',
         primaryDiagnosis: '',
@@ -204,6 +222,54 @@ const MedicalRecords = () => {
         loadRecords();
     }, [selectedPatient, page]);
 
+    useEffect(() => {
+        const loadRecordSnapshot = async () => {
+            if (expandedRecord) {
+                setLoadingSnapshot(true);
+                try {
+                    const response = await getRecordSnapshot(expandedRecord);
+                    setRecordSnapshot(response.data.summary);
+                } catch (error) {
+                    console.error("Failed to load record snapshot:", error);
+                    setRecordSnapshot("AI synthesis unavailable for this record.");
+                } finally {
+                    setLoadingSnapshot(false);
+                }
+            } else {
+                setRecordSnapshot(null);
+            }
+        };
+        loadRecordSnapshot();
+    }, [expandedRecord]);
+
+    // Real-time Triage Analysis (Gap: Silent Crisis)
+    useEffect(() => {
+        const analyzeTriage = async () => {
+            const { temperature, heartRate, bloodPressureSystolic, respiratoryRate, oxygenSaturation } = formData.vitalSigns;
+            
+            // Only analyze if enough vitals are present to be meaningful
+            if (!temperature || !heartRate || !bloodPressureSystolic) {
+                setTriageData(null);
+                return;
+            }
+
+            try {
+                // We use the server-side triage logic for consistency
+                // In a production app, we'd also mirror this in a local utility for true offline-first
+                const response = await getPatientTriage(null, {
+                    vitals: formData.vitalSigns,
+                    symptoms: formData.symptoms
+                });
+                setTriageData(response.data);
+            } catch (error) {
+                console.error("Triage analysis failed:", error);
+            }
+        };
+
+        const timer = setTimeout(analyzeTriage, 1000); // Debounce
+        return () => clearTimeout(timer);
+    }, [formData.vitalSigns, formData.symptoms]);
+
     const handleSearch = () => {
         if (!searchTerm.trim()) {
             setSelectedPatient(null);
@@ -236,6 +302,15 @@ const MedicalRecords = () => {
             doctorName: `${currentUser?.firstName} ${currentUser?.lastName}`,
             visitDate: new Date().toISOString().split('T')[0],
             visitType: 'Outpatient',
+            visitStatus: 'Active',
+            observations: [],
+            newObservation: {
+                timestamp: new Date().toISOString(),
+                vitalSigns: { temperature: '', heartRate: '', bloodPressureSystolic: '', bloodPressureDiastolic: '', oxygenSaturation: '', respiratoryRate: '' },
+                fluidBalance: { intake: '', output: '', type: 'IV Fluids' },
+                notes: '',
+                status: 'Stable'
+            },
             symptoms: [],
             symptomInput: '',
             primaryDiagnosis: '',
@@ -299,6 +374,15 @@ const MedicalRecords = () => {
             doctorName: record.doctorName || '',
             visitDate: record.visitDate ? record.visitDate.split('T')[0] : new Date().toISOString().split('T')[0],
             visitType: record.visitType || 'Outpatient',
+            visitStatus: record.visitStatus || 'Active',
+            observations: record.observations || [],
+            newObservation: {
+                timestamp: new Date().toISOString(),
+                vitalSigns: { temperature: '', heartRate: '', bloodPressureSystolic: '', bloodPressureDiastolic: '', oxygenSaturation: '', respiratoryRate: '' },
+                fluidBalance: { intake: '', output: '', type: 'IV Fluids' },
+                notes: '',
+                status: 'Stable'
+            },
             symptoms: record.symptoms || [],
             symptomInput: '',
             primaryDiagnosis: record.primaryDiagnosis?.name || record.disease || '',
@@ -622,6 +706,8 @@ const MedicalRecords = () => {
             doctorName: formData.doctorName,
             visitDate: formData.visitDate,
             visitType: formData.visitType,
+            visitStatus: formData.visitStatus,
+            observations: formData.observations,
             symptoms: formData.symptoms,
             primaryDiagnosis: { name: formData.primaryDiagnosis },
             disease: formData.disease,
@@ -866,6 +952,15 @@ const MedicalRecords = () => {
                                                                 }`}>
                                                                     {record.visitType}
                                                                 </span>
+                                                                <span className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-lg border ${
+                                                                    record.visitStatus === 'Active' ? 'bg-green-500/10 border-green-500/20 text-green-500' :
+                                                                    record.visitStatus === 'In Admission' ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' :
+                                                                    'bg-brand-dark-800 border-white/10 text-gray-500'
+                                                                }`}>
+                                                                    {record.visitStatus === 'Active' ? 'Active Case' : 
+                                                                     record.visitStatus === 'Finalized' ? 'Case Closed' : 
+                                                                     record.visitStatus}
+                                                                </span>
                                                             </div>
                                                             <div className="flex items-center space-x-4">
                                                                 <div className="flex items-center text-[10px] font-bold text-gray-600 uppercase tracking-widest">
@@ -910,6 +1005,40 @@ const MedicalRecords = () => {
                                                 <div className="px-8 pb-8 animate-in fade-in slide-in-from-top-4 duration-500">
                                                     <div className="h-px w-full bg-white/5 mb-8" />
                                                     
+                                                    {/* Record-Specific AI Snapshot (Information Sifting Gap Fix) */}
+                                                    <div className="mb-10 flex flex-col md:flex-row gap-6">
+                                                        <div className="flex-1 p-6 rounded-2xl bg-gradient-to-br from-cyber-blue/5 to-transparent border border-cyber-blue/10 relative overflow-hidden group">
+                                                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                                                <SparklesIcon className="h-10 w-10 text-cyber-blue" />
+                                                            </div>
+                                                            <h4 className="text-[9px] font-bold text-cyber-blue uppercase tracking-[0.3em] mb-3 flex items-center">
+                                                                <CommandLineIcon className="h-3 w-3 mr-2" />
+                                                                AI_RECORD_SYNTHESIS
+                                                            </h4>
+                                                            {loadingSnapshot ? (
+                                                                <div className="flex items-center space-x-3 animate-pulse">
+                                                                    <div className="w-2 h-2 rounded-full bg-cyber-blue" />
+                                                                    <div className="h-2 w-48 bg-white/5 rounded" />
+                                                                </div>
+                                                            ) : (
+                                                                <p className="text-gray-200 text-sm leading-relaxed italic">
+                                                                    "{recordSnapshot || 'Analyzing clinical encounter patterns...'}"
+                                                                </p>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Outcome Highlight (Gap: Record Closure & Outcome) */}
+                                                        {(record.visitStatus === 'Finalized' || record.visitStatus === 'Discharged') && (
+                                                            <div className="md:w-72 p-6 rounded-2xl bg-brand-dark-950 border border-cyber-purple/20 flex flex-col justify-center text-center">
+                                                                <p className="text-[8px] font-bold text-gray-600 uppercase tracking-[0.3em] mb-2">Clinical Outcome</p>
+                                                                <div className="text-xl font-black text-cyber-purple tracking-tighter uppercase">{record.disposition || 'Finalized'}</div>
+                                                                {record.dischargeInstructions && (
+                                                                    <p className="text-[9px] text-gray-500 mt-2 italic line-clamp-2">"{record.dischargeInstructions}"</p>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
                                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                                                         {/* Symptoms & Diagnosis */}
                                                         <div className="space-y-6">
@@ -1018,9 +1147,20 @@ const MedicalRecords = () => {
                                                                 </div>
                                                             )}
                                                         </div>
-                                                    )}
+                                                        )}
 
-                                                    {/* Action Controls */}
+                                                        {/* Clinical Progression (Admission Progress Support) */}
+                                                        {record.observations?.length > 0 && (
+                                                        <div className="mt-12 p-8 rounded-[2rem] bg-brand-dark-950/50 border border-cyber-blue/10">
+                                                            <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyber-blue mb-8 flex items-center">
+                                                                <ChartBarIcon className="h-4 w-4 mr-3" />
+                                                                Dynamic Clinical Progression
+                                                            </h4>
+                                                            <ClinicalProgression observations={record.observations} />
+                                                        </div>
+                                                        )}
+
+                                                        {/* Action Controls */}
                                                     <div className="mt-10 pt-8 border-t border-white/5 flex justify-end space-x-4">
                                                         <button 
                                                             onClick={() => handleEditRecord(record)}
@@ -1112,6 +1252,11 @@ const MedicalRecords = () => {
 
                             {/* Modal Body */}
                             <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                                {/* Real-time Triage Alert (Gap: Silent Crisis Fix) */}
+                                <div className="mb-10">
+                                    <TriageAlert triageData={triageData} loading={loadingTriage} />
+                                </div>
+
                                 <form id="medical-record-form" onSubmit={handleSubmit} className="space-y-12">
                                     {/* Core Information Section */}
                                     <section>
@@ -1175,6 +1320,23 @@ const MedicalRecords = () => {
                                                         <option value="Follow-up">Follow-up</option>
                                                         <option value="Consultation">Consultation</option>
                                                         <option value="Home Visit">Home Visit</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Clinical Status</label>
+                                                <div className="relative group">
+                                                    <CommandLineIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600 group-focus-within:text-cyber-blue transition-colors" />
+                                                    <select
+                                                        value={formData.visitStatus}
+                                                        onChange={(e) => setFormData({...formData, visitStatus: e.target.value})}
+                                                        className="w-full bg-brand-dark-950 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm text-white focus:border-cyber-blue/30 focus:ring-1 focus:ring-cyber-blue/30 transition-all outline-none appearance-none"
+                                                    >
+                                                        <option value="Draft">Draft</option>
+                                                        <option value="Active">Active Case</option>
+                                                        <option value="In Admission">In Admission</option>
+                                                        <option value="Discharged">Discharged</option>
+                                                        <option value="Finalized">Closed / Finalized</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -1254,6 +1416,208 @@ const MedicalRecords = () => {
                                             </div>
                                         </div>
                                     </section>
+
+                                    {/* Admission/Active Progress Section (Gap: Information Sifting & Admission Support) */}
+                                    {(formData.visitStatus === 'In Admission' || formData.visitStatus === 'Active') && (
+                                        <section className="p-8 rounded-[2rem] bg-brand-dark-950 border border-cyber-blue/20 shadow-[0_0_40px_rgba(0,242,255,0.05)]">
+                                            <h3 className="text-[10px] font-bold text-cyber-blue uppercase tracking-[0.3em] mb-8 flex items-center justify-between">
+                                                <div className="flex items-center">
+                                                    <div className="w-2 h-2 bg-cyber-blue rounded-full mr-3 animate-pulse" />
+                                                    {formData.visitStatus === 'In Admission' ? 'ADMISSION_PROGRESS_TRACKING' : 'ACTIVE_CARE_MONITORING'}
+                                                </div>
+                                                <span className="px-3 py-1 rounded-lg bg-cyber-blue/10 text-[8px] border border-cyber-blue/20">LIVE MONITORING ACTIVE</span>
+                                            </h3>
+
+                                            {/* Existing Observations Timeline */}
+                                            {formData.observations.length > 0 && (
+                                                <div className="mb-10 space-y-4 max-h-[300px] overflow-y-auto pr-4 custom-scrollbar">
+                                                    {formData.observations.map((obs, idx) => (
+                                                        <div key={idx} className="relative pl-8 pb-4">
+                                                            <div className="absolute left-0 top-0 bottom-0 w-px bg-white/5" />
+                                                            <div className="absolute left-[-4px] top-2 w-2 h-2 rounded-full bg-cyber-blue shadow-[0_0_10px_rgba(0,242,255,0.5)]" />
+
+                                                            <div className="p-4 rounded-2xl bg-brand-dark-900 border border-white/5 flex flex-col md:flex-row justify-between gap-4">
+                                                                <div>
+                                                                    <div className="flex items-center space-x-3 mb-2">
+                                                                        <span className="text-[10px] font-mono text-gray-500">{new Date(obs.timestamp).toLocaleString()}</span>
+                                                                        <span className={`text-[8px] font-bold uppercase px-2 py-0.5 rounded border ${
+                                                                            obs.status === 'Critical' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
+                                                                            obs.status === 'Deteriorating' ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' :
+                                                                            'bg-green-500/10 border-green-500/20 text-green-500'
+                                                                        }`}>{obs.status}</span>
+                                                                    </div>
+                                                                    <p className="text-xs text-gray-300 italic">"{obs.notes || 'No notes recorded'}"</p>
+                                                                </div>
+                                                                <div className="flex gap-4">
+                                                                    {obs.vitalSigns && Object.entries(obs.vitalSigns).map(([key, val]) => val && (
+                                                                        <div key={key} className="text-center">
+                                                                            <p className="text-[8px] text-gray-600 uppercase font-bold">{key === 'oxygenSaturation' ? 'SpO2' : key.substring(0, 4)}</p>
+                                                                            <p className="text-[10px] text-white font-mono">{val}{key === 'temperature' ? '°' : key === 'oxygenSaturation' ? '%' : ''}</p>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Add New Observation Form */}
+                                            <div className="p-6 rounded-2xl bg-brand-dark-900 border border-cyber-blue/10">
+                                                <h4 className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-6">Record New Clinical State</h4>
+                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                                                    <div className="space-y-1">
+                                                        <label className="text-[8px] font-bold text-gray-600 uppercase">Temp</label>
+                                                        <input 
+                                                            type="number" step="0.1"
+                                                            value={formData.newObservation.vitalSigns.temperature}
+                                                            onChange={(e) => setFormData({
+                                                                ...formData, 
+                                                                newObservation: {
+                                                                    ...formData.newObservation,
+                                                                    vitalSigns: { ...formData.newObservation.vitalSigns, temperature: e.target.value }
+                                                                }
+                                                            })}
+                                                            className="w-full bg-brand-dark-950 border border-white/5 rounded-xl py-2 px-3 text-xs text-white"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-[8px] font-bold text-gray-600 uppercase">Heart Rate</label>
+                                                        <input 
+                                                            type="number"
+                                                            value={formData.newObservation.vitalSigns.heartRate}
+                                                            onChange={(e) => setFormData({
+                                                                ...formData, 
+                                                                newObservation: {
+                                                                    ...formData.newObservation,
+                                                                    vitalSigns: { ...formData.newObservation.vitalSigns, heartRate: e.target.value }
+                                                                }
+                                                            })}
+                                                            className="w-full bg-brand-dark-950 border border-white/5 rounded-xl py-2 px-3 text-xs text-white"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-[8px] font-bold text-gray-600 uppercase">SpO2 (%)</label>
+                                                        <input 
+                                                            type="number"
+                                                            value={formData.newObservation.vitalSigns.oxygenSaturation}
+                                                            onChange={(e) => setFormData({
+                                                                ...formData, 
+                                                                newObservation: {
+                                                                    ...formData.newObservation,
+                                                                    vitalSigns: { ...formData.newObservation.vitalSigns, oxygenSaturation: e.target.value }
+                                                                }
+                                                            })}
+                                                            className="w-full bg-brand-dark-950 border border-white/5 rounded-xl py-2 px-3 text-xs text-white"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-[8px] font-bold text-gray-600 uppercase">Patient Status</label>
+                                                        <select 
+                                                            value={formData.newObservation.status}
+                                                            onChange={(e) => setFormData({
+                                                                ...formData, 
+                                                                newObservation: { ...formData.newObservation, status: e.target.value }
+                                                            })}
+                                                            className="w-full bg-brand-dark-950 border border-white/5 rounded-xl py-2 px-3 text-xs text-white"
+                                                        >
+                                                            <option value="Stable">Stable</option>
+                                                            <option value="Improving">Improving</option>
+                                                            <option value="Deteriorating">Deteriorating</option>
+                                                            <option value="Critical">Critical</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                
+                                                {/* Fluid Balance Inputs */}
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 pt-6 border-t border-white/5">
+                                                    <div className="space-y-1">
+                                                        <label className="text-[8px] font-bold text-gray-600 uppercase">Fluid Intake (ml)</label>
+                                                        <input 
+                                                            type="number"
+                                                            placeholder="e.g. 500"
+                                                            value={formData.newObservation.fluidBalance.intake}
+                                                            onChange={(e) => setFormData({
+                                                                ...formData, 
+                                                                newObservation: {
+                                                                    ...formData.newObservation,
+                                                                    fluidBalance: { ...formData.newObservation.fluidBalance, intake: e.target.value }
+                                                                }
+                                                            })}
+                                                            className="w-full bg-brand-dark-950 border border-white/5 rounded-xl py-2 px-3 text-xs text-white"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-[8px] font-bold text-gray-600 uppercase">Fluid Output (ml)</label>
+                                                        <input 
+                                                            type="number"
+                                                            placeholder="e.g. 200"
+                                                            value={formData.newObservation.fluidBalance.output}
+                                                            onChange={(e) => setFormData({
+                                                                ...formData, 
+                                                                newObservation: {
+                                                                    ...formData.newObservation,
+                                                                    fluidBalance: { ...formData.newObservation.fluidBalance, output: e.target.value }
+                                                                }
+                                                            })}
+                                                            className="w-full bg-brand-dark-950 border border-white/5 rounded-xl py-2 px-3 text-xs text-white"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <label className="text-[8px] font-bold text-gray-600 uppercase">Intake Type</label>
+                                                        <input 
+                                                            type="text"
+                                                            placeholder="e.g. IV Fluids, Oral"
+                                                            value={formData.newObservation.fluidBalance.type}
+                                                            onChange={(e) => setFormData({
+                                                                ...formData, 
+                                                                newObservation: {
+                                                                    ...formData.newObservation,
+                                                                    fluidBalance: { ...formData.newObservation.fluidBalance, type: e.target.value }
+                                                                }
+                                                            })}
+                                                            className="w-full bg-brand-dark-950 border border-white/5 rounded-xl py-2 px-3 text-xs text-white"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex gap-4">
+                                                    <textarea 
+                                                        placeholder="Clinical notes for this observation..."
+                                                        value={formData.newObservation.notes}
+                                                        onChange={(e) => setFormData({
+                                                            ...formData, 
+                                                            newObservation: { ...formData.newObservation, notes: e.target.value }
+                                                        })}
+                                                        className="flex-1 bg-brand-dark-950 border border-white/5 rounded-xl py-3 px-4 text-xs text-white min-h-[60px]"
+                                                    />
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => {
+                                                            if (!formData.newObservation.vitalSigns.temperature && !formData.newObservation.notes) {
+                                                                toast.error("Enter at least temperature or a note");
+                                                                return;
+                                                            }
+                                                            setFormData({
+                                                                ...formData,
+                                                                observations: [...formData.observations, { ...formData.newObservation, timestamp: new Date().toISOString() }],
+                                                                newObservation: {
+                                                                    timestamp: new Date().toISOString(),
+                                                                    vitalSigns: { temperature: '', heartRate: '', bloodPressureSystolic: '', bloodPressureDiastolic: '', oxygenSaturation: '', respiratoryRate: '' },
+                                                                    notes: '',
+                                                                    status: 'Stable'
+                                                                }
+                                                            });
+                                                            toast.success("Observation added to queue");
+                                                        }}
+                                                        className="px-6 rounded-xl bg-cyber-blue/10 border border-cyber-blue/20 text-cyber-blue font-bold text-[10px] uppercase hover:bg-cyber-blue hover:text-white transition-all"
+                                                    >
+                                                        COMMIT STATE
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </section>
+                                    )}
 
                                     {/* Diagnosis Section */}
                                     <section>

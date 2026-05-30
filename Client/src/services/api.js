@@ -55,6 +55,7 @@ export const createMedicalRecord = (data) => API.post('/medical-records', data);
 export const updateMedicalRecord = (id, data) => API.patch(`/medical-records/${id}`, data);
 export const deleteMedicalRecord = (id) => API.delete(`/medical-records/${id}`);
 export const getHospitalStaff = () => API.get('/medical-records/staff');
+export const getClinicalStaff = getHospitalStaff; // Alias for resilience
 export const uploadRadiologyImages = (patientId, studyType, files) => {
     const formData = new FormData();
     formData.append('patientId', patientId);
@@ -119,6 +120,7 @@ export const getDiseaseInsights = (disease, period = 'all') => {
 };
 export const getAIStats = () => API.get('/ai/stats');
 export const getClinicalSnapshot = (patientId) => API.get(`/ai/clinical-snapshot/${patientId}`);
+export const getRecordSnapshot = (recordId) => API.get(`/ai/record-snapshot/${recordId}`);
 export const getAnomalyDetection = (patientId, currentVitals = {}) => API.post(`/ai/anomaly-detection/${patientId}`, { currentVitals });
 export const getSimilarPatients = (patientId, limit = 10) => API.post(`/ai/similar-patients/${patientId}`, { limit });
 export const getPatientTriage = (patientId) => API.get(`/ai/patient-triage/${patientId}`);
@@ -208,6 +210,7 @@ export const getPatientAuditLog = (id) =>
 export const getHospitalHandovers = () => API.get('/api/handovers/my-hospital');
 export const getPatientHandovers = (patientId) => API.get(`/api/handovers/patient/${patientId}`);
 export const createHandover = (data) => API.post('/api/handovers', data);
+export const assignHandoverStaff = (handoverId, assignedUsers) => API.patch(`/api/handovers/${handoverId}/assign`, { assignedUsers });
 export const completeHandoverTask = (handoverId, taskId, status = 'Completed') => 
     API.patch(`/api/handovers/${handoverId}/task/${taskId}`, { status });
 export const getPendingTaskCount = () => API.get('/api/handovers/pending-count');
