@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { predictDisease, getPatientRisk, getPatientByNationalId, getAIStatus } from '../services/api';
+import { predictDisease, getPatientRisk, getPatientByNationalId, getPatients, getAIStatus, getAISymptoms } from '../services/api';
 import { useAuth } from '../context/AuthProvider';
 import { 
     BeakerIcon, 
@@ -15,7 +15,11 @@ import {
     ArrowPathIcon,
     HeartIcon,
     ClipboardDocumentListIcon,
-    DocumentTextIcon
+    DocumentTextIcon,
+    TagIcon,
+    FunnelIcon,
+    Squares2X2Icon,
+    ListBulletIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -24,6 +28,9 @@ const AIPredictor = () => {
     const canUseAI = hasPermission('use:ai_predictor');
     
     const [symptoms, setSymptoms] = useState([]);
+    const [allSymptoms, setAllSymptoms] = useState([]);
+    const [symptomSearch, setSymptomSearch] = useState('');
+    const [viewMode, setViewMode] = useState('common'); // 'common' or 'all'
     const [symptomInput, setSymptomInput] = useState('');
     const [province, setProvince] = useState('Harare');
     const [_patientId, setPatientId] = useState('');
@@ -34,6 +41,14 @@ const AIPredictor = () => {
     const [loading, setLoading] = useState(false);
     const [aiStatus, setAiStatus] = useState(null);
     const [activeTab, setActiveTab] = useState('predict');
+    const [vitals, setVitals] = useState({
+        temperature: '',
+        heartRate: '',
+        systolicBP: '',
+        diastolicBP: '',
+        oxygenSaturation: '',
+        respiratoryRate: ''
+    });
 
     const provinces = [
         'Harare', 'Bulawayo', 'Manicaland', 'Mashonaland Central',
@@ -42,15 +57,16 @@ const AIPredictor = () => {
     ];
 
     const commonSymptoms = [
-        'fever', 'headache', 'chills', 'fatigue', 'cough', 
-        'difficulty breathing', 'chest pain', 'nausea', 'vomiting',
-        'diarrhea', 'rash', 'joint pain', 'muscle pain', 'sweating',
-        'weight loss', 'night sweats', 'blurred vision', 'dizziness',
-        'stomach pain', 'loss of appetite', 'sore throat', 'runny nose'
+        'cough', 'fever', 'blurred vision', 'vomiting', 'dizziness', 
+        'shortness of breath', 'unexplained weight loss', 'headache',
+        'diarrhoea', 'abdominal pain', 'skin redness', 'heartburn',
+        'pallor', 'itching', 'wheezing', 'excessive thirst',
+        'nausea', 'constipation', 'bloating', 'fatigue'
     ];
 
     useEffect(() => {
         loadAIStatus();
+        loadAllSymptoms();
     }, []);
 
     const loadAIStatus = async () => {
@@ -61,6 +77,21 @@ const AIPredictor = () => {
             console.error('Failed to load AI status', error);
         }
     };
+
+    const loadAllSymptoms = async () => {
+        try {
+            const response = await getAISymptoms();
+            if (response.data.symptoms) {
+                setAllSymptoms(response.data.symptoms);
+            }
+        } catch (error) {
+            console.error('Failed to load symptoms', error);
+        }
+    };
+
+    const filteredSymptoms = allSymptoms.filter(s => 
+        s.toLowerCase().includes(symptomSearch.toLowerCase())
+    );
 
     const addSymptom = () => {
         if (symptomInput.trim() && !symptoms.includes(symptomInput.trim().toLowerCase())) {
@@ -73,6 +104,11 @@ const AIPredictor = () => {
         setSymptoms(symptoms.filter(s => s !== symptom));
     };
 
+    const handleVitalsChange = (e) => {
+        const { name, value } = e.target;
+        setVitals(prev => ({ ...prev, [name]: value }));
+    };
+
     const handlePredict = async () => {
         if (symptoms.length === 0) {
             toast.error('Please add at least one symptom');
@@ -81,9 +117,16 @@ const AIPredictor = () => {
 
         setLoading(true);
         try {
+            // Convert vitals to numbers where possible
+            const formattedVitals = {};
+            Object.entries(vitals).forEach(([key, val]) => {
+                if (val !== '') formattedVitals[key] = parseFloat(val);
+            });
+
             const requestData = {
                 symptoms: symptoms,
-                province: province
+                province: province,
+                vitals: formattedVitals
             };
             
             if (selectedPatient) {
@@ -329,64 +372,225 @@ const AIPredictor = () => {
                             )}
                         </div>
 
-                        {/* Symptoms Input */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Add Symptoms</label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={symptomInput}
-                                    onChange={(e) => setSymptomInput(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && addSymptom()}
-                                    className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
-                                    placeholder="Enter a symptom (e.g., fever)"
-                                />
-                                <button
-                                    onClick={addSymptom}
-                                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300"
-                                >
-                                    Add
-                                </button>
+                        {/* Symptoms Section */}
+                        <div className="mb-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <label className="text-sm font-medium text-gray-300">Add Symptoms</label>
+                                <div className="flex bg-white/5 rounded-lg p-1 border border-white/10">
+                                    <button
+                                        onClick={() => setViewMode('common')}
+                                        className={`px-3 py-1 rounded-md text-xs font-medium transition-all duration-300 flex items-center ${
+                                            viewMode === 'common' 
+                                                ? 'bg-purple-500 text-white shadow-sm' 
+                                                : 'text-gray-400 hover:text-white'
+                                        }`}
+                                    >
+                                        <Squares2X2Icon className="h-3 w-3 mr-1" />
+                                        Common
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('all')}
+                                        className={`px-3 py-1 rounded-md text-xs font-medium transition-all duration-300 flex items-center ${
+                                            viewMode === 'all' 
+                                                ? 'bg-purple-500 text-white shadow-sm' 
+                                                : 'text-gray-400 hover:text-white'
+                                        }`}
+                                    >
+                                        <ListBulletIcon className="h-3 w-3 mr-1" />
+                                        All ({allSymptoms.length})
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {/* Direct Input */}
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={symptomInput}
+                                        onChange={(e) => setSymptomInput(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && addSymptom()}
+                                        className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500"
+                                        placeholder="Type a symptom..."
+                                    />
+                                    <button
+                                        onClick={addSymptom}
+                                        className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+
+                                {/* Symptom Selection Area */}
+                                <div className="p-4 rounded-xl bg-white/5 border border-white/10 min-h-[160px]">
+                                    {viewMode === 'all' && (
+                                        <div className="relative mb-3">
+                                            <MagnifyingGlassIcon className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+                                            <input
+                                                type="text"
+                                                placeholder="Search all recorded symptoms..."
+                                                value={symptomSearch}
+                                                onChange={(e) => setSymptomSearch(e.target.value)}
+                                                className="w-full pl-9 pr-4 py-1.5 rounded-lg bg-white/5 border border-white/10 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50"
+                                            />
+                                        </div>
+                                    )}
+
+                                    <div className="flex flex-wrap gap-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+                                        {viewMode === 'common' ? (
+                                            commonSymptoms.map((symptom) => (
+                                                <button
+                                                    key={symptom}
+                                                    onClick={() => {
+                                                        if (!symptoms.includes(symptom.toLowerCase())) {
+                                                            setSymptoms([...symptoms, symptom.toLowerCase()]);
+                                                        }
+                                                    }}
+                                                    className={`px-3 py-1.5 rounded-lg text-sm transition-all duration-300 ${
+                                                        symptoms.includes(symptom.toLowerCase())
+                                                            ? 'bg-purple-500/30 text-purple-300 border border-purple-500/50'
+                                                            : 'bg-white/5 text-gray-400 border border-white/5 hover:bg-white/10 hover:text-white'
+                                                    }`}
+                                                >
+                                                    {symptom}
+                                                </button>
+                                            ))
+                                        ) : (
+                                            filteredSymptoms.length > 0 ? (
+                                                filteredSymptoms.map((symptom) => (
+                                                    <button
+                                                        key={symptom}
+                                                        onClick={() => {
+                                                            if (!symptoms.includes(symptom.toLowerCase())) {
+                                                                setSymptoms([...symptoms, symptom.toLowerCase()]);
+                                                            }
+                                                        }}
+                                                        className={`px-3 py-1.5 rounded-lg text-sm transition-all duration-300 ${
+                                                            symptoms.includes(symptom.toLowerCase())
+                                                                ? 'bg-purple-500/30 text-purple-300 border border-purple-500/50'
+                                                                : 'bg-white/5 text-gray-400 border border-white/5 hover:bg-white/10 hover:text-white'
+                                                        }`}
+                                                    >
+                                                        {symptom}
+                                                    </button>
+                                                ))
+                                            ) : (
+                                                <div className="w-full py-8 text-center">
+                                                    <FunnelIcon className="h-8 w-8 text-gray-700 mx-auto mb-2" />
+                                                    <p className="text-gray-500 text-xs">No symptoms matching "{symptomSearch}"</p>
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Selected Symptoms */}
+                        {/* Selected Symptoms Chips */}
                         {symptoms.length > 0 && (
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Selected Symptoms:</label>
-                                <div className="flex flex-wrap gap-2">
+                            <div className="mb-6">
+                                <div className="flex items-center space-x-2 mb-3">
+                                    <TagIcon className="h-4 w-4 text-purple-400" />
+                                    <label className="text-sm font-medium text-gray-300">Current Assessment ({symptoms.length})</label>
+                                </div>
+                                <div className="flex flex-wrap gap-2 p-3 rounded-xl bg-purple-500/5 border border-purple-500/10">
                                     {symptoms.map((symptom, idx) => (
-                                        <span key={idx} className="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-400 text-sm flex items-center">
+                                        <span key={idx} className="px-3 py-1.5 rounded-lg bg-purple-500/20 text-purple-300 text-sm flex items-center border border-purple-500/20">
                                             {symptom}
                                             <button
                                                 onClick={() => removeSymptom(symptom)}
-                                                className="ml-2 text-purple-400 hover:text-purple-300"
+                                                className="ml-2 hover:text-white transition-colors"
                                             >
-                                                ×
+                                                <XMarkIcon className="h-4 w-4" />
                                             </button>
                                         </span>
                                     ))}
+                                    <button 
+                                        onClick={() => setSymptoms([])}
+                                        className="px-3 py-1.5 text-xs text-red-400 hover:text-red-300 transition-colors"
+                                    >
+                                        Clear All
+                                    </button>
                                 </div>
                             </div>
                         )}
 
-                        {/* Common Symptoms */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Common Symptoms (click to add):</label>
-                            <div className="flex flex-wrap gap-2">
-                                {commonSymptoms.slice(0, 12).map((symptom) => (
-                                    <button
-                                        key={symptom}
-                                        onClick={() => {
-                                            if (!symptoms.includes(symptom)) {
-                                                setSymptoms([...symptoms, symptom]);
-                                            }
-                                        }}
-                                        className="px-3 py-1.5 rounded-lg bg-white/10 text-gray-300 text-sm hover:bg-white/20 transition-all duration-300"
-                                    >
-                                        {symptom}
-                                    </button>
-                                ))}
+                        {/* Vital Signs Section */}
+                        <div className="mb-6">
+                            <div className="flex items-center space-x-2 mb-4">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
+                                    <HeartIcon className="h-4 w-4 text-white" />
+                                </div>
+                                <h2 className="text-xl font-bold text-white">Vital Signs</h2>
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-400 mb-1">Temp (°C)</label>
+                                    <input
+                                        type="number"
+                                        name="temperature"
+                                        value={vitals.temperature}
+                                        onChange={handleVitalsChange}
+                                        step="0.1"
+                                        className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 text-sm"
+                                        placeholder="36.5"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-400 mb-1">Heart Rate (bpm)</label>
+                                    <input
+                                        type="number"
+                                        name="heartRate"
+                                        value={vitals.heartRate}
+                                        onChange={handleVitalsChange}
+                                        className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 text-sm"
+                                        placeholder="72"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-400 mb-1">Systolic BP</label>
+                                    <input
+                                        type="number"
+                                        name="systolicBP"
+                                        value={vitals.systolicBP}
+                                        onChange={handleVitalsChange}
+                                        className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 text-sm"
+                                        placeholder="120"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-400 mb-1">Diastolic BP</label>
+                                    <input
+                                        type="number"
+                                        name="diastolicBP"
+                                        value={vitals.diastolicBP}
+                                        onChange={handleVitalsChange}
+                                        className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 text-sm"
+                                        placeholder="80"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-400 mb-1">SpO₂ (%)</label>
+                                    <input
+                                        type="number"
+                                        name="oxygenSaturation"
+                                        value={vitals.oxygenSaturation}
+                                        onChange={handleVitalsChange}
+                                        className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 text-sm"
+                                        placeholder="98"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-400 mb-1">Resp Rate</label>
+                                    <input
+                                        type="number"
+                                        name="respiratoryRate"
+                                        value={vitals.respiratoryRate}
+                                        onChange={handleVitalsChange}
+                                        className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 text-sm"
+                                        placeholder="16"
+                                    />
+                                </div>
                             </div>
                         </div>
 

@@ -110,6 +110,7 @@ export const getPrevalence    = () => API.get('/medical-records/stats/prevalence
 
 // ============ AI ============
 export const getAIStatus = () => API.get('/ai/status');
+export const getAISymptoms = () => API.get('/ai/symptoms');
 export const predictDisease = (data) => API.post('/ai/predict', data);
 export const getAlerts = () => API.get('/ai/alerts');
 export const getPatientRisk = (patientId) => API.get(`/ai/risk/${patientId}`);

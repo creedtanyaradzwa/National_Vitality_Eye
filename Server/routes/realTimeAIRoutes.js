@@ -66,28 +66,28 @@ router.get("/status", hasPermission("view:analytics"), async (req, res) => {
 // POST predict disease (ENHANCED with Vital Signs, Chronic Conditions, Family History)
 router.post("/predict", hasPermission("use:ai_predictor"), async (req, res) => {
     try {
-        const { symptoms, province, patientId } = req.body;
-        
+        const { symptoms, province, patientId, vitals: manualVitals } = req.body;
+
         if (!realTimeAI) {
             return res.status(503).json({ error: "AI still initializing" });
         }
-        
+
         if (!symptoms || symptoms.length === 0) {
             return res.status(400).json({ error: "Symptoms required" });
         }
-        
+
         const month = new Date().getMonth();
         let patientAge = null;
         let patientGender = null;
         let patientRiskFactors = [];
-        let patientVitals = {};
+        let patientVitals = manualVitals || {};
         let patientChronicConditions = [];
         let patientFamilyHistory = {};
 
         // Normalise symptoms and province before prediction
         const normalisedSymptoms = normaliseSymptoms(symptoms);
         const normalisedProvince = normaliseProvince(province || "Harare");
-        
+
         // If patientId provided, get ALL clinical data for enhanced prediction
         if (patientId) {
             const patient = await Patient.findById(patientId);
@@ -96,16 +96,16 @@ router.post("/predict", hasPermission("use:ai_predictor"), async (req, res) => {
                 patientAge = patient.age;
                 patientGender = patient.gender;
                 patientRiskFactors = patient.clinicalProfile?.riskFactors?.map(rf => rf.factor) || [];
-                
-                // NEW: Get vital signs from clinical profile
+
+                // Merge patient profile vitals (if manual vitals didn't provide them)
                 patientVitals = {
-                    temperature: patient.clinicalProfile?.vitalSigns?.temperature,
-                    heartRate: patient.clinicalProfile?.vitalSigns?.heartRate,
-                    systolicBP: patient.clinicalProfile?.vitalSigns?.bloodPressure?.systolic,
-                    diastolicBP: patient.clinicalProfile?.vitalSigns?.bloodPressure?.diastolic,
-                    oxygenSaturation: patient.clinicalProfile?.vitalSigns?.oxygenSaturation,
-                    respiratoryRate: patient.clinicalProfile?.vitalSigns?.respiratoryRate,
-                    bmi: patient.clinicalProfile?.vitalSigns?.bmi
+                    temperature: manualVitals?.temperature ?? patient.clinicalProfile?.vitalSigns?.temperature,
+                    heartRate: manualVitals?.heartRate ?? patient.clinicalProfile?.vitalSigns?.heartRate,
+                    systolicBP: manualVitals?.systolicBP ?? patient.clinicalProfile?.vitalSigns?.bloodPressure?.systolic,
+                    diastolicBP: manualVitals?.diastolicBP ?? patient.clinicalProfile?.vitalSigns?.bloodPressure?.diastolic,
+                    oxygenSaturation: manualVitals?.oxygenSaturation ?? patient.clinicalProfile?.vitalSigns?.oxygenSaturation,
+                    respiratoryRate: manualVitals?.respiratoryRate ?? patient.clinicalProfile?.vitalSigns?.respiratoryRate,
+                    bmi: manualVitals?.bmi ?? patient.clinicalProfile?.vitalSigns?.bmi
                 };
                 
                 // Chronic conditions — normalise before passing to AI
@@ -816,17 +816,18 @@ router.get("/disease-insights/:disease", hasPermission("view:analytics"), async 
             const { current } = periodMatches(diseaseFilter, period);
             const now = new Date();
 
-            const [analytics, records] = await Promise.all([
+            const [analytics, recordsCursor] = await Promise.all([
                 buildDiseasePeriodAnalytics({
                     MedicalRecord,
                     baseMatch: diseaseFilter,
                     period,
                     diseaseLabel: rawDisease
                 }),
-                MedicalRecord.find(current)
+                Promise.resolve(MedicalRecord.find(current)
                     .populate('patientId', 'dateOfBirth')
                     .select('province disposition patientId')
                     .lean()
+                    .cursor())
             ]);
 
             const total = analytics.totalCases;
@@ -836,7 +837,7 @@ router.get("/disease-insights/:disease", hasPermission("view:analytics"), async 
 
             const ageGroups = { child: 0, adult: 0, elderly: 0 };
             let ageKnown = 0;
-            records.forEach((r) => {
+            for await (const r of recordsCursor) {
                 const dob = r.patientId?.dateOfBirth;
                 if (dob) {
                     ageKnown++;
@@ -845,7 +846,7 @@ router.get("/disease-insights/:disease", hasPermission("view:analytics"), async 
                     else if (age >= 65) ageGroups.elderly++;
                     else ageGroups.adult++;
                 }
-            });
+            }
 
             const demographics = ageKnown > 0
                 ? normalizeDemographics(
@@ -1072,6 +1073,23 @@ router.get("/stats", hasPermission("view:analytics"), async (req, res) => {
 
 // ============ ADMIN AI CONTROLS ==========
 
+// GET all symptoms recorded in the system
+router.get("/symptoms", protect, async (req, res) => {
+    try {
+        if (!realTimeAI) {
+            return res.status(503).json({ error: "AI system not yet initialized" });
+        }
+        const symptoms = realTimeAI.getAllSymptoms();
+        res.json({ 
+            symptoms,
+            total: symptoms.length,
+            lastUpdated: realTimeAI.lastUpdated
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // POST refresh AI — retrains from scratch without loading patient PII
 router.post("/refresh", hasPermission("admin"), async (req, res) => {
     try {
@@ -1081,22 +1099,29 @@ router.post("/refresh", hasPermission("admin"), async (req, res) => {
         const emitter = new AlertEmitter(global.io);
         const learner = new ContinuousLearner();
 
-        // ALL records feed the AI — confidentiality only controls patient portal visibility.
-        // Only clinical fields selected — no patient names or identifiers ever enter the model.
-        const records = await MedicalRecord.find({})
+        // Use cursor for memory efficiency with 100k+ records
+        const cursor = MedicalRecord.find({})
             .populate('patientId', 'dateOfBirth gender clinicalProfile')
             .select({ 
                 disease: 1, symptoms: 1, province: 1, visitDate: 1, 
                 vitalSigns: 1, disposition: 1, patientId: 1 
-            });
+            })
+            .lean()
+            .cursor();
 
-        learner.processBatch(records);
+        let count = 0;
+        for await (const record of cursor) {
+            if (record && record.disease) {
+                learner.processNewRecord(record, record.patientId);
+                count++;
+            }
+        }
 
         realTimeAI = learner;
         alertEmitter = emitter;
 
         res.json({
-            message: "AI refreshed with latest data",
+            message: `AI refreshed with ${count} latest records`,
             stats: realTimeAI.getStats(),
             enhancedFeatures: ["Vital Signs", "Chronic Conditions", "Family History"]
         });

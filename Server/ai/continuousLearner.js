@@ -34,6 +34,7 @@ class ContinuousLearner {
         // Global stats
         this.totalRecords = 0;
         this.lastUpdated = null;
+        this.uniqueSymptoms = new Set(); // Track all unique symptoms globally
         
         // Cache for patient data
         this.patientCache = new Map();
@@ -189,6 +190,9 @@ class ContinuousLearner {
         // Update symptoms
         symptoms.forEach(symptom => {
             if (symptom) {
+                // Add to global unique symptoms set
+                this.uniqueSymptoms.add(symptom);
+                
                 const current = pattern.symptoms.get(symptom) || 0;
                 pattern.symptoms.set(symptom, current + 1);
             }
@@ -948,6 +952,11 @@ class ContinuousLearner {
                 condition,
                 prevalence: Math.min(100, Math.round((count / pattern.count) * 100))
             }));
+    }
+
+    // Get all symptoms recorded in the system
+    getAllSymptoms() {
+        return Array.from(this.uniqueSymptoms).sort();
     }
 
     // Get prediction accuracy for a disease

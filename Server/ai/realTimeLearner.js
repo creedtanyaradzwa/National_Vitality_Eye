@@ -4,8 +4,8 @@ const MedicalRecord = require("../models/MedicalRecord");
 const ContinuousLearner = require("./continuousLearner");
 
 class RealTimeLearner {
-    constructor(io, alertEmitter) {
-        this.ai = new ContinuousLearner();
+    constructor(io, alertEmitter, existingAI = null) {
+        this.ai = existingAI || new ContinuousLearner();
         this.io = io;
         this.alertEmitter = alertEmitter;
         this.isListening = false;
@@ -16,9 +16,6 @@ class RealTimeLearner {
     // Initialize and start listening
     async start() {
         console.log("🎧 Real-time AI learner starting...");
-        
-        // Load existing records
-        await this.loadHistoricalData();
         
         // Start listening to changes
         this.watchChanges();
@@ -33,27 +30,9 @@ class RealTimeLearner {
         return this.ai;
     }
 
-    // Load all existing records for initial training
+    // Load all existing records for initial training (Deprecated: use initializeAI in server.js)
     async loadHistoricalData() {
-        try {
-            console.log("📚 Loading historical medical records...");
-            
-            const records = await MedicalRecord.find({})
-                .populate('patientId')
-                .sort({ visitDate: -1 });
-            
-            if (records.length > 0) {
-                this.ai.processBatch(records);
-                console.log(`✅ Loaded ${records.length} historical records`);
-                
-                // Send initial stats
-                this.alertEmitter.sendAIUpdate(this.ai.getStats());
-            } else {
-                console.log("ℹ️ No historical records found");
-            }
-        } catch (error) {
-            console.error("❌ Error loading historical data:", error);
-        }
+        console.log("ℹ️ Skipping loadHistoricalData in RealTimeLearner (handled by server.js)");
     }
 
     // Watch for new records in real-time

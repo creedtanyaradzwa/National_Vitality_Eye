@@ -151,7 +151,6 @@ const patientSchema = new mongoose.Schema({
 
 // ============ INDEXES ============
 patientSchema.index({ firstName: 1, lastName: 1 });
-patientSchema.index({ nationalId: 1 });
 
 // ============ VIRTUAL FIELDS ============
 patientSchema.virtual("fullName").get(function() {

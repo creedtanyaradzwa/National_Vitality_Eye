@@ -18,6 +18,7 @@ const ContinuousLearner = require("./ai/continuousLearner");
 const AlertEmitter = require("./ai/alertEmitter");
 const RealTimeLearner = require("./ai/realTimeLearner");
 const MedicalRecord = require("./models/MedicalRecord");
+const Patient = require("./models/Patient");
 
 const app = express();
 const server = http.createServer(app);
@@ -144,42 +145,61 @@ let alertEmitter = null;
 async function initializeAI() {
     try {
         console.log("\n🧠 Initializing Enhanced Clinical AI...");
-        
-        // Load ALL records with patient data — confidentiality only controls patient portal visibility,
-        // not what feeds the AI. The AI never receives patient names or identifiers;
-        // it only reads clinical fields (disease, symptoms, vitals, province, disposition, age, gender).
-        const records = await MedicalRecord.find({})
-            .populate('patientId', 'dateOfBirth gender clinicalProfile')
-            .select({
-                disease: 1, symptoms: 1, province: 1, visitDate: 1,
-                vitalSigns: 1, disposition: 1, patientId: 1
-            });
-        
-        console.log(`📊 Found ${records.length} medical records`);
+        const startTime = Date.now();
         
         const ai = new ContinuousLearner();
         const emitter = new AlertEmitter(io);
+
+        // 1. Load all patients into a Map first. 
+        // This is MUCH faster than using .populate() on 100k+ records.
+        console.log("👥 Loading patient index...");
+        const patients = await Patient.find({})
+            .select('dateOfBirth gender clinicalProfile')
+            .lean();
         
-        if (records.length > 0) {
-            // Process batch with patient profiles
-            records.forEach(record => {
-                if (record && record.disease) {
-                    ai.processNewRecord(record, record.patientId);
+        const patientMap = new Map();
+        patients.forEach(p => patientMap.set(p._id.toString(), p));
+        console.log(`✅ Indexed ${patientMap.size} patients`);
+
+        // 2. Stream medical records and use the patientMap for demographics
+        console.log("📚 Training AI with medical records...");
+        const cursor = MedicalRecord.find({})
+            .select({
+                disease: 1, symptoms: 1, province: 1, visitDate: 1,
+                vitalSigns: 1, disposition: 1, patientId: 1
+            })
+            .lean()
+            .cursor({ batchSize: 2000 });
+        
+        let count = 0;
+        for await (const record of cursor) {
+            if (record && record.disease) {
+                const patient = record.patientId ? patientMap.get(record.patientId.toString()) : null;
+                ai.processNewRecord(record, patient);
+                
+                count++;
+                
+                // Yield the event loop frequently to keep the process responsive
+                if (count % 1000 === 0) {
+                    await new Promise(resolve => setImmediate(resolve));
                 }
-            });
-            console.log(`✅ AI trained with ${records.length} records`);
+
+                if (count % 10000 === 0) {
+                    process.stdout.write(`⏳ Trained with ${count} records...\r`);
+                }
+            }
         }
         
+        const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+        console.log(`\n✅ AI trained with ${count} records in ${duration}s`);
         console.log(`📊 Tracking ${ai.diseasePatterns.size} diseases`);
         
         // Store references
         realTimeAI = ai;
         alertEmitter = emitter;
 
-        // ── Start RealTimeLearner so MongoDB change stream watches for new records ──
-        // This is what makes the AI update in real time as new records are saved,
-        // and what triggers outbreak detection and 'new-case' WebSocket events.
-        const rtLearner = new RealTimeLearner(io, emitter);
+        // Pass the already trained AI instance to RealTimeLearner
+        const rtLearner = new RealTimeLearner(io, emitter, ai);
         rtLearner.start().catch(err =>
             console.error("❌ RealTimeLearner start error:", err.message)
         );
@@ -194,6 +214,9 @@ async function initializeAI() {
         return ai;
     } catch (error) {
         console.error("❌ AI initialization error:", error.message);
+        // Ensure we at least have an empty AI if training fails
+        realTimeAI = realTimeAI || new ContinuousLearner();
+        alertEmitter = alertEmitter || new AlertEmitter(io);
         return null;
     }
 }
@@ -209,17 +232,20 @@ const maskedMongoUri = mongoUri
     .replace(/\/\/([^:]+):([^@]+)@/i, (m, user) => `//${user}:***@`);
 
 mongoose.connect(mongoUri, {
-    serverSelectionTimeoutMS: 10000,
-    connectTimeoutMS: 10000,
+    serverSelectionTimeoutMS: 30000, 
+    connectTimeoutMS: 30000,
+    socketTimeoutMS: 120000, // 2 minutes for initial load
 })
-    .then(() => {
+    .then(async () => {
         console.log("📦 MongoDB Connected");
         
+        // Initialize AI BEFORE starting the server to ensure readiness
+        await initializeAI();
+
         const PORT = process.env.PORT || 5000;
-        server.listen(PORT, async () => {
+        server.listen(PORT, () => {
             console.log(`\n🚀 Server running on port ${PORT}`);
-            await initializeAI();
-            console.log(`\n✅ System ready!\n`);
+            console.log(`✅ System ready!\n`);
         });
     })
     .catch(err => {
@@ -232,8 +258,14 @@ mongoose.connect(mongoUri, {
     });
 
 // Graceful shutdown
-process.on('SIGINT', () => {
+process.on('SIGINT', async () => {
     console.log('\n🛑 Shutting down...');
     if (io) io.close();
-    mongoose.connection.close(() => process.exit(0));
+    try {
+        await mongoose.connection.close();
+        process.exit(0);
+    } catch (err) {
+        console.error("Error during shutdown:", err);
+        process.exit(1);
+    }
 });
