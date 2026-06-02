@@ -37,6 +37,10 @@ async function getRecordAccessFilter(user) {
     if (user.role === 'admin') return {};
     if (user.role === 'patient') return { patientId: user._id };
 
+    // Standard Staff Access: Can see all records in their own hospital
+    // OR records they created/are tagged in (for multi-hospital roaming staff)
+    const hospitalFilter = user.hospitalName ? { hospital: user.hospitalName } : null;
+
     // Find all patients who have explicitly trusted this provider
     const trustedPatients = await Patient.find(
         { 'portalAccount.trustedProviders.userId': user._id },
@@ -48,6 +52,11 @@ async function getRecordAccessFilter(user) {
         { createdBy: user._id },
         { taggedUsers: user._id }
     ];
+
+    if (hospitalFilter) {
+        conditions.push(hospitalFilter);
+    }
+
     if (trustedPatientIds.length > 0) {
         conditions.push({ patientId: { $in: trustedPatientIds } });
     }
@@ -103,15 +112,42 @@ router.use(protect, isApproved);
 // GET global summary stats
 router.get("/stats/summary", hasPermission("view:analytics"), async (req, res) => {
     try {
-        const filter = {}; // Global for analytics
-        const totalCases = await MedicalRecord.countDocuments(filter);
-        const diseases = await MedicalRecord.distinct("disease", filter);
-        const provinces = await MedicalRecord.distinct("province", filter);
+        const { hospital } = req.query;
+        const filter = {};
+        const patientFilter = { isActive: { $ne: false } };
         
+        if (hospital) {
+            filter.hospital = hospital;
+            patientFilter.currentHospital = hospital;
+        }
+
+        const [totalCases, totalPatients, highRiskPatients, vitalAnomalies, diseases, provinces] = await Promise.all([
+            MedicalRecord.countDocuments(filter),
+            Patient.countDocuments(patientFilter),
+            Patient.countDocuments({ 
+                ...patientFilter,
+                'clinicalProfile.triageStatus.priority': 'CRITICAL' 
+            }),
+            Patient.countDocuments({
+                ...patientFilter,
+                'clinicalProfile.anomalyDetection.hasAnomaly': true
+            }),
+            MedicalRecord.distinct("disease", filter),
+            MedicalRecord.distinct("province", filter)
+        ]);
+        
+        const activeAlerts = req.app.locals.alertEmitter ? req.app.locals.alertEmitter.getActiveAlerts() : [];
+        const outbreakAnomalies = hospital 
+            ? activeAlerts.filter(a => a.province === (req.user.province || '')).length 
+            : activeAlerts.length;
+
         res.json({
             totalCases,
+            totalPatients,
+            highRiskPatients,
             diseasesTracked: diseases.length,
-            provincesActive: provinces.length
+            provincesActive: provinces.length,
+            recentAnomalies: vitalAnomalies || outbreakAnomalies
         });
     } catch (error) {
         res.status(500).json({ error: error.message });

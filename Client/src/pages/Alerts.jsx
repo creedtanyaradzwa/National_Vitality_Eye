@@ -396,22 +396,81 @@ const Alerts = () => {
                                     )}
                                 </div>
                                 
-                                {selectedAlert.affectedAgeGroups && (
-                                    <div className="rounded-xl bg-white/5 p-4">
-                                        <h4 className="font-semibold text-purple-400 mb-2">Affected Age Groups</h4>
-                                        <div className="space-y-2">
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-400">Children (&lt;18)</span>
-                                                <span className="font-medium text-white">{selectedAlert.affectedAgeGroups.child}</span>
+                                {selectedAlert.clinicalJustification && (
+                                    <div className="space-y-4">
+                                        <div className="rounded-xl bg-cyber-blue/5 border border-cyber-blue/20 p-5 relative overflow-hidden group">
+                                            <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                                                <ShieldCheckIcon className="h-10 w-10 text-cyber-blue" />
                                             </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-400">Adults (18-64)</span>
-                                                <span className="font-medium text-white">{selectedAlert.affectedAgeGroups.adult}</span>
+                                            <h4 className="text-[10px] font-black text-cyber-blue uppercase tracking-[0.3em] mb-3 flex items-center">
+                                                <ChartBarIcon className="h-3.5 w-3.5 mr-2" />
+                                                AI_CLINICAL_SYNTHESIS
+                                            </h4>
+                                            <p className="text-gray-200 text-sm leading-relaxed italic">
+                                                "{selectedAlert.clinicalJustification.summary}"
+                                            </p>
+                                        </div>
+
+                                        <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+                                            <h4 className="text-[10px] font-black text-purple-400 uppercase tracking-[0.3em] mb-4 flex items-center">
+                                                <CalendarIcon className="h-3.5 w-3.5 mr-2" />
+                                                EVIDENCE_BASED_REASONING
+                                            </h4>
+                                            <div className="space-y-3">
+                                                {selectedAlert.clinicalJustification.reasoning?.map((reason, i) => (
+                                                    <div key={i} className="flex items-start gap-3">
+                                                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.5)] flex-shrink-0" />
+                                                        <p className="text-xs text-gray-400 leading-relaxed font-medium">
+                                                            {reason}
+                                                        </p>
+                                                    </div>
+                                                ))}
                                             </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-gray-400">Elderly (65+)</span>
-                                                <span className="font-medium text-white">{selectedAlert.affectedAgeGroups.elderly}</span>
+                                            <div className="mt-6 pt-4 border-t border-white/5">
+                                                <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest flex items-center">
+                                                    <ShieldCheckIcon className="h-3 w-3 mr-1.5 text-gray-600" />
+                                                    Evidence Base: <span className="text-gray-400 ml-1.5">{selectedAlert.clinicalJustification.evidenceBase}</span>
+                                                </p>
                                             </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedAlert.recommendations?.length > 0 && (
+                                    <div className="rounded-xl bg-brand-dark-900 border border-cyber-green/20 p-5">
+                                        <h4 className="text-[10px] font-black text-cyber-green uppercase tracking-[0.3em] mb-4 flex items-center">
+                                            <BellIcon className="h-3.5 w-3.5 mr-2" />
+                                            STRATEGIC_INTERVENTION_PLAN
+                                        </h4>
+                                        <div className="space-y-3">
+                                            {selectedAlert.recommendations.map((rec, i) => (
+                                                <div key={i} className="flex items-start gap-3">
+                                                    <div className="mt-1.5 w-1 h-1 rounded-full bg-cyber-green flex-shrink-0" />
+                                                    <p className="text-xs text-gray-300 font-bold leading-relaxed">
+                                                        {rec}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {selectedAlert.protocol && (
+                                    <div className="rounded-xl bg-white/5 border border-white/10 p-5">
+                                        <h4 className="text-[10px] font-black text-cyber-blue uppercase tracking-[0.3em] mb-4 flex items-center">
+                                            <ShieldCheckIcon className="h-3.5 w-3.5 mr-2" />
+                                            NATIONAL_TREATMENT_PROTOCOL
+                                        </h4>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Diagnostic Signs</p>
+                                                <p className="text-xs text-gray-300">{selectedAlert.protocol.diagnosticSigns}</p>
+                                            </div>
+                                            <div>
+                                                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-1">Recommended Treatment</p>
+                                                <p className="text-xs text-gray-300">{selectedAlert.protocol.treatment}</p>
+                                            </div>
+                                            <p className="text-[8px] text-gray-600 italic">Source: {selectedAlert.protocol.source}</p>
                                         </div>
                                     </div>
                                 )}

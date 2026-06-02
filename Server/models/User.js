@@ -55,4 +55,15 @@ UserSchema.methods.comparePassword = async function(candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
 };
 
+const { normaliseHospital, normaliseProvince } = require("../utils/normalise");
+
+UserSchema.pre("save", async function() {
+    if (this.hospitalName) {
+        this.hospitalName = normaliseHospital(this.hospitalName);
+    }
+    if (this.province) {
+        this.province = normaliseProvince(this.province);
+    }
+});
+
 module.exports = mongoose.model('User', UserSchema);

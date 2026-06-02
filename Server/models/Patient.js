@@ -51,6 +51,11 @@ const patientSchema = new mongoose.Schema({
     
     // ============ CLINICAL PROFILE ============
     clinicalProfile: {
+        bloodType: {
+            type: String,
+            enum: ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Unknown"],
+            default: "Unknown"
+        },
         vitalSigns: mongoose.Schema.Types.Mixed,
         triageStatus: {
             priority: { 
@@ -82,6 +87,21 @@ const patientSchema = new mongoose.Schema({
             status: String,
             prescribedDate: Date
         }],
+        surgicalHistory: [{
+            procedure: String,
+            date: Date,
+            surgeon: String,
+            hospital: String,
+            notes: String
+        }],
+        immunizations: [{
+            vaccine: String,
+            dateAdministered: Date,
+            doseNumber: Number,
+            batchNumber: String,
+            provider: String,
+            notes: String
+        }],
         familyHistory: {
             mother: [String],
             father: [String],
@@ -92,6 +112,32 @@ const patientSchema = new mongoose.Schema({
             factor: String,
             severity: String,
             notes: String
+        }],
+        pregnancyStatus: {
+            isPregnant: { type: Boolean, default: false },
+            lastMenstrualPeriod: Date,
+            expectedDueDate: Date,
+            gravidity: Number,
+            parity: Number,
+            notes: String
+        },
+        pediatric: {
+            isPediatric: { type: Boolean, default: false },
+            birthWeight: Number,
+            developmentalMilestones: [String],
+            growthCharts: mongoose.Schema.Types.Mixed
+        },
+        specialNeeds: [String],
+        anomalyDetection: {
+            hasAnomaly: { type: Boolean, default: false },
+            detectedAt: Date,
+            description: String,
+            severity: String
+        },
+        similarPatients: [{
+            patientId: { type: mongoose.Schema.Types.ObjectId, ref: 'Patient' },
+            similarityScore: Number,
+            reasons: [String]
         }]
     },
     
@@ -162,6 +208,17 @@ patientSchema.virtual("age").get(function() {
     const ageDiff = Date.now() - this.dateOfBirth.getTime();
     const ageDate = new Date(ageDiff);
     return Math.abs(ageDate.getUTCFullYear() - 1970);
+});
+
+const { normaliseHospital, normaliseProvince } = require("../utils/normalise");
+
+patientSchema.pre("save", async function() {
+    if (this.currentHospital) {
+        this.currentHospital = normaliseHospital(this.currentHospital);
+    }
+    if (this.province) {
+        this.province = normaliseProvince(this.province);
+    }
 });
 
 module.exports = mongoose.model("Patient", patientSchema);

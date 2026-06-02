@@ -49,6 +49,11 @@ const alertSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Patient'
     }],
+    clinicalJustification: {
+        summary: String,
+        reasoning: [String],
+        evidenceBase: String
+    },
     protocol: {
         treatment: String,
         diagnosticSigns: String,

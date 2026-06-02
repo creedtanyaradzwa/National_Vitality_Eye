@@ -269,6 +269,12 @@ const HOSPITAL_SYNONYMS = {
     'hch': 'Harare Central Hospital',
     'harare central hosp': 'Harare Central Hospital',
 
+    // Harare General
+    'harare general': 'Harare General Hospital',
+    'harare general hospital': 'Harare General Hospital',
+    'hgh': 'Harare General Hospital',
+    'hosp-hre-001': 'Harare General Hospital',
+
     // Mpilo
     'mpilo': 'Mpilo Central Hospital',
     'mpilo hospital': 'Mpilo Central Hospital',

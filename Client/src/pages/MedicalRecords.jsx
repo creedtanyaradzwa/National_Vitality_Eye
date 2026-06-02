@@ -1430,14 +1430,14 @@ const MedicalRecords = () => {
                                     </section>
 
                                     {/* Admission/Active Progress Section (Gap: Information Sifting & Admission Support) */}
-                                    {(formData.visitStatus === 'In Admission' || formData.visitStatus === 'Active') && (
+                                    {(formData.visitStatus === 'In Admission' || formData.visitStatus === 'Active' || formData.disposition === 'Admitted') && (
                                         <section className="p-8 rounded-[2rem] bg-brand-dark-950 border border-cyber-blue/20 shadow-[0_0_40px_rgba(0,242,255,0.05)]">
                                             <h3 className="text-[10px] font-bold text-cyber-blue uppercase tracking-[0.3em] mb-8 flex items-center justify-between">
                                                 <div className="flex items-center">
                                                     <div className="w-2 h-2 bg-cyber-blue rounded-full mr-3 animate-pulse" />
-                                                    {formData.visitStatus === 'In Admission' ? 'ADMISSION_PROGRESS_TRACKING' : 'ACTIVE_CARE_MONITORING'}
+                                                    ADMISSION_PROGRESS_TRACKING & LIVE MONITORING
                                                 </div>
-                                                <span className="px-3 py-1 rounded-lg bg-cyber-blue/10 text-[8px] border border-cyber-blue/20">LIVE MONITORING ACTIVE</span>
+                                                <span className="px-3 py-1 rounded-lg bg-cyber-blue/10 text-[8px] border border-cyber-blue/20 uppercase tracking-widest font-black">Interactive Dataset Mode</span>
                                             </h3>
 
                                             {/* Existing Observations Timeline */}

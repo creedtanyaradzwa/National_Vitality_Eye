@@ -5,1244 +5,462 @@ import {
     getPatientRecords, 
     getClinicalProfile,
     getPatientVitalsHistory,
-    updateClinicalProfile,
-    addChronicCondition,
-    addMedication,
-    updateVitalSigns,
-    addRiskFactor
+    updatePatient,
+    getClinicalSnapshot,
+    getClinicalRisk
 } from '../services/api';
 import { useAuth } from '../context/AuthProvider';
-import {
-    UserIcon,
-    EnvelopeIcon,
-    PhoneIcon,
-    MapPinIcon,
-    CalendarIcon,
-    BeakerIcon,
-    PlusIcon,
-    XMarkIcon,
-    BuildingOfficeIcon,
-    PencilIcon,
+import { 
+    UserIcon, 
+    UserGroupIcon,
+    HeartIcon, 
+    ClipboardDocumentListIcon, 
     ShieldCheckIcon,
-    DocumentTextIcon,
-    HeartIcon,
-    ClipboardDocumentListIcon,
-    ArrowLeftIcon,
-    SparklesIcon,
-    CpuChipIcon,
     ExclamationTriangleIcon,
-    UserGroupIcon
+    CalendarIcon,
+    ArrowTrendingUpIcon,
+    BeakerIcon,
+    ClockIcon,
+    DocumentTextIcon,
+    PlusIcon,
+    ChatBubbleLeftRightIcon,
+    ChevronRightIcon,
+    SparklesIcon,
+    ChartBarIcon,
+    AcademicCapIcon,
+    StarIcon,
+    MagnifyingGlassIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import PregnancyInfo from '../components/patients/PregnancyInfo';
 import PediatricInfo from '../components/patients/PediatricInfo';
 import SpecialNeeds from '../components/patients/SpecialNeeds';
 import VitalsTrend from '../components/patients/VitalsTrend';
-import AnomalyDetection from '../components/ai/AnomalyDetection';
-import SimilarPatients from '../components/ai/SimilarPatients';
-import ClinicalSnapshot from '../components/ai/ClinicalSnapshot';
-import HandoverWidget from '../components/patients/HandoverWidget';
-import FluidBalanceWidget from '../components/patients/FluidBalanceWidget';
 
 const PatientDetailsPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { hasPermission } = useAuth();
-    const canEdit = hasPermission('edit:patients');
+    const { user: currentUser } = useAuth();
     
     const [patient, setPatient] = useState(null);
     const [records, setRecords] = useState([]);
     const [clinicalProfile, setClinicalProfile] = useState(null);
-    const [vitalsHistory, setVitalsHistory] = useState([]);
+    const [snapshot, setSnapshot] = useState(null);
+    const [clinicalRisk, setClinicalRisk] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [loadingRisk, setLoadingRisk] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
+    const [editingField, setEditingField] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
     const [modalType, setModalType] = useState('');
-    const [editingField, setEditingField] = useState(null);
     const [formData, setFormData] = useState({});
 
-    // Central function to load ALL patient data
-    const loadPatientData = useCallback(async () => {
-        setLoading(true);
+    const canEdit = currentUser?.role !== 'viewer' && currentUser?.role !== 'patient';
+
+    const fetchData = useCallback(async () => {
         try {
-            console.log('Loading patient data for ID:', id);
-            
-            const [patientRes, recordsRes, clinicalRes, vitalsRes] = await Promise.all([
+            const [patientRes, recordsRes, profileRes, snapshotRes] = await Promise.all([
                 getPatient(id),
                 getPatientRecords(id),
                 getClinicalProfile(id),
-                getPatientVitalsHistory(id)
+                getClinicalSnapshot(id)
             ]);
-            
-            console.log('Clinical Profile loaded:', clinicalRes.data);
-            console.log('Pregnancy info:', clinicalRes.data?.pregnancyInfo);
-            console.log('Pediatric info:', clinicalRes.data?.pediatricInfo);
-            console.log('Special needs:', clinicalRes.data?.specialNeeds);
-            console.log('Immunizations:', clinicalRes.data?.immunizations);
-            
             setPatient(patientRes.data);
             setRecords(recordsRes.data);
-            setClinicalProfile(clinicalRes.data || {});
-            setVitalsHistory(vitalsRes.data || []);
+            setClinicalProfile(profileRes.data);
+            setSnapshot(snapshotRes.data);
         } catch (error) {
-            console.error('Error loading patient data:', error);
-            toast.error('Failed to load patient data');
-            navigate('/patients');
+            console.error('Failed to fetch patient data', error);
+            toast.error('Clinical data sync failed');
         } finally {
             setLoading(false);
         }
-    }, [id, navigate]);
+    }, [id]);
 
-    // Load data on mount and when ID changes
     useEffect(() => {
-        loadPatientData();
-    }, [loadPatientData]);
+        fetchData();
+    }, [fetchData]);
 
-    // Generic update function for clinical profile sections
-    const updateClinicalProfileSection = async (section, data) => {
-        try {
-            const updatedProfile = { ...clinicalProfile, [section]: data };
-            await updateClinicalProfile(id, updatedProfile);
-            toast.success(`${section} updated successfully`);
-            // Reload all data to reflect changes
-            await loadPatientData();
-            return true;
-        } catch (error) {
-            console.error(`Error updating ${section}:`, error);
-            toast.error(`Failed to update ${section}`);
-            return false;
+    useEffect(() => {
+        if (activeTab === 'risk' && patient?._id) {
+            fetchClinicalRisk();
         }
-    };
+    }, [activeTab, patient?._id]);
 
-    // Specific handlers using the generic function
-    const handleUpdatePregnancy = async (data) => {
-        await updateClinicalProfileSection('pregnancyInfo', data);
-    };
-
-    const handleUpdatePediatric = async (data) => {
-        await updateClinicalProfileSection('pediatricInfo', data);
-    };
-
-    const handleUpdateSpecialNeeds = async (data) => {
-        await updateClinicalProfileSection('specialNeeds', data);
-    };
-
-    const handleUpdateImmunizations = async (data) => {
-        await updateClinicalProfileSection('immunizations', data);
-    };
-
-    const handleFluidUpdate = async (newObservation) => {
-        const latestRecord = records[0];
-        if (!latestRecord) return;
-        
+    const fetchClinicalRisk = async () => {
+        setLoadingRisk(true);
         try {
-            const updatedObservations = [...(latestRecord.observations || []), {
-                ...newObservation,
-                recordedBy: currentUser?.id
-            }];
-            
-            // Re-use the existing update service (assuming it supports partial record updates or we update whole record)
-            const { updateMedicalRecord } = await import('../services/api');
-            await updateMedicalRecord(latestRecord._id, { observations: updatedObservations });
-            
-            toast.success('Fluid intake/output logged');
-            await loadPatientData();
-        } catch (error) {
-            console.error('Fluid log error:', error);
-            toast.error('Failed to log fluid data');
+            const res = await getClinicalRisk(patient._id);
+            setClinicalRisk(res.data);
+        } catch (err) {
+            console.error("Risk assessment failed", err);
+        } finally {
+            setLoadingRisk(false);
         }
-    };
-
-    const handleAddChronicCondition = async (data) => {
-        try {
-            await addChronicCondition(id, data);
-            toast.success('Chronic condition added');
-            await loadPatientData();
-            setShowAddModal(false);
-        } catch {
-            toast.error('Failed to add condition');
-        }
-    };
-
-    const handleAddMedication = async (data) => {
-        try {
-            await addMedication(id, data);
-            toast.success('Medication added');
-            await loadPatientData();
-            setShowAddModal(false);
-        } catch {
-            toast.error('Failed to add medication');
-        }
-    };
-
-    const handleUpdateVitals = async (data) => {
-        try {
-            await updateVitalSigns(id, data);
-            toast.success('Vital signs updated');
-            await loadPatientData();
-            setEditingField(null);
-        } catch {
-            toast.error('Failed to update vital signs');
-        }
-    };
-
-    const handleAddRiskFactor = async (data) => {
-        try {
-            await addRiskFactor(id, data);
-            toast.success('Risk factor added');
-            await loadPatientData();
-            setShowAddModal(false);
-        } catch {
-            toast.error('Failed to add risk factor');
-        }
-    };
-
-    const handleUpdateBloodType = async (bloodType) => {
-        try {
-            const updatedProfile = { ...clinicalProfile, bloodType };
-            await updateClinicalProfile(id, updatedProfile);
-            toast.success('Blood type updated');
-            await loadPatientData();
-            setEditingField(null);
-        } catch {
-            toast.error('Failed to update blood type');
-        }
-    };
-
-    const handleAddAllergy = async (data) => {
-        try {
-            const allergies = [...(clinicalProfile?.allergies || []), data];
-            const updatedProfile = { ...clinicalProfile, allergies };
-            await updateClinicalProfile(id, updatedProfile);
-            toast.success('Allergy added');
-            await loadPatientData();
-            setShowAddModal(false);
-        } catch {
-            toast.error('Failed to add allergy');
-        }
-    };
-
-    const handleAddSurgery = async (data) => {
-        try {
-            const surgicalHistory = [...(clinicalProfile?.surgicalHistory || []), data];
-            const updatedProfile = { ...clinicalProfile, surgicalHistory };
-            await updateClinicalProfile(id, updatedProfile);
-            toast.success('Surgery added');
-            await loadPatientData();
-            setShowAddModal(false);
-        } catch {
-            toast.error('Failed to add surgery');
-        }
-    };
-
-    const handleAddFamilyHistory = async (data) => {
-        try {
-            const currentFamilyHistory = clinicalProfile?.familyHistory || { mother: [], father: [], siblings: [], notes: '' };
-            
-            if (data.member === 'mother') {
-                const motherConditions = currentFamilyHistory.mother || [];
-                if (data.condition && !motherConditions.includes(data.condition)) {
-                    currentFamilyHistory.mother = [...motherConditions, data.condition];
-                }
-            } else if (data.member === 'father') {
-                const fatherConditions = currentFamilyHistory.father || [];
-                if (data.condition && !fatherConditions.includes(data.condition)) {
-                    currentFamilyHistory.father = [...fatherConditions, data.condition];
-                }
-            } else if (data.member === 'siblings') {
-                const siblingConditions = currentFamilyHistory.siblings || [];
-                if (data.condition && !siblingConditions.includes(data.condition)) {
-                    currentFamilyHistory.siblings = [...siblingConditions, data.condition];
-                }
-            }
-            
-            if (data.notes) {
-                currentFamilyHistory.notes = data.notes;
-            }
-            
-            const updatedProfile = { ...clinicalProfile, familyHistory: currentFamilyHistory };
-            await updateClinicalProfile(id, updatedProfile);
-            toast.success('Family history updated');
-            await loadPatientData();
-            setShowAddModal(false);
-        } catch {
-            toast.error('Failed to update family history');
-        }
-    };
-
-    const handleAddImmunization = async (data) => {
-        try {
-            const immunizations = [...(clinicalProfile?.immunizations || []), data];
-            const updatedProfile = { ...clinicalProfile, immunizations };
-            await updateClinicalProfile(id, updatedProfile);
-            toast.success('Immunization added');
-            await loadPatientData();
-            setShowAddModal(false);
-        } catch {
-            toast.error('Failed to add immunization');
-        }
-    };
-
-    const getAge = (dateOfBirth) => {
-        if (!dateOfBirth) return 'N/A';
-        const age = new Date().getFullYear() - new Date(dateOfBirth).getFullYear();
-        return `${age} years`;
     };
 
     const formatDate = (date) => {
         if (!date) return 'N/A';
-        return new Date(date).toLocaleDateString();
+        return new Date(date).toLocaleDateString('en-ZW', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
     };
 
-    const tabs = [
-        { id: 'overview', label: 'Overview', icon: UserIcon },
-        { id: 'conditions', label: 'Conditions', icon: BeakerIcon },
-        { id: 'medications', label: 'Medications', icon: ClipboardDocumentListIcon },
-        { id: 'allergies', label: 'Allergies', icon: ShieldCheckIcon },
-        { id: 'surgical', label: 'Surgical', icon: DocumentTextIcon },
-        { id: 'family', label: 'Family', icon: HeartIcon },
-        { id: 'immunizations', label: 'Immunizations', icon: SparklesIcon },
-        { id: 'vitals', label: 'Vitals', icon: HeartIcon },
-        { id: 'records', label: 'Records', icon: DocumentTextIcon },
-        { id: 'risk', label: 'Risk', icon: ExclamationTriangleIcon },
-        { id: 'pregnancy', label: 'Pregnancy', icon: HeartIcon },
-        { id: 'pediatric', label: 'Pediatric', icon: UserIcon },
-        { id: 'special-needs', label: 'Special Needs', icon: ShieldCheckIcon },
-        { id: 'anomaly', label: 'Anomaly Detection', icon: ExclamationTriangleIcon },
-        { id: 'similar', label: 'Similar Patients', icon: UserGroupIcon }
-    ];
+    const calculateAge = (dob) => {
+        if (!dob) return 'N/A';
+        const birthDate = new Date(dob);
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const m = today.getMonth() - birthDate.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+            age--;
+        }
+        return age;
+    };
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="relative">
-                    <div className="w-16 h-16 border-4 border-purple-500/20 rounded-full animate-spin border-t-purple-500"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <UserIcon className="h-6 w-6 text-purple-400 animate-pulse" />
-                    </div>
-                </div>
+            <div className="min-h-screen flex items-center justify-center bg-brand-dark-950">
+                <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
             </div>
         );
     }
 
     if (!patient) {
         return (
-            <div className="text-center py-12">
-                <p className="text-gray-400">Patient not found</p>
-                <button onClick={() => navigate('/patients')} className="mt-4 text-purple-400 hover:underline">Back to Patients</button>
+            <div className="min-h-screen flex flex-col items-center justify-center bg-brand-dark-950 px-4">
+                <div className="w-20 h-20 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6">
+                    <ExclamationTriangleIcon className="h-10 w-10 text-red-500" />
+                </div>
+                <h1 className="text-2xl font-black text-white tracking-tighter mb-2 uppercase">Record Not Found</h1>
+                <p className="text-gray-500 text-sm max-w-md text-center mb-8">
+                    The requested clinical record could not be retrieved from the central health database. It may have been purged or the link is invalid.
+                </p>
+                <button 
+                    onClick={() => navigate('/patients')}
+                    className="px-8 py-3 rounded-xl bg-brand-dark-900 border border-white/5 text-white hover:bg-brand-dark-800 transition-all font-mono text-[10px] uppercase tracking-widest"
+                >
+                    Back to Registry
+                </button>
             </div>
         );
     }
 
-    const bloodTypes = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
-
-    const getTriageStyles = (priority) => {
-        switch(priority) {
-            case 'CRITICAL': return 'bg-red-500/20 text-red-500 border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.2)]';
-            case 'EMERGENT': return 'bg-orange-500/20 text-orange-500 border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.1)]';
-            case 'URGENT': return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30';
-            case 'STABLE': return 'bg-blue-500/20 text-blue-500 border-blue-500/30';
-            default: return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
-        }
-    };
-
-    const triageStatus = patient?.clinicalProfile?.triageStatus || { priority: 'STABLE', score: 0, reasons: [] };
-
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8">
-            {/* Back Button */}
-            <button
-                onClick={() => navigate('/patients')}
-                className="mb-6 flex items-center space-x-2 text-gray-400 hover:text-white transition-all duration-300 group"
-            >
-                <ArrowLeftIcon className="h-5 w-5 group-hover:-translate-x-1 transition-transform duration-300" />
-                <span>Back to Patients</span>
-            </button>
-
-            {/* Header with Patient Info */}
-            <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] mb-8">
-                <div className="rounded-2xl bg-slate-900/80 backdrop-blur-xl p-6">
-                    <div className="flex justify-between items-start">
-                        <div className="flex items-start space-x-5">
-                            <div className="w-20 h-20 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
-                                <UserIcon className="h-10 w-10 text-white" />
+        <div className="min-h-screen bg-brand-dark-950 pb-20">
+            {/* Clinical Header */}
+            <div className="bg-brand-dark-900 border-b border-white/5 pt-12 pb-8">
+                <div className="max-w-7xl mx-auto px-4">
+                    <div className="flex flex-col md:flex-row justify-between items-start gap-8">
+                        <div className="flex items-center gap-6">
+                            <div className="w-24 h-24 rounded-[2rem] bg-brand-dark-800 border border-white/5 flex items-center justify-center relative group overflow-hidden">
+                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                                <UserIcon className="h-12 w-12 text-gray-400 group-hover:text-white transition-colors duration-300" />
                             </div>
                             <div>
-                                <h1 className="text-3xl font-bold text-white mb-2">
+                                <h1 className="text-4xl font-black text-white tracking-tighter mb-2">
                                     {patient.firstName} {patient.lastName}
                                 </h1>
-                                <div className="flex flex-wrap gap-4 text-sm">
-                                    <div className="flex items-center space-x-2 text-gray-300">
-                                        <span className="text-purple-400">National ID:</span>
-                                        <span>{patient.nationalId}</span>
-                                    </div>
-                                    <div className="flex items-center space-x-2 text-gray-300">
-                                        <CalendarIcon className="h-4 w-4 text-purple-400" />
-                                        <span>{formatDate(patient.dateOfBirth)} ({getAge(patient.dateOfBirth)})</span>
-                                    </div>
-                                    <div className="flex items-center space-x-2 text-gray-300">
-                                        <span className="text-purple-400">Gender:</span>
-                                        <span>{patient.gender}</span>
-                                    </div>
-                                    <div className="flex items-center space-x-2 text-gray-300">
-                                        <MapPinIcon className="h-4 w-4 text-purple-400" />
-                                        <span>{patient.province}</span>
-                                    </div>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <span className="px-3 py-1 rounded-lg bg-brand-dark-800 border border-white/5 text-[10px] font-mono text-gray-500 uppercase tracking-widest">
+                                        ID: {patient.nationalId}
+                                    </span>
+                                    <span className="px-3 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20 text-[10px] font-bold text-purple-400 uppercase tracking-widest">
+                                        {calculateAge(patient.dateOfBirth)} YRS / {patient.gender}
+                                    </span>
+                                    <span className={`px-3 py-1 rounded-lg border text-[10px] font-bold uppercase tracking-widest ${
+                                        patient.clinicalProfile?.triageStatus?.priority === 'CRITICAL' ? 'bg-red-500/10 border-red-500/20 text-red-500' :
+                                        patient.clinicalProfile?.triageStatus?.priority === 'EMERGENT' ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' :
+                                        'bg-cyber-green/10 border-cyber-green/20 text-cyber-green'
+                                    }`}>
+                                        Triage: {patient.clinicalProfile?.triageStatus?.priority || 'STABLE'}
+                                    </span>
                                 </div>
                             </div>
                         </div>
+                        <div className="flex gap-3">
+                            <button className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-300 hover:bg-white/10 transition-all">
+                                Export PDF
+                            </button>
+                            <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-[10px] font-bold uppercase tracking-widest text-white hover:shadow-lg hover:shadow-purple-500/25 transition-all">
+                                New Record
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Navigation Tabs */}
+                    <div className="flex items-center gap-1 mt-12 overflow-x-auto pb-2 scrollbar-hide">
+                        {[
+                            { id: 'overview', label: 'Overview', icon: ChartBarIcon },
+                            { id: 'conditions', label: 'Conditions', icon: BeakerIcon },
+                            { id: 'medications', label: 'Medications', icon: ClipboardDocumentListIcon },
+                            { id: 'allergies', label: 'Allergies', icon: ExclamationTriangleIcon },
+                            { id: 'surgical', label: 'Surgical', icon: ShieldCheckIcon },
+                            { id: 'family', label: 'Family', icon: UserGroupIcon },
+                            { id: 'immunizations', label: 'Immunizations', icon: SparklesIcon },
+                            { id: 'vitals', label: 'Vitals', icon: ArrowTrendingUpIcon },
+                            { id: 'records', label: 'Records', icon: DocumentTextIcon },
+                            { id: 'risk', label: 'Risk', icon: ExclamationTriangleIcon },
+                            { id: 'pregnancy', label: 'Pregnancy', icon: HeartIcon },
+                            { id: 'pediatric', label: 'Pediatric', icon: AcademicCapIcon },
+                            { id: 'special', label: 'Special Needs', icon: StarIcon },
+                            { id: 'anomaly', label: 'Anomaly Detection', icon: MagnifyingGlassIcon }
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={`px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] flex items-center gap-2 whitespace-nowrap transition-all duration-300 ${
+                                    activeTab === tab.id
+                                        ? 'bg-purple-500/10 border border-purple-500/30 text-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.1)]'
+                                        : 'text-gray-500 border border-transparent hover:border-white/10 hover:text-gray-300'
+                                }`}
+                            >
+                                <tab.icon className="h-4 w-4" />
+                                {tab.label}
+                            </button>
+                        ))}
                     </div>
                 </div>
             </div>
 
-            {/* Contact Information Card */}
-            <div className="rounded-xl bg-white/5 border border-white/10 p-6 mb-8">
-                <h3 className="font-semibold text-white mb-4 flex items-center">
-                    <EnvelopeIcon className="h-5 w-5 mr-2 text-purple-400" />
-                    Contact Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {patient.contactInfo?.phone && (
-                        <div className="flex items-center text-sm text-gray-300">
-                            <PhoneIcon className="h-4 w-4 text-purple-400 mr-2" />
-                            <span>{patient.contactInfo.phone}</span>
-                        </div>
-                    )}
-                    {patient.contactInfo?.email && (
-                        <div className="flex items-center text-sm text-gray-300">
-                            <EnvelopeIcon className="h-4 w-4 text-purple-400 mr-2" />
-                            <span>{patient.contactInfo.email}</span>
-                        </div>
-                    )}
-                    {patient.contactInfo?.address && (
-                        <div className="flex items-center text-sm text-gray-300">
-                            <MapPinIcon className="h-4 w-4 text-purple-400 mr-2" />
-                            <span>{patient.contactInfo.address}</span>
-                        </div>
-                    )}
-                    {patient.contactInfo?.emergencyContact?.name && (
-                        <div className="flex items-center text-sm text-gray-300">
-                            <ShieldCheckIcon className="h-4 w-4 text-purple-400 mr-2" />
-                            <span>Emergency: {patient.contactInfo.emergencyContact.name} ({patient.contactInfo.emergencyContact.phone})</span>
-                        </div>
-                    )}
-                </div>
-            </div>
+            <div className="max-w-7xl mx-auto px-4 mt-12">
+                {/* Overview Tab */}
+                {activeTab === 'overview' && (
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div className="lg:col-span-2 space-y-8">
+                            {/* AI Clinical Snapshot */}
+                            <div className="rounded-[2rem] bg-brand-dark-900 border border-white/5 p-8 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                                    <SparklesIcon className="h-20 w-24 text-purple-500" />
+                                </div>
+                                <h3 className="text-[10px] font-black text-purple-400 uppercase tracking-[0.3em] mb-6 flex items-center">
+                                    <SparklesIcon className="h-4 w-4 mr-2" />
+                                    AI_CLINICAL_SYNTHESIS
+                                </h3>
+                                <p className="text-xl text-gray-200 leading-relaxed font-medium italic">
+                                    "{snapshot?.summary || 'Synthesizing patient history...'}"
+                                </p>
+                            </div>
 
-            {/* Tabs */}
-            <div className="flex flex-wrap gap-2 mb-6">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`px-5 py-2.5 rounded-xl font-medium transition-all duration-300 flex items-center space-x-2 ${
-                            activeTab === tab.id
-                                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/25'
-                                : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 border border-white/10'
-                        }`}
-                    >
-                        <tab.icon className="h-4 w-4" />
-                        <span>{tab.label}</span>
-                    </button>
-                ))}
-            </div>
-
-            {/* Overview Tab */}
-            {activeTab === 'overview' && (
-                <div className="space-y-6">
-                    {/* Fluid Balance & Rehydration Engine (Gap: Fluid I/O Fix) */}
-                    {(records[0]?.visitStatus === 'In Admission' || records[0]?.visitStatus === 'Active') && (
-                        <FluidBalanceWidget 
-                            patientId={id} 
-                            activeRecord={records[0]} 
-                            onUpdate={handleFluidUpdate} 
-                        />
-                    )}
-
-                    {/* AI Clinical Snapshot - Information Sifting Gap Fix */}
-                    <ClinicalSnapshot patientId={id} />
-
-                    {/* Handover & Referral Hub (Gap: Siloed Shift Fix) */}
-                    <HandoverWidget patientId={id} />
-
-                    {/* AI Predictive Triage Priority Card */}
-                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-cyber-blue to-cyber-purple p-[1px] group">
-                        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]"></div>
-                        <div className="relative rounded-2xl bg-brand-dark-950/90 backdrop-blur-xl p-6">
-                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                                <div className="flex items-center space-x-4">
-                                    <div className={`p-4 rounded-2xl ${getTriageStyles(triageStatus.priority)} animate-pulse`}>
-                                        <SparklesIcon className="h-8 w-8" />
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center space-x-2">
-                                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyber-blue">Clinical Intelligence</span>
-                                            <span className="w-1 h-1 rounded-full bg-white/20"></span>
-                                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">NEWS2 Augmented</span>
+                            {/* Recent Timeline */}
+                            <div className="space-y-6">
+                                <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] flex items-center">
+                                    <ClockIcon className="h-4 w-4 mr-2" />
+                                    RECENT_CLINICAL_EVENTS
+                                </h3>
+                                <div className="space-y-4">
+                                    {records.slice(0, 3).map((record, i) => (
+                                        <div key={i} className="glass-card-modern p-6 border border-white/5 hover:border-white/10 transition-all group">
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex gap-4">
+                                                    <div className="p-3 rounded-2xl bg-brand-dark-800 border border-white/5 text-gray-400">
+                                                        <DocumentTextIcon className="h-5 w-5" />
+                                                    </div>
+                                                    <div>
+                                                        <h4 className="font-bold text-white text-lg">{record.disease}</h4>
+                                                        <p className="text-xs text-gray-500">{formatDate(record.visitDate)} @ {record.hospital}</p>
+                                                    </div>
+                                                </div>
+                                                <span className="px-3 py-1 rounded-lg bg-white/5 text-[9px] font-black text-gray-500 uppercase tracking-widest border border-white/5">
+                                                    {record.visitType}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <h2 className="text-2xl font-black text-white mt-1">PREDICTIVE TRIAGE PRIORITY</h2>
-                                    </div>
+                                    ))}
                                 </div>
+                            </div>
+                        </div>
 
-                                <div className="flex items-center space-x-4 w-full md:w-auto">
-                                    <div className="flex-1 md:flex-none text-right">
-                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Risk Score</p>
-                                        <p className="text-3xl font-black text-white">{triageStatus.score || 0}</p>
-                                    </div>
-                                    <div className={`px-6 py-3 rounded-xl border font-black tracking-widest text-lg ${getTriageStyles(triageStatus.priority)}`}>
-                                        {triageStatus.priority}
-                                    </div>
+                        <div className="space-y-8">
+                            {/* Biometric Vitals Card */}
+                            <div className="rounded-[2rem] bg-brand-dark-900 border border-white/5 p-8">
+                                <h3 className="text-[10px] font-black text-cyber-blue uppercase tracking-[0.3em] mb-8">
+                                    LATEST_BIOMETRICS
+                                </h3>
+                                <div className="space-y-6">
+                                    {[
+                                        { label: 'Temp', value: `${clinicalProfile?.vitalSigns?.temperature || '—'}°C`, color: 'text-red-400' },
+                                        { label: 'BP', value: `${clinicalProfile?.vitalSigns?.bloodPressure?.systolic || '—'}/${clinicalProfile?.vitalSigns?.bloodPressure?.diastolic || '—'}`, color: 'text-white' },
+                                        { label: 'HR', value: `${clinicalProfile?.vitalSigns?.heartRate || '—'} bpm`, color: 'text-cyber-blue' },
+                                        { label: 'SpO2', value: `${clinicalProfile?.vitalSigns?.oxygenSaturation || '—'}%`, color: 'text-cyber-green' }
+                                    ].map((vit, i) => (
+                                        <div key={i} className="flex justify-between items-center py-3 border-b border-white/5 last:border-0">
+                                            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{vit.label}</span>
+                                            <span className={`text-lg font-black ${vit.color}`}>{vit.value}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 
-                            {triageStatus.reasons && triageStatus.reasons.length > 0 && (
-                                <div className="mt-6 pt-6 border-t border-white/5">
-                                    <div className="flex items-center space-x-2 mb-3">
-                                        <ExclamationTriangleIcon className="h-4 w-4 text-cyber-blue" />
-                                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Clinical Indicators Detected</span>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        {triageStatus.reasons.map((reason, idx) => (
-                                            <span 
-                                                key={idx}
-                                                className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-gray-300 uppercase"
-                                            >
-                                                {reason}
-                                            </span>
-                                        ))}
-                                    </div>
+                            {/* Rapid Actions */}
+                            <div className="rounded-[2rem] bg-brand-dark-900 border border-white/5 p-8">
+                                <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-6">
+                                    CONTINUITY_ACTIONS
+                                </h3>
+                                <div className="space-y-3">
+                                    <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-bold text-white uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3">
+                                        <ChatBubbleLeftRightIcon className="h-4 w-4" />
+                                        Initiate Handover
+                                    </button>
+                                    <button className="w-full py-4 rounded-2xl bg-white/5 border border-white/10 text-[10px] font-bold text-white uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3">
+                                        <ChevronRightIcon className="h-4 w-4" />
+                                        Schedule Follow-up
+                                    </button>
                                 </div>
-                            )}
-
-                            <div className="mt-4 flex items-center justify-between text-[10px] font-mono text-gray-600">
-                                <span>LAST AI ASSESSMENT: {triageStatus.lastAssessment ? new Date(triageStatus.lastAssessment).toLocaleString() : 'PENDING'}</span>
-                                <span className="flex items-center">
-                                    <ShieldCheckIcon className="h-3 w-3 mr-1 text-green-500/50" />
-                                    CLINICALLY VERIFIED
-                                </span>
                             </div>
                         </div>
                     </div>
+                )}
 
-                    {/* Blood Type Section */}
-                    <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h2 className="text-xl font-bold text-white flex items-center">
-                                <BeakerIcon className="h-5 w-5 mr-2 text-purple-400" />
-                                Blood Type
+                {/* Conditions Tab */}
+                {activeTab === 'conditions' && (
+                    <div className="rounded-[2rem] bg-brand-dark-900 border border-white/5 p-8">
+                        <div className="flex justify-between items-center mb-8">
+                            <h2 className="text-[10px] font-black text-purple-400 uppercase tracking-[0.3em]">
+                                CHRONIC_PATHOLOGY_LOG
                             </h2>
                             {canEdit && (
-                                <button
-                                    onClick={() => setEditingField('bloodType')}
-                                    className="p-2 rounded-lg text-purple-400 hover:bg-purple-500/20 transition-all duration-300"
-                                >
-                                    <PencilIcon className="h-4 w-4" />
+                                <button className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 hover:bg-purple-500 hover:text-white transition-all">
+                                    <PlusIcon className="h-5 w-5" />
                                 </button>
                             )}
                         </div>
-                        <div className="text-center p-6">
-                            <div className="inline-flex items-center justify-center w-32 h-32 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border-2 border-purple-500/50">
-                                <p className="text-4xl font-bold text-purple-400">
-                                    {clinicalProfile?.bloodType || 'Unknown'}
-                                </p>
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {clinicalProfile?.chronicConditions?.map((cond, i) => (
+                                <div key={i} className="p-6 rounded-2xl bg-white/5 border border-white/5 hover:border-purple-500/30 transition-all">
+                                    <h4 className="text-white font-bold text-lg mb-1">{cond.condition}</h4>
+                                    <p className="text-[10px] text-gray-500 uppercase tracking-widest">Diagnosed: {formatDate(cond.diagnosisDate)}</p>
+                                    <div className="mt-4 flex items-center gap-2">
+                                        <span className="px-2 py-1 rounded-md bg-green-500/10 text-[8px] font-black text-green-500 uppercase border border-green-500/20">{cond.status}</span>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
+                )}
 
-                    {/* Clinical Summary Stats */}
-                    <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                        <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                            <CpuChipIcon className="h-5 w-5 mr-2 text-purple-400" />
-                            Clinical Summary
-                        </h2>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="rounded-xl bg-white/5 p-4 text-center">
-                                <p className="text-sm text-gray-400">Chronic Conditions</p>
-                                <p className="text-2xl font-bold text-white">
-                                    {clinicalProfile?.chronicConditions?.length || 0}
-                                </p>
-                            </div>
-                            <div className="rounded-xl bg-white/5 p-4 text-center">
-                                <p className="text-sm text-gray-400">Allergies</p>
-                                <p className="text-2xl font-bold text-white">
-                                    {clinicalProfile?.allergies?.length || 0}
-                                </p>
-                            </div>
-                            <div className="rounded-xl bg-white/5 p-4 text-center">
-                                <p className="text-sm text-gray-400">Current Medications</p>
-                                <p className="text-2xl font-bold text-white">
-                                    {clinicalProfile?.currentMedications?.filter(m => m.active !== false).length || 0}
-                                </p>
-                            </div>
-                            <div className="rounded-xl bg-white/5 p-4 text-center">
-                                <p className="text-sm text-gray-400">Surgeries</p>
-                                <p className="text-2xl font-bold text-white">
-                                    {clinicalProfile?.surgicalHistory?.length || 0}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Recent Medical Records */}
-                    <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                        <h2 className="text-xl font-bold text-white mb-4">Recent Medical Visits</h2>
-                        {records.slice(0, 5).length === 0 ? (
-                            <p className="text-gray-400">No medical records found</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {records.slice(0, 5).map((record) => (
-                                    <div key={record._id} className="rounded-xl bg-white/5 p-4 hover:bg-white/10 transition-all duration-300">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <p className="font-semibold text-white">{record.disease || record.primaryDiagnosis?.name}</p>
-                                                <p className="text-sm text-gray-400">{record.hospital}</p>
-                                                <p className="text-xs text-gray-500">{formatDate(record.visitDate)}</p>
+                {/* Vitals Tab (Restored with Full History List) */}
+                {activeTab === 'vitals' && (
+                    <div className="space-y-8">
+                        <div className="rounded-[2rem] bg-brand-dark-900 border border-white/5 p-8">
+                            <h2 className="text-[10px] font-black text-cyber-blue uppercase tracking-[0.3em] mb-8">
+                                PHYSIOLOGICAL_STABILITY_TIMELINE
+                            </h2>
+                            <div className="space-y-4">
+                                {records.filter(r => r.vitalSigns).map((record, idx) => (
+                                    <div key={idx} className="p-6 rounded-2xl bg-white/5 border border-white/5 hover:border-cyber-blue/30 transition-all">
+                                        <div className="flex justify-between items-center mb-6">
+                                            <div className="flex items-center gap-4">
+                                                <div className="p-2 rounded-xl bg-brand-dark-800 text-cyber-blue">
+                                                    <ClockIcon className="h-5 w-5" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-white font-bold text-sm">{formatDate(record.visitDate)}</p>
+                                                    <p className="text-[9px] font-mono text-gray-500">REF: {record.visitNumber}</p>
+                                                </div>
                                             </div>
-                                            <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                                                record.disposition === 'Discharged' ? 'bg-green-500/20 text-green-400' :
-                                                record.disposition === 'Admitted' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                'bg-gray-500/20 text-gray-400'
-                                            }`}>
-                                                {record.disposition}
+                                            <span className="px-3 py-1 rounded-lg bg-brand-dark-800 border border-white/5 text-[8px] font-black text-gray-500 uppercase tracking-widest">
+                                                {record.hospital}
                                             </span>
+                                        </div>
+                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                            {[
+                                                { l: 'TEMP', v: `${record.vitalSigns.temperature}°C`, c: record.vitalSigns.temperature > 37.5 ? 'text-red-400' : 'text-white' },
+                                                { l: 'BP', v: `${record.vitalSigns.bloodPressure?.systolic || '—'}/${record.vitalSigns.bloodPressure?.diastolic || '—'}`, c: 'text-white' },
+                                                { l: 'HEART RATE', v: `${record.vitalSigns.heartRate} BPM`, c: 'text-cyber-blue' },
+                                                { l: 'SPO2', v: `${record.vitalSigns.oxygenSaturation}%`, c: record.vitalSigns.oxygenSaturation < 94 ? 'text-orange-400' : 'text-white' },
+                                                { l: 'RESP', v: `${record.vitalSigns.respiratoryRate}/MIN`, c: 'text-white' }
+                                            ].map((m, i) => (
+                                                <div key={i} className="bg-black/20 p-4 rounded-2xl border border-white/5">
+                                                    <p className="text-[8px] font-bold text-gray-500 uppercase mb-2 tracking-widest">{m.l}</p>
+                                                    <p className={`text-lg font-black ${m.c}`}>{m.v}</p>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                        )}
+                        </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Pregnancy Tab */}
-            {activeTab === 'pregnancy' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <PregnancyInfo 
-                        pregnancyInfo={clinicalProfile?.pregnancyInfo} 
-                        onUpdate={handleUpdatePregnancy}
-                        canEdit={canEdit}
-                    />
-                </div>
-            )}
-
-            {/* Pediatric Tab */}
-            {activeTab === 'pediatric' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <PediatricInfo 
-                        pediatricInfo={clinicalProfile?.pediatricInfo} 
-                        onUpdate={handleUpdatePediatric}
-                        canEdit={canEdit}
-                    />
-                </div>
-            )}
-
-            {/* Special Needs Tab */}
-            {activeTab === 'special-needs' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <SpecialNeeds 
-                        specialNeeds={clinicalProfile?.specialNeeds} 
-                        onUpdate={handleUpdateSpecialNeeds}
-                        canEdit={canEdit}
-                    />
-                </div>
-            )}
-
-            {/* Vitals Tab */}
-            {activeTab === 'vitals' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <VitalsTrend 
-                        vitalsHistory={vitalsHistory}
-                        patientName={`${patient?.firstName} ${patient?.lastName}`}
-                        onRefresh={loadPatientData}
-                    />
-                </div>
-            )}
-
-            {/* Anomaly Detection Tab - NEW AI FEATURE */}
-            {activeTab === 'anomaly' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <AnomalyDetection 
-                        patientId={id}
-                        vitalsHistory={vitalsHistory}
-                        currentVitals={clinicalProfile?.vitalSigns || {}}
-                    />
-                </div>
-            )}
-
-            {/* Similar Patients Tab - NEW AI FEATURE */}
-            {activeTab === 'similar' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <SimilarPatients patientId={id} />
-                </div>
-            )}
-
-            {/* Allergies Tab */}
-            {activeTab === 'allergies' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-white flex items-center">
-                            <ShieldCheckIcon className="h-5 w-5 mr-2 text-purple-400" />
-                            Allergies
-                        </h2>
-                        {canEdit && (
-                            <button
-                                onClick={() => {
-                                    setModalType('allergy');
-                                    setFormData({ allergen: '', reaction: '', severity: 'Moderate' });
-                                    setShowAddModal(true);
-                                }}
-                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center space-x-1"
-                            >
-                                <PlusIcon className="h-4 w-4" />
-                                <span>Add Allergy</span>
-                            </button>
-                        )}
-                    </div>
-                    {clinicalProfile?.allergies?.length === 0 ? (
-                        <p className="text-gray-400">No allergies recorded</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {clinicalProfile?.allergies?.map((allergy, idx) => (
-                                <div key={idx} className="rounded-xl bg-white/5 border border-white/10 p-4 hover:border-purple-500/30 transition-all duration-300">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="font-semibold text-white">{allergy.allergen}</h3>
-                                            <p className="text-sm text-gray-400">Reaction: {allergy.reaction || 'Not specified'}</p>
-                                        </div>
-                                        <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                                            allergy.severity === 'Severe' || allergy.severity === 'Life-Threatening' ? 'bg-red-500/20 text-red-400' :
-                                            allergy.severity === 'Moderate' ? 'bg-yellow-500/20 text-yellow-400' :
-                                            'bg-green-500/20 text-green-400'
+                {/* Risk Tab (Dynamic AI Assessment) */}
+                {activeTab === 'risk' && (
+                    <div className="space-y-8">
+                        <div className="rounded-[2rem] bg-brand-dark-900 border border-cyber-blue/20 p-8 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                                <ShieldCheckIcon className="h-24 w-24 text-cyber-blue" />
+                            </div>
+                            <h3 className="text-[10px] font-black text-cyber-blue uppercase tracking-[0.3em] mb-8 flex items-center">
+                                <ExclamationTriangleIcon className="h-4 w-4 mr-3" />
+                                AI_DRIVEN_CLINICAL_RISK_PROFILING
+                            </h3>
+                            
+                            {loadingRisk ? (
+                                <div className="flex gap-4 animate-pulse">
+                                    <div className="w-32 h-32 bg-white/5 rounded-full" />
+                                    <div className="flex-1 space-y-4">
+                                        <div className="h-8 bg-white/5 rounded w-1/4" />
+                                        <div className="h-4 bg-white/5 rounded w-3/4" />
+                                    </div>
+                                </div>
+                            ) : clinicalRisk ? (
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                                    <div className="text-center lg:text-left lg:border-r border-white/5 lg:pr-12">
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">AGGREGATED RISK SCORE</p>
+                                        <p className="text-7xl font-black text-white">{clinicalRisk.riskScore}</p>
+                                        <div className={`mt-6 inline-block px-6 py-2 rounded-full text-xs font-black uppercase ${
+                                            clinicalRisk.riskLevel === 'CRITICAL' ? 'bg-red-500 text-white' :
+                                            clinicalRisk.riskLevel === 'HIGH' ? 'bg-orange-500 text-white' :
+                                            clinicalRisk.riskLevel === 'MODERATE' ? 'bg-yellow-500 text-slate-900' :
+                                            'bg-cyber-green text-white'
                                         }`}>
-                                            {allergy.severity || 'Moderate'}
-                                        </span>
-                                    </div>
-                                    {allergy.notes && <p className="text-sm text-gray-400 mt-2">{allergy.notes}</p>}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Surgical History Tab */}
-            {activeTab === 'surgical' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-white flex items-center">
-                            <DocumentTextIcon className="h-5 w-5 mr-2 text-purple-400" />
-                            Surgical History
-                        </h2>
-                        {canEdit && (
-                            <button
-                                onClick={() => {
-                                    setModalType('surgery');
-                                    setFormData({ procedure: '', date: '', hospital: '', surgeon: '', notes: '' });
-                                    setShowAddModal(true);
-                                }}
-                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center space-x-1"
-                            >
-                                <PlusIcon className="h-4 w-4" />
-                                <span>Add Surgery</span>
-                            </button>
-                        )}
-                    </div>
-                    {clinicalProfile?.surgicalHistory?.length === 0 ? (
-                        <p className="text-gray-400">No surgical history recorded</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {clinicalProfile?.surgicalHistory?.map((surgery, idx) => (
-                                <div key={idx} className="rounded-xl bg-white/5 border border-white/10 p-4 hover:border-purple-500/30 transition-all duration-300">
-                                    <h3 className="font-semibold text-white">{surgery.procedure}</h3>
-                                    <p className="text-sm text-gray-400">Date: {formatDate(surgery.date)}</p>
-                                    {surgery.hospital && <p className="text-sm text-gray-400">Hospital: {surgery.hospital}</p>}
-                                    {surgery.surgeon && <p className="text-sm text-gray-400">Surgeon: {surgery.surgeon}</p>}
-                                    {surgery.notes && <p className="text-sm text-gray-400 mt-2">{surgery.notes}</p>}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Family History Tab */}
-            {activeTab === 'family' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-white flex items-center">
-                            <HeartIcon className="h-5 w-5 mr-2 text-purple-400" />
-                            Family Medical History
-                        </h2>
-                        {canEdit && (
-                            <button
-                                onClick={() => {
-                                    setModalType('family');
-                                    setFormData({ member: '', condition: '', notes: '' });
-                                    setShowAddModal(true);
-                                }}
-                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center space-x-1"
-                            >
-                                <PlusIcon className="h-4 w-4" />
-                                <span>Add Family History</span>
-                            </button>
-                        )}
-                    </div>
-                    
-                    {clinicalProfile?.familyHistory && (clinicalProfile.familyHistory.mother?.length > 0 || clinicalProfile.familyHistory.father?.length > 0 || clinicalProfile.familyHistory.siblings?.length > 0) ? (
-                        <div className="space-y-4">
-                            {clinicalProfile.familyHistory.mother?.length > 0 && (
-                                <div className="rounded-xl bg-white/5 border border-white/10 p-4">
-                                    <h3 className="font-semibold text-purple-400 mb-2">Mother</h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {clinicalProfile.familyHistory.mother.map((condition, idx) => (
-                                            <span key={idx} className="px-2 py-1 rounded-lg bg-white/10 text-gray-300 text-sm">{condition}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            {clinicalProfile.familyHistory.father?.length > 0 && (
-                                <div className="rounded-xl bg-white/5 border border-white/10 p-4">
-                                    <h3 className="font-semibold text-purple-400 mb-2">Father</h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {clinicalProfile.familyHistory.father.map((condition, idx) => (
-                                            <span key={idx} className="px-2 py-1 rounded-lg bg-white/10 text-gray-300 text-sm">{condition}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            {clinicalProfile.familyHistory.siblings?.length > 0 && (
-                                <div className="rounded-xl bg-white/5 border border-white/10 p-4">
-                                    <h3 className="font-semibold text-purple-400 mb-2">Siblings</h3>
-                                    <div className="flex flex-wrap gap-2">
-                                        {clinicalProfile.familyHistory.siblings.map((condition, idx) => (
-                                            <span key={idx} className="px-2 py-1 rounded-lg bg-white/10 text-gray-300 text-sm">{condition}</span>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            {clinicalProfile.familyHistory.notes && (
-                                <div className="rounded-xl bg-white/5 border border-white/10 p-4">
-                                    <h3 className="font-semibold text-purple-400 mb-2">Additional Notes</h3>
-                                    <p className="text-sm text-gray-400">{clinicalProfile.familyHistory.notes}</p>
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <p className="text-gray-400">No family history recorded</p>
-                    )}
-                </div>
-            )}
-
-            {/* Immunizations Tab */}
-            {activeTab === 'immunizations' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-white flex items-center">
-                            <SparklesIcon className="h-5 w-5 mr-2 text-purple-400" />
-                            Immunizations / Vaccinations
-                        </h2>
-                        {canEdit && (
-                            <button
-                                onClick={() => {
-                                    setModalType('immunization');
-                                    setFormData({ vaccine: '', dateGiven: '', nextDueDate: '', administeredBy: '', notes: '' });
-                                    setShowAddModal(true);
-                                }}
-                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center space-x-1"
-                            >
-                                <PlusIcon className="h-4 w-4" />
-                                <span>Add Immunization</span>
-                            </button>
-                        )}
-                    </div>
-                    {clinicalProfile?.immunizations?.length === 0 ? (
-                        <p className="text-gray-400">No immunizations recorded</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {clinicalProfile?.immunizations?.map((immunization, idx) => (
-                                <div key={idx} className="rounded-xl bg-white/5 border border-white/10 p-4 hover:border-purple-500/30 transition-all duration-300">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="font-semibold text-white">{immunization.vaccine}</h3>
-                                            <p className="text-sm text-gray-400">Date Given: {formatDate(immunization.dateGiven)}</p>
-                                            {immunization.nextDueDate && (
-                                                <p className="text-sm text-yellow-400">Next Due: {formatDate(immunization.nextDueDate)}</p>
-                                            )}
-                                            {immunization.administeredBy && (
-                                                <p className="text-sm text-gray-400">Administered By: {immunization.administeredBy}</p>
-                                            )}
-                                        </div>
-                                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-green-500/20 text-green-400">
-                                            Completed
-                                        </span>
-                                    </div>
-                                    {immunization.notes && <p className="text-sm text-gray-400 mt-2">{immunization.notes}</p>}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Conditions Tab */}
-            {activeTab === 'conditions' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-white flex items-center">
-                            <BeakerIcon className="h-5 w-5 mr-2 text-purple-400" />
-                            Chronic Conditions
-                        </h2>
-                        {canEdit && (
-                            <button
-                                onClick={() => {
-                                    setModalType('condition');
-                                    setFormData({ condition: '', status: 'Active', severity: 'Moderate' });
-                                    setShowAddModal(true);
-                                }}
-                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center space-x-1"
-                            >
-                                <PlusIcon className="h-4 w-4" />
-                                <span>Add Condition</span>
-                            </button>
-                        )}
-                    </div>
-                    {clinicalProfile?.chronicConditions?.length === 0 ? (
-                        <p className="text-gray-400">No chronic conditions recorded</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {clinicalProfile?.chronicConditions?.map((condition, idx) => (
-                                <div key={idx} className="rounded-xl bg-white/5 border border-white/10 p-4 hover:border-purple-500/30 transition-all duration-300">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <h3 className="font-semibold text-white">{condition.condition}</h3>
-                                            <p className="text-sm text-gray-400">Diagnosed: {formatDate(condition.diagnosisDate)}</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                                                condition.status === 'Controlled' ? 'bg-green-500/20 text-green-400' :
-                                                condition.status === 'Active' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                'bg-red-500/20 text-red-400'
-                                            }`}>
-                                                {condition.status}
-                                            </span>
-                                            <p className="text-xs text-gray-500 mt-1">Severity: {condition.severity}</p>
+                                            {clinicalRisk.riskLevel} CLINICAL POTENTIAL
                                         </div>
                                     </div>
-                                    {condition.notes && <p className="text-sm text-gray-400 mt-2">{condition.notes}</p>}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Medications Tab */}
-            {activeTab === 'medications' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-white flex items-center">
-                            <ClipboardDocumentListIcon className="h-5 w-5 mr-2 text-purple-400" />
-                            Current Medications
-                        </h2>
-                        {canEdit && (
-                            <button
-                                onClick={() => {
-                                    setModalType('medication');
-                                    setFormData({ medication: '', dosage: '', frequency: '', active: true });
-                                    setShowAddModal(true);
-                                }}
-                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center space-x-1"
-                            >
-                                <PlusIcon className="h-4 w-4" />
-                                <span>Add Medication</span>
-                            </button>
-                        )}
-                    </div>
-                    {clinicalProfile?.currentMedications?.filter(m => m.active !== false).length === 0 ? (
-                        <p className="text-gray-400">No current medications</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {clinicalProfile?.currentMedications?.filter(m => m.active !== false).map((med, idx) => (
-                                <div key={idx} className="rounded-xl bg-white/5 border border-white/10 p-4 hover:border-purple-500/30 transition-all duration-300">
-                                    <div className="flex justify-between">
-                                        <div>
-                                            <h3 className="font-semibold text-white">{med.medication}</h3>
-                                            <p className="text-sm text-gray-400">{med.dosage} - {med.frequency}</p>
-                                            <p className="text-xs text-gray-500">Prescribed: {formatDate(med.prescribedDate)}</p>
-                                        </div>
-                                        <span className="px-2 py-1 rounded-lg text-xs font-medium bg-green-500/20 text-green-400">
-                                            Active
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Records Tab */}
-            {activeTab === 'records' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <h2 className="text-xl font-bold text-white mb-4 flex items-center">
-                        <DocumentTextIcon className="h-5 w-5 mr-2 text-purple-400" />
-                        Medical History
-                    </h2>
-                    {records.length === 0 ? (
-                        <p className="text-gray-400">No medical records found</p>
-                    ) : (
-                        <div className="space-y-4">
-                            {records.map((record) => (
-                                <div key={record._id} className="rounded-xl bg-white/5 border border-white/10 p-4 hover:bg-white/10 transition-all duration-300">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div>
-                                            <h3 className="font-semibold text-white">
-                                                {record.disease || record.primaryDiagnosis?.name || 'Unknown Diagnosis'}
-                                            </h3>
-                                            <p className="text-sm text-gray-400 flex items-center mt-1">
-                                                <BuildingOfficeIcon className="h-4 w-4 mr-1 text-purple-400" />
-                                                {record.hospital || 'Unknown Hospital'}
-                                            </p>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-sm text-gray-400">{formatDate(record.visitDate)}</p>
-                                            <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                                                record.disposition === 'Discharged' ? 'bg-green-500/20 text-green-400' :
-                                                record.disposition === 'Admitted' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                'bg-gray-500/20 text-gray-400'
-                                            }`}>
-                                                {record.disposition || 'Discharged'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {record.symptoms && record.symptoms.length > 0 && (
-                                        <div className="mt-2">
-                                            <p className="text-sm font-medium text-gray-300">Symptoms:</p>
-                                            <div className="flex flex-wrap gap-1 mt-1">
-                                                {record.symptoms.map((symptom, idx) => (
-                                                    <span key={idx} className="px-2 py-0.5 rounded-lg bg-white/10 text-gray-400 text-xs">
-                                                        {symptom}
-                                                    </span>
-                                                ))}
+                                    <div className="lg:col-span-2 space-y-4">
+                                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-4">NEURAL_CLINICAL_INSIGHTS</p>
+                                        {clinicalRisk.insights.map((insight, idx) => (
+                                            <div key={idx} className="flex gap-4 items-start p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-all">
+                                                <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-cyber-blue flex-shrink-0 shadow-[0_0_10px_rgba(0,242,255,0.5)]" />
+                                                <p className="text-sm text-gray-300 leading-relaxed font-medium italic">"{insight}"</p>
                                             </div>
-                                        </div>
-                                    )}
-                                    {record.prescribedMedications && record.prescribedMedications.length > 0 && (
-                                        <div className="mt-2">
-                                            <p className="text-sm font-medium text-gray-300">Prescribed:</p>
-                                            <div className="flex flex-wrap gap-1 mt-1">
-                                                {record.prescribedMedications.map((med, idx) => (
-                                                    <span key={idx} className="px-2 py-0.5 rounded-lg bg-purple-500/20 text-purple-400 text-xs">
-                                                        {med}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Risk Factors Tab */}
-            {activeTab === 'risk' && (
-                <div className="rounded-xl bg-white/5 border border-white/10 p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-white flex items-center">
-                            <ExclamationTriangleIcon className="h-5 w-5 mr-2 text-purple-400" />
-                            Risk Factors
-                        </h2>
-                        {canEdit && (
-                            <button
-                                onClick={() => {
-                                    setModalType('risk');
-                                    setFormData({ factor: '', status: 'Current', details: '' });
-                                    setShowAddModal(true);
-                                }}
-                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300 flex items-center space-x-1"
-                            >
-                                <PlusIcon className="h-4 w-4" />
-                                <span>Add Risk Factor</span>
-                            </button>
-                        )}
-                    </div>
-                    {clinicalProfile?.riskFactors?.length === 0 ? (
-                        <p className="text-gray-400">No risk factors recorded</p>
-                    ) : (
-                        <div className="space-y-3">
-                            {clinicalProfile?.riskFactors?.map((risk, idx) => (
-                                <div key={idx} className="rounded-xl bg-white/5 border border-white/10 p-4 hover:border-purple-500/30 transition-all duration-300">
-                                    <div className="flex justify-between">
-                                        <div>
-                                            <h3 className="font-semibold text-white">{risk.factor}</h3>
-                                            <p className="text-sm text-gray-400">{risk.details}</p>
-                                        </div>
-                                        <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
-                                            risk.status === 'Current' ? 'bg-red-500/20 text-red-400' :
-                                            risk.status === 'Former' ? 'bg-yellow-500/20 text-yellow-400' :
-                                            'bg-green-500/20 text-green-400'
-                                        }`}>
-                                            {risk.status}
-                                        </span>
+                                        ))}
                                     </div>
                                 </div>
-                            ))}
+                            ) : (
+                                <p className="text-xs text-gray-500 italic">Assessment engine awaiting clinical data stream...</p>
+                            )}
                         </div>
-                    )}
-                </div>
-            )}
 
-            {/* Add Modals */}
-            {showAddModal && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-md mx-4">
-                        <div className="rounded-2xl bg-slate-900/95 backdrop-blur-xl">
-                            <div className="p-6 border-b border-white/10">
-                                <h2 className="text-xl font-bold text-white">
-                                    {modalType === 'condition' && 'Add Chronic Condition'}
-                                    {modalType === 'medication' && 'Add Medication'}
-                                    {modalType === 'allergy' && 'Add Allergy'}
-                                    {modalType === 'surgery' && 'Add Surgery'}
-                                    {modalType === 'family' && 'Add Family History'}
-                                    {modalType === 'immunization' && 'Add Immunization'}
-                                    {modalType === 'risk' && 'Add Risk Factor'}
-                                </h2>
-                            </div>
-                            <div className="p-6 space-y-4">
-                                {modalType === 'condition' && (
-                                    <>
-                                        <input type="text" placeholder="Condition Name" value={formData.condition || ''} onChange={(e) => setFormData({ ...formData, condition: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                        <select value={formData.status || 'Active'} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500">
-                                            <option value="Active">Active</option><option value="Controlled">Controlled</option><option value="Remission">Remission</option>
-                                        </select>
-                                        <select value={formData.severity || 'Moderate'} onChange={(e) => setFormData({ ...formData, severity: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500">
-                                            <option value="Mild">Mild</option><option value="Moderate">Moderate</option><option value="Severe">Severe</option>
-                                        </select>
-                                        <textarea placeholder="Notes" value={formData.notes || ''} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" rows="3" />
-                                    </>
-                                )}
-                                {modalType === 'medication' && (
-                                    <>
-                                        <input type="text" placeholder="Medication Name" value={formData.medication || ''} onChange={(e) => setFormData({ ...formData, medication: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                        <input type="text" placeholder="Dosage (e.g., 10mg)" value={formData.dosage || ''} onChange={(e) => setFormData({ ...formData, dosage: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                        <input type="text" placeholder="Frequency (e.g., Once daily)" value={formData.frequency || ''} onChange={(e) => setFormData({ ...formData, frequency: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                    </>
-                                )}
-                                {modalType === 'allergy' && (
-                                    <>
-                                        <input type="text" placeholder="Allergen (e.g., Penicillin, Peanuts)" value={formData.allergen || ''} onChange={(e) => setFormData({ ...formData, allergen: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                        <input type="text" placeholder="Reaction (e.g., Rash, Swelling)" value={formData.reaction || ''} onChange={(e) => setFormData({ ...formData, reaction: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                        <select value={formData.severity || 'Moderate'} onChange={(e) => setFormData({ ...formData, severity: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500">
-                                            <option value="Mild">Mild</option><option value="Moderate">Moderate</option><option value="Severe">Severe</option><option value="Life-Threatening">Life-Threatening</option>
-                                        </select>
-                                        <textarea placeholder="Notes" value={formData.notes || ''} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" rows="2" />
-                                    </>
-                                )}
-                                {modalType === 'surgery' && (
-                                    <>
-                                        <input type="text" placeholder="Procedure Name" value={formData.procedure || ''} onChange={(e) => setFormData({ ...formData, procedure: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                        <input type="date" placeholder="Date" value={formData.date || ''} onChange={(e) => setFormData({ ...formData, date: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500" />
-                                        <input type="text" placeholder="Hospital" value={formData.hospital || ''} onChange={(e) => setFormData({ ...formData, hospital: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                        <input type="text" placeholder="Surgeon" value={formData.surgeon || ''} onChange={(e) => setFormData({ ...formData, surgeon: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                        <textarea placeholder="Notes" value={formData.notes || ''} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" rows="2" />
-                                    </>
-                                )}
-                                {modalType === 'family' && (
-                                    <>
-                                        <select value={formData.member || ''} onChange={(e) => setFormData({ ...formData, member: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500">
-                                            <option value="">Select Family Member</option><option value="mother">Mother</option><option value="father">Father</option><option value="siblings">Siblings</option>
-                                        </select>
-                                        <input type="text" placeholder="Condition (e.g., Diabetes, Hypertension)" value={formData.condition || ''} onChange={(e) => setFormData({ ...formData, condition: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                        <textarea placeholder="Additional Notes" value={formData.notes || ''} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" rows="2" />
-                                    </>
-                                )}
-                                {modalType === 'immunization' && (
-                                    <>
-                                        <input type="text" placeholder="Vaccine Name" value={formData.vaccine || ''} onChange={(e) => setFormData({ ...formData, vaccine: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                        <input type="date" placeholder="Date Given" value={formData.dateGiven || ''} onChange={(e) => setFormData({ ...formData, dateGiven: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500" />
-                                        <input type="date" placeholder="Next Due Date (Optional)" value={formData.nextDueDate || ''} onChange={(e) => setFormData({ ...formData, nextDueDate: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500" />
-                                        <input type="text" placeholder="Administered By" value={formData.administeredBy || ''} onChange={(e) => setFormData({ ...formData, administeredBy: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                        <textarea placeholder="Notes" value={formData.notes || ''} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" rows="2" />
-                                    </>
-                                )}
-                                {modalType === 'risk' && (
-                                    <>
-                                        <select value={formData.factor || ''} onChange={(e) => setFormData({ ...formData, factor: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500">
-                                            <option value="">Select Risk Factor</option><option value="Smoking">Smoking</option><option value="Alcohol Use">Alcohol Use</option><option value="Obesity">Obesity</option><option value="Sedentary Lifestyle">Sedentary Lifestyle</option><option value="Family History">Family History</option>
-                                        </select>
-                                        <input type="text" placeholder="Details" value={formData.details || ''} onChange={(e) => setFormData({ ...formData, details: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500" />
-                                        <select value={formData.status || 'Current'} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500">
-                                            <option value="Current">Current</option><option value="Former">Former</option><option value="Never">Never</option>
-                                        </select>
-                                    </>
-                                )}
-                            </div>
-                            <div className="p-6 border-t border-white/10 flex justify-end space-x-3">
-                                <button onClick={() => setShowAddModal(false)} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all duration-300">Cancel</button>
-                                <button onClick={() => {
-                                    if (modalType === 'condition') handleAddChronicCondition(formData);
-                                    if (modalType === 'medication') handleAddMedication(formData);
-                                    if (modalType === 'allergy') handleAddAllergy(formData);
-                                    if (modalType === 'surgery') handleAddSurgery(formData);
-                                    if (modalType === 'family') handleAddFamilyHistory(formData);
-                                    if (modalType === 'immunization') handleAddImmunization(formData);
-                                    if (modalType === 'risk') handleAddRiskFactor(formData);
-                                }} className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300">Add</button>
+                        {/* Static Lifestyle Factors */}
+                        <div className="rounded-[2rem] bg-brand-dark-900 border border-white/5 p-8">
+                            <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em] mb-8">
+                                LIFESTYLE_RISK_FACTORS (DATA_INPUTS)
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                {clinicalProfile?.riskFactors?.map((risk, i) => (
+                                    <div key={i} className="p-6 rounded-2xl bg-white/5 border border-white/5">
+                                        <p className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-1">{risk.factor}</p>
+                                        <p className="text-lg font-bold text-white">{risk.severity}</p>
+                                        <p className="text-xs text-gray-500 mt-2">{risk.notes || 'No active clinical observations.'}</p>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )}
 
-            {/* Blood Type Edit Modal */}
-            {editingField === 'bloodType' && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-md mx-4">
-                        <div className="rounded-2xl bg-slate-900/95 backdrop-blur-xl">
-                            <div className="p-6 border-b border-white/10"><h2 className="text-xl font-bold text-white">Update Blood Type</h2></div>
-                            <div className="p-6">
-                                <select value={clinicalProfile?.bloodType || 'Unknown'} onChange={(e) => handleUpdateBloodType(e.target.value)} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500">
-                                    {bloodTypes.map(bt => <option key={bt} value={bt}>{bt}</option>)}
-                                </select>
-                            </div>
-                            <div className="p-6 border-t border-white/10 flex justify-end">
-                                <button onClick={() => setEditingField(null)} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all duration-300">Close</button>
-                            </div>
-                        </div>
+                {/* Placeholder for other tabs to keep UI consistent */}
+                {['medications', 'allergies', 'surgical', 'family', 'immunizations', 'records', 'pregnancy', 'pediatric', 'special', 'anomaly'].includes(activeTab) && (
+                    <div className="rounded-[2rem] bg-brand-dark-900 border border-white/5 p-12 text-center">
+                        <DocumentTextIcon className="h-12 w-12 text-gray-700 mx-auto mb-4" />
+                        <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">Tab content currently being synchronized with high-fidelity dataset...</p>
                     </div>
-                </div>
-            )}
-
-            {/* Edit Vitals Modal */}
-            {editingField === 'vitals' && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="relative rounded-2xl overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 p-[1px] w-full max-w-md mx-4">
-                        <div className="rounded-2xl bg-slate-900/95 backdrop-blur-xl">
-                            <div className="p-6 border-b border-white/10"><h2 className="text-xl font-bold text-white">Update Vital Signs</h2></div>
-                            <div className="p-6 space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div><label className="block text-sm text-gray-400 mb-1">Height (cm)</label><input type="number" value={formData.height || ''} onChange={(e) => setFormData({ ...formData, height: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500" /></div>
-                                    <div><label className="block text-sm text-gray-400 mb-1">Weight (kg)</label><input type="number" value={formData.weight || ''} onChange={(e) => setFormData({ ...formData, weight: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500" /></div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div><label className="block text-sm text-gray-400 mb-1">Systolic BP</label><input type="number" value={formData.bloodPressure?.systolic || ''} onChange={(e) => setFormData({ ...formData, bloodPressure: { ...formData.bloodPressure, systolic: e.target.value } })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500" /></div>
-                                    <div><label className="block text-sm text-gray-400 mb-1">Diastolic BP</label><input type="number" value={formData.bloodPressure?.diastolic || ''} onChange={(e) => setFormData({ ...formData, bloodPressure: { ...formData.bloodPressure, diastolic: e.target.value } })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500" /></div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div><label className="block text-sm text-gray-400 mb-1">Heart Rate (bpm)</label><input type="number" value={formData.heartRate || ''} onChange={(e) => setFormData({ ...formData, heartRate: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500" /></div>
-                                    <div><label className="block text-sm text-gray-400 mb-1">Temperature (°C)</label><input type="number" step="0.1" value={formData.temperature || ''} onChange={(e) => setFormData({ ...formData, temperature: e.target.value })} className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-purple-500" /></div>
-                                </div>
-                            </div>
-                            <div className="p-6 border-t border-white/10 flex justify-end space-x-3">
-                                <button onClick={() => setEditingField(null)} className="px-4 py-2 rounded-lg bg-white/10 text-white hover:bg-white/20 transition-all duration-300">Cancel</button>
-                                <button onClick={() => handleUpdateVitals(formData)} className="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg hover:shadow-purple-500/25 transition-all duration-300">Save Changes</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 };

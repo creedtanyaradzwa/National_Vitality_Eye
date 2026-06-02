@@ -197,30 +197,4 @@ router.get("/pending-count", protect, hasPermission("view:patients"), async (req
     }
 });
 
-// @route   GET /api/handovers/my-hospital
-// @desc    Get all pending tasks (shift or incoming transfer) for the user's hospital
-// @access  Private (Clinicians)
-router.get("/my-hospital", protect, hasPermission("view:patients"), async (req, res) => {
-    try {
-        const hospital = req.user.hospitalName;
-        
-        const handovers = await Handover.find({
-            $or: [
-                { sourceHospital: hospital, type: "Shift" },
-                { targetHospital: hospital, type: "Transfer" }
-            ],
-            "tasks.status": "Pending"
-        })
-        .sort({ createdAt: -1 })
-        .populate("patientId", "firstName lastName nationalId")
-        .populate("assignedUsers", "firstName lastName role position")
-        .populate("creatorId", "firstName lastName role hospitalName");
-
-        res.json(handovers);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: "Server error fetching hospital handovers" });
-    }
-});
-
 module.exports = router;

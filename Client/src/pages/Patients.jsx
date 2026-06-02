@@ -31,6 +31,7 @@ const Patients = () => {
     const [patients, setPatients] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState(location.state?.initialSearchTerm || '');
+    const [triageFilter, setTriageFilter] = useState(location.state?.triageFilter || '');
     const [showModal, setShowModal] = useState(false);
     const [editingPatient, setEditingPatient] = useState(null);
     const [page, setPage] = useState(1);
@@ -54,12 +55,12 @@ const Patients = () => {
 
     useEffect(() => {
         loadPatients();
-    }, [page]);
+    }, [page, triageFilter]); // Reload when triageFilter changes
 
     const loadPatients = async () => {
         setLoading(true);
         try {
-            const response = await getPatients(page, limit, searchTerm);
+            const response = await getPatients(page, limit, searchTerm, triageFilter ? 'priority' : '', triageFilter);
             setPatients(response.data.patients);
             setTotalPages(response.data.pages);
             setTotalResults(response.data.total);
@@ -208,26 +209,44 @@ const Patients = () => {
                             </p>
                         </div>
 
-                        <div className="flex items-center space-x-4">
-                            <div className="relative group">
-                                <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-cyber-blue transition-colors" />
-                                <input
-                                    type="text"
-                                    placeholder="SEARCH BY NAME OR ID..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 font-mono text-sm focus:outline-none focus:border-cyber-blue/50 focus:ring-4 focus:ring-cyber-blue/5 transition-all duration-500"
-                                />
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center space-x-4">
+                                <div className="relative group">
+                                    <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-cyber-blue transition-colors" />
+                                    <input
+                                        type="text"
+                                        placeholder="SEARCH BY NAME OR ID..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                        className="w-full pl-12 pr-4 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 font-mono text-sm focus:outline-none focus:border-cyber-blue/50 focus:ring-4 focus:ring-cyber-blue/5 transition-all duration-500"
+                                    />
+                                </div>
+                                {canCreate && (
+                                    <button
+                                        onClick={handleAddNew}
+                                        className="btn-primary-modern px-8 py-4 uppercase tracking-[0.2em] text-[10px] font-bold flex items-center"
+                                    >
+                                        <PlusIcon className="h-4 w-4 mr-2" />
+                                        Register Citizen
+                                    </button>
+                                )}
                             </div>
-                            {canCreate && (
-                                <button
-                                    onClick={handleAddNew}
-                                    className="btn-primary-modern px-8 py-4 uppercase tracking-[0.2em] text-[10px] font-bold flex items-center"
-                                >
-                                    <PlusIcon className="h-4 w-4 mr-2" />
-                                    Register Citizen
-                                </button>
+                            
+                            {triageFilter && (
+                                <div className="flex items-center gap-2 ml-4 animate-in fade-in slide-in-from-left-2">
+                                    <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Active Filter:</span>
+                                    <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-500">
+                                        <ExclamationTriangleIcon className="h-3 w-3" />
+                                        <span className="text-[9px] font-black uppercase tracking-widest">{triageFilter} PRIORITY</span>
+                                        <button 
+                                            onClick={() => setTriageFilter('')}
+                                            className="p-0.5 hover:bg-red-500/20 rounded-full transition-colors"
+                                        >
+                                            <XMarkIcon className="h-3 w-3" />
+                                        </button>
+                                    </div>
+                                </div>
                             )}
                         </div>
                     </div>
@@ -296,9 +315,9 @@ const Patients = () => {
                                             <td className="px-8 py-5 whitespace-nowrap text-right">
                                                 <div className="flex justify-end space-x-2">
                                                     <button
-                                                        onClick={() => navigate('/records', { state: { selectedPatient: patient } })}
+                                                        onClick={() => navigate(`/patients/${patient._id}`)}
                                                         className="p-2.5 rounded-xl bg-brand-dark-800 border border-white/5 text-gray-500 hover:text-cyber-blue hover:border-cyber-blue/30 transition-all duration-300"
-                                                        title="ACCESS_NODE"
+                                                        title="VIEW_PATIENT_DETAILS"
                                                     >
                                                         <EyeIcon className="h-5 w-5" />
                                                     </button>

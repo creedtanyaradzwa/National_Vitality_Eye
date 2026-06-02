@@ -25,7 +25,9 @@ import {
     ArrowPathRoundedSquareIcon,
     CheckCircleIcon,
     UserPlusIcon,
-    XMarkIcon
+    XMarkIcon,
+    UserIcon,
+    ChevronLeftIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -39,7 +41,10 @@ const CareHub = () => {
         recentAnomalies: 0
     });
     const [highPriorityPatients, setHighPriorityPatients] = useState([]);
-    const [pendingTasks, setPendingTasks] = useState([]);
+    const [queuePage, setQueuePage] = useState(1);
+    const [queueTotalPages, setQueueTotalPages] = useState(1);
+    const [pendingPatients, setPendingPatients] = useState([]);
+    const [expandedPatientId, setExpandedPatientId] = useState(null);
     const [staffMembers, setStaffMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -49,7 +54,10 @@ const CareHub = () => {
     const [isSearching, setIsSearching] = useState(false);
 
     useEffect(() => {
-        loadCareData();
+        loadCareData(queuePage);
+    }, [currentUser, queuePage]);
+
+    useEffect(() => {
         if (currentUser?.role === 'admin') {
             loadStaff();
         }
@@ -88,43 +96,71 @@ const CareHub = () => {
         }
     };
 
-    const loadCareData = async () => {
+    const loadCareData = async (page = 1) => {
         setLoading(true);
         try {
+            // Use hospital-specific summary if available
             const [patientsRes, summaryRes, handoversRes] = await Promise.all([
-                getPatients(1, 5),
-                getGlobalSummary(),
-                getHospitalHandovers()
+                getPatients(page, 10, '', 'priority'),
+                getGlobalSummary(currentUser?.hospitalName),
+                getHospitalHandovers(currentUser?.hospitalName)
             ]);
 
             // Filter for high priority/critical patients for the clinical queue
             const allPatients = patientsRes.data?.patients || [];
             setHighPriorityPatients(allPatients);
+            setQueueTotalPages(patientsRes.data?.pages || 1);
 
-            // Extract pending tasks from handovers
-            const tasks = handoversRes.data.flatMap(h => 
-                h.tasks.filter(t => t.status === 'Pending').map(t => ({
-                    ...t,
-                    handoverId: h._id,
-                    type: h.type,
-                    patient: h.patientId,
-                    creator: h.creatorId,
-                    sourceHospital: h.sourceHospital,
-                    assignedUsers: h.assignedUsers
-                }))
-            );
-            setPendingTasks(tasks);
+            // Group handovers/tasks by patient
+            const patientMap = new Map();
+            (handoversRes.data || []).forEach(h => {
+                const pending = (h.tasks || []).filter(t => t.status === 'Pending');
+                if (pending.length === 0) return;
 
+                const patientId = h.patientId?._id;
+                if (!patientId) return;
+
+                if (!patientMap.has(patientId)) {
+                    patientMap.set(patientId, {
+                        patient: h.patientId,
+                        tasks: [],
+                        hasTransfer: false,
+                        sourceHospitals: new Set()
+                    });
+                }
+
+                const entry = patientMap.get(patientId);
+                if (h.type === 'Transfer') entry.hasTransfer = true;
+                if (h.sourceHospital) entry.sourceHospitals.add(h.sourceHospital);
+                
+                pending.forEach(t => {
+                    entry.tasks.push({
+                        ...t,
+                        handoverId: h._id,
+                        type: h.type,
+                        creator: h.creatorId,
+                        assignedUsers: h.assignedUsers,
+                        sourceHospital: h.sourceHospital
+                    });
+                });
+            });
+
+            const groupedPatients = Array.from(patientMap.values());
+            setPendingPatients(groupedPatients);
+
+            const summaryData = summaryRes.data || {};
             setStats({
-                totalPatients: summaryRes.data?.totalPatients || 0,
-                highRiskPatients: allPatients.filter(p => p.clinicalProfile?.triageStatus?.priority === 'CRITICAL').length,
-                pendingFollowUps: tasks.length, 
-                recentAnomalies: 4    // Simulated for now
+                totalPatients: summaryData.totalPatients ?? 0,
+                highRiskPatients: summaryData.highRiskPatients ?? 0,
+                pendingFollowUps: groupedPatients.length, 
+                recentAnomalies: summaryData.recentAnomalies ?? 0
             });
 
         } catch (error) {
             console.error('Failed to load care hub data', error);
-            toast.error('Clinical data sync failed');
+            if (currentUser) {
+                toast.error('Clinical data sync failed');
+            }
         } finally {
             setLoading(false);
         }
@@ -134,7 +170,7 @@ const CareHub = () => {
         try {
             await completeHandoverTask(handoverId, taskId);
             toast.success('Task marked as completed');
-            loadCareData();
+            loadCareData(queuePage);
         } catch (err) {
             toast.error('Failed to update task');
         }
@@ -147,7 +183,7 @@ const CareHub = () => {
             toast.success('Staff assigned to transfer successfully');
             setShowAssignModal(false);
             setSelectedStaff([]);
-            loadCareData();
+            loadCareData(queuePage);
         } catch (err) {
             toast.error('Failed to assign staff');
         }
@@ -210,11 +246,22 @@ const CareHub = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {[
                         { label: 'Active Care Nodes', value: stats.totalPatients, icon: UserGroupIcon, color: 'text-cyber-blue' },
-                        { label: 'Critical Triage', value: stats.highRiskPatients, icon: ExclamationTriangleIcon, color: 'text-red-500' },
+                        { 
+                            label: 'Critical Triage', 
+                            value: stats.highRiskPatients, 
+                            icon: ExclamationTriangleIcon, 
+                            color: 'text-red-500',
+                            clickable: true,
+                            onClick: () => navigate('/patients', { state: { triageFilter: 'CRITICAL' } })
+                        },
                         { label: 'Follow-up Required', value: stats.pendingFollowUps, icon: ClockIcon, color: 'text-orange-500' },
                         { label: 'Vital Anomalies', value: stats.recentAnomalies, icon: ArrowTrendingUpIcon, color: 'text-cyber-green' }
                     ].map((s, i) => (
-                        <div key={i} className="glass-card-modern p-6 border border-white/5 relative overflow-hidden group">
+                        <div 
+                            key={i} 
+                            onClick={s.onClick}
+                            className={`glass-card-modern p-6 border border-white/5 relative overflow-hidden group ${s.clickable ? 'cursor-pointer hover:border-red-500/30 hover:bg-red-500/5' : ''}`}
+                        >
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                                 <s.icon className={`h-12 w-12 ${s.color}`} />
                             </div>
@@ -232,86 +279,110 @@ const CareHub = () => {
                             Shift & Transfer Queue
                         </h2>
                         <span className="text-[10px] font-black px-3 py-1 rounded-full bg-brand-dark-800 text-cyber-blue border border-cyber-blue/20">
-                            {pendingTasks.length} PENDING ACTIONS
+                            {pendingPatients.length} PATIENTS REQUIRING ACTION
                         </span>
                     </div>
 
-                    {pendingTasks.length > 0 ? (
+                    {pendingPatients.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {pendingTasks.map((task, i) => (
+                            {pendingPatients.map((group, i) => (
                                 <div 
                                     key={i} 
-                                    className={`glass-card-modern p-5 border transition-all hover:scale-[1.02] cursor-pointer group ${
-                                        task.type === 'Transfer' ? 'border-cyber-purple/30 bg-cyber-purple/5' : 'border-white/5'
-                                    }`}
-                                    onClick={() => navigate(`/patients/${task.patient._id}`)}
+                                    className={`glass-card-modern border transition-all overflow-hidden ${
+                                        expandedPatientId === group.patient?._id ? 'ring-2 ring-cyber-blue/50' : 'hover:border-white/20'
+                                    } ${group.hasTransfer ? 'border-cyber-purple/30 bg-cyber-purple/5' : 'border-white/5'}`}
                                 >
-                                    <div className="flex justify-between items-start mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg ${task.type === 'Transfer' ? 'bg-cyber-purple/20 text-cyber-purple' : 'bg-cyber-blue/20 text-cyber-blue'}`}>
-                                                {task.type === 'Transfer' ? <ArrowPathRoundedSquareIcon className="h-5 w-5" /> : <ClockIcon className="h-5 w-5" />}
+                                    {/* Patient Header */}
+                                    <div 
+                                        className="p-5 cursor-pointer group"
+                                        onClick={() => setExpandedPatientId(expandedPatientId === group.patient?._id ? null : group.patient?._id)}
+                                    >
+                                        <div className="flex justify-between items-start mb-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`p-2 rounded-lg ${group.hasTransfer ? 'bg-cyber-purple/20 text-cyber-purple' : 'bg-cyber-blue/20 text-cyber-blue'}`}>
+                                                    {group.hasTransfer ? <ArrowPathRoundedSquareIcon className="h-5 w-5" /> : <ClockIcon className="h-5 w-5" />}
+                                                </div>
+                                                <div>
+                                                    <p className="text-xs font-black text-white group-hover:text-cyber-blue transition-colors">
+                                                        {group.patient?.firstName} {group.patient?.lastName}
+                                                    </p>
+                                                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
+                                                        {group.tasks.length} PENDING {group.tasks.length === 1 ? 'TASK' : 'TASKS'}
+                                                    </p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p className="text-xs font-black text-white group-hover:text-cyber-blue transition-colors">
-                                                    {task.patient?.firstName} {task.patient?.lastName}
-                                                </p>
-                                                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">
-                                                    {task.type === 'Transfer' ? `From ${task.sourceHospital}` : 'Internal Shift Task'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${
-                                            task.priority === 'High' ? 'bg-red-500/20 text-red-500' :
-                                            task.priority === 'Medium' ? 'bg-orange-500/20 text-orange-500' :
-                                            'bg-blue-500/20 text-blue-500'
-                                        }`}>
-                                            {task.priority}
-                                        </span>
-                                    </div>
-                                    <p className="text-sm font-bold text-gray-300 mb-4 line-clamp-2">"{task.description}"</p>
-                                    <div className="flex items-center justify-between pt-4 border-t border-white/5">
-                                        <div className="flex flex-col gap-2">
                                             <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-full bg-brand-dark-800 flex items-center justify-center text-[8px] font-black text-gray-500">
-                                                    {task.creator?.firstName[0]}{task.creator?.lastName[0]}
-                                                </div>
-                                                <p className="text-[9px] font-bold text-gray-500 uppercase">By {task.creator?.firstName}</p>
-                                            </div>
-                                            {task.assignedUsers && task.assignedUsers.length > 0 && (
-                                                <div className="flex -space-x-2">
-                                                    {task.assignedUsers.map((user, idx) => (
-                                                        <div key={idx} title={`${user.firstName} ${user.lastName} (${user.role})`} className="w-6 h-6 rounded-full bg-cyber-blue/20 border border-cyber-blue/30 flex items-center justify-center text-[8px] font-black text-cyber-blue">
-                                                            {user.firstName[0]}{user.lastName[0]}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex gap-2">
-                                            {currentUser?.role === 'admin' && task.type === 'Transfer' && (
                                                 <button 
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        setSelectedHandover(task);
-                                                        setShowAssignModal(true);
+                                                        navigate(`/patients/${group.patient._id}`);
                                                     }}
-                                                    className="p-2 rounded-lg bg-cyber-purple/10 text-cyber-purple hover:bg-cyber-purple hover:text-white transition-all"
-                                                    title="Assign Staff"
+                                                    className="p-1.5 rounded-md bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-all"
+                                                    title="View Profile"
                                                 >
-                                                    <UserPlusIcon className="h-4 w-4" />
+                                                    <UserIcon className="h-3.5 w-3.5" />
                                                 </button>
-                                            )}
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleCompleteTask(task.handoverId, task._id);
-                                                }}
-                                                className="p-2 rounded-lg bg-white/5 hover:bg-cyber-green/20 hover:text-cyber-green transition-all"
-                                            >
-                                                <CheckCircleIcon className="h-4 w-4" />
-                                            </button>
+                                                <ChevronRightIcon className={`h-4 w-4 text-gray-500 transition-transform duration-300 ${expandedPatientId === group.patient?._id ? 'rotate-90' : ''}`} />
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex flex-wrap gap-1">
+                                            {Array.from(group.sourceHospitals).map((hosp, idx) => (
+                                                <span key={idx} className="text-[8px] font-black uppercase px-2 py-0.5 rounded bg-brand-dark-800 text-gray-400 border border-white/5">
+                                                    {hosp}
+                                                </span>
+                                            ))}
                                         </div>
                                     </div>
+
+                                    {/* Expandable Task List */}
+                                    {expandedPatientId === group.patient?._id && (
+                                        <div className="bg-black/20 border-t border-white/5 p-4 space-y-3 animate-in slide-in-from-top-2 duration-300">
+                                            {group.tasks.map((task, tidx) => (
+                                                <div key={tidx} className="bg-white/5 rounded-xl p-3 border border-white/5 group/task">
+                                                    <div className="flex justify-between items-start gap-3 mb-2">
+                                                        <p className="text-xs font-bold text-gray-300 leading-tight">"{task.description}"</p>
+                                                        <span className={`text-[7px] font-black uppercase px-1.5 py-0.5 rounded flex-shrink-0 ${
+                                                            task.priority === 'High' ? 'bg-red-500/20 text-red-500' :
+                                                            task.priority === 'Medium' ? 'bg-orange-500/20 text-orange-500' :
+                                                            'bg-blue-500/20 text-blue-500'
+                                                        }`}>
+                                                            {task.priority}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center justify-between mt-3 pt-2 border-t border-white/5">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="w-5 h-5 rounded-full bg-brand-dark-800 flex items-center justify-center text-[7px] font-black text-gray-500 border border-white/5">
+                                                                {task.creator?.firstName[0]}{task.creator?.lastName[0]}
+                                                            </div>
+                                                            <p className="text-[8px] font-bold text-gray-500 uppercase">By {task.creator?.firstName}</p>
+                                                        </div>
+                                                        
+                                                        <div className="flex gap-1.5">
+                                                            {currentUser?.role === 'admin' && task.type === 'Transfer' && (
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        setSelectedHandover({ ...task, _id: task.handoverId, patient: group.patient });
+                                                                        setShowAssignModal(true);
+                                                                    }}
+                                                                    className="p-1.5 rounded-lg bg-cyber-purple/10 text-cyber-purple hover:bg-cyber-purple hover:text-white transition-all"
+                                                                >
+                                                                    <UserPlusIcon className="h-3.5 w-3.5" />
+                                                                </button>
+                                                            )}
+                                                            <button 
+                                                                onClick={() => handleCompleteTask(task.handoverId, task._id)}
+                                                                className="p-1.5 rounded-lg bg-white/5 hover:bg-cyber-green/20 hover:text-cyber-green transition-all"
+                                                            >
+                                                                <CheckCircleIcon className="h-3.5 w-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
@@ -390,7 +461,23 @@ const CareHub = () => {
                                 <ShieldCheckIcon className="h-5 w-5 text-cyber-purple" />
                                 Clinical Priority Queue
                             </h2>
-                            <button className="text-[10px] font-bold text-gray-500 uppercase hover:text-white transition-colors">View All Patients</button>
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => setQueuePage(p => Math.max(1, p - 1))}
+                                    disabled={queuePage === 1}
+                                    className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <ChevronLeftIcon className="h-4 w-4" />
+                                </button>
+                                <span className="text-[10px] font-mono text-gray-500 uppercase">Page {queuePage} of {queueTotalPages}</span>
+                                <button 
+                                    onClick={() => setQueuePage(p => Math.min(queueTotalPages, p + 1))}
+                                    disabled={queuePage === queueTotalPages}
+                                    className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-500 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                                >
+                                    <ChevronRightIcon className="h-4 w-4" />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="space-y-3">
@@ -413,17 +500,22 @@ const CareHub = () => {
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-6">
-                                            {p.clinicalProfile?.vitals?.temperature && (
+                                            {p.clinicalProfile?.vitalSigns?.temperature && (
                                                 <div className="text-right hidden xl:block">
                                                     <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">Last Temp</p>
-                                                    <p className={`text-xs font-black ${p.clinicalProfile.vitals.temperature > 38 ? 'text-red-500' : 'text-gray-400'}`}>
-                                                        {p.clinicalProfile.vitals.temperature}°C
+                                                    <p className={`text-xs font-black ${p.clinicalProfile.vitalSigns.temperature > 38 ? 'text-red-500' : 'text-gray-400'}`}>
+                                                        {p.clinicalProfile.vitalSigns.temperature}°C
                                                     </p>
                                                 </div>
                                             )}
                                             <div className="text-right hidden sm:block">
                                                 <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">Triage Status</p>
-                                                <span className={`text-[10px] font-black uppercase ${p.clinicalProfile?.triageStatus?.priority === 'CRITICAL' ? 'text-red-500' : 'text-cyber-green'}`}>
+                                                <span className={`text-[10px] font-black uppercase ${
+                                                    p.clinicalProfile?.triageStatus?.priority === 'CRITICAL' ? 'text-red-500' :
+                                                    p.clinicalProfile?.triageStatus?.priority === 'EMERGENT' ? 'text-orange-500' :
+                                                    p.clinicalProfile?.triageStatus?.priority === 'URGENT' ? 'text-yellow-500' :
+                                                    'text-cyber-green'
+                                                }`}>
                                                     {p.clinicalProfile?.triageStatus?.priority || 'STABLE'}
                                                 </span>
                                             </div>

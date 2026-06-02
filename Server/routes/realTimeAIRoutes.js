@@ -27,6 +27,11 @@ const {
 } = require("../utils/analyticsHelpers");
 
 const { predictTriagePriority } = require("../utils/triageAI");
+const { 
+    generateClinicalSnapshot, 
+    generateRecordSnapshot,
+    getQuickMetrics
+} = require("../utils/snapshotAI");
 
 // All AI routes require authentication and approval
 router.use(protect, isApproved);
@@ -1126,6 +1131,46 @@ router.post("/refresh", hasPermission("admin"), async (req, res) => {
             enhancedFeatures: ["Vital Signs", "Chronic Conditions", "Family History"]
         });
     } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// ============ CLINICAL SNAPSHOTS ============
+
+// @route   GET /ai/clinical-snapshot/:patientId
+// @desc    Get an AI-generated concise clinical summary for a patient
+// @access  Private
+router.get("/clinical-snapshot/:patientId", protect, async (req, res) => {
+    try {
+        const patient = await Patient.findById(req.params.patientId);
+        if (!patient) return res.status(404).json({ error: "Patient not found" });
+
+        const records = await MedicalRecord.find({ patientId: req.params.patientId })
+            .sort({ visitDate: -1 });
+
+        const summary = generateClinicalSnapshot(patient, records);
+        res.json({
+            summary,
+            quickMetrics: getQuickMetrics(records)
+        });
+    } catch (error) {
+        console.error("Clinical snapshot error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// @route   GET /ai/record-snapshot/:recordId
+// @desc    Get an AI-generated concise summary for a single medical record
+// @access  Private
+router.get("/record-snapshot/:recordId", protect, async (req, res) => {
+    try {
+        const record = await MedicalRecord.findById(req.params.recordId);
+        if (!record) return res.status(404).json({ error: "Record not found" });
+
+        const summary = generateRecordSnapshot(record);
+        res.json({ summary });
+    } catch (error) {
+        console.error("Record snapshot error:", error);
         res.status(500).json({ error: error.message });
     }
 });

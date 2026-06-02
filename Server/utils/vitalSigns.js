@@ -61,6 +61,18 @@ function classifySpO2(percent) {
     return { status: 'NORMAL', level: 'normal', color: 'green' };
 }
 
+function calculateAge(dob) {
+    if (!dob) return null;
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age;
+}
+
 function buildPatientSnapshot(patient, visitDate = new Date()) {
     if (!patient) return null;
     const dob = patient.dateOfBirth ? new Date(patient.dateOfBirth) : null;
@@ -129,6 +141,7 @@ module.exports = {
     classifyBloodPressure,
     classifyHeartRate,
     classifySpO2,
+    calculateAge,
     buildPatientSnapshot,
     normalizeVitalSigns
 };

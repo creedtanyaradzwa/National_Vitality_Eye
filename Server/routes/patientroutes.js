@@ -17,31 +17,42 @@ router.get("/", hasPermission("view:patients"), async (req, res) => {
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
         const search = req.query.search || "";
+        const triage = req.query.triage || "";
 
         // Security: Filter patients created by user or linked via medical records
-        const accessFilter = await getPatientAccessFilter(req.user);
+        const accessFilter = await getPatientAccessFilter(req.user, search);
 
-        // Add search logic
-        let query = accessFilter;
+        // Add search and triage logic
+        const conditions = [];
+        
         if (search) {
-            query = {
-                $and: [
-                    accessFilter,
-                    {
-                        $or: [
-                            { firstName: { $regex: search, $options: "i" } },
-                            { lastName: { $regex: search, $options: "i" } },
-                            { nationalId: { $regex: search, $options: "i" } }
-                        ]
-                    }
+            const searchTerms = search.split(/\s+/).filter(t => t.length > 0);
+            const searchConditions = searchTerms.map(term => ({
+                $or: [
+                    { firstName: { $regex: term, $options: "i" } },
+                    { lastName: { $regex: term, $options: "i" } },
+                    { nationalId: { $regex: term, $options: "i" } }
                 ]
-            };
+            }));
+            
+            if (searchConditions.length > 0) {
+                conditions.push({ $and: searchConditions });
+            }
+        }
+        
+        if (triage) {
+            conditions.push({ 'clinicalProfile.triageStatus.priority': triage });
+        }
+
+        let query = accessFilter;
+        if (conditions.length > 0) {
+            query = { $and: [accessFilter, ...conditions] };
         }
 
         const [patients, total] = await Promise.all([
             Patient.find(query)
-                .select("-clinicalProfile")
-                .sort({ createdAt: -1 })
+                .select("firstName lastName nationalId gender dateOfBirth province district currentHospital createdAt clinicalProfile")
+                .sort(req.query.sortBy === 'priority' ? { 'clinicalProfile.triageStatus.score': -1, createdAt: -1 } : { createdAt: -1 })
                 .skip(skip)
                 .limit(limit),
             Patient.countDocuments(query)
@@ -59,10 +70,10 @@ router.get("/", hasPermission("view:patients"), async (req, res) => {
 });
 
 // Helper for patient access filtering
-async function getPatientAccessFilter(user) {
+async function getPatientAccessFilter(user, searchTerm = "") {
     if (user.role === 'admin') return {};
 
-    // Get IDs of patients from medical records created by or tagged to the user
+    // Base filter: patients at their hospital or they have a record for
     const MedicalRecord = require("../models/MedicalRecord");
     const recordPatients = await MedicalRecord.distinct("patientId", {
         $or: [
@@ -71,13 +82,27 @@ async function getPatientAccessFilter(user) {
         ]
     });
 
-    return {
-        $or: [
-            { createdBy: user._id },
-            { _id: { $in: recordPatients } },
-            { currentHospital: user.hospitalName }
-        ]
-    };
+    const standardConditions = [
+        { createdBy: user._id },
+        { _id: { $in: recordPatients } },
+        { currentHospital: user.hospitalName }
+    ];
+
+    // If there's a search term that looks like a National ID (contains hyphens or numbers)
+    // OR if the user is explicitly searching, allow searching across ALL patients
+    // but only if they are not a 'patient' role.
+    if (searchTerm && user.role !== 'patient') {
+        // Broaden access for search terms to allow finding patients for admission/registration
+        return { $or: [
+            ...standardConditions,
+            { nationalId: { $regex: searchTerm, $options: "i" } },
+            // Also allow finding by name if it's a specific search
+            { firstName: { $regex: searchTerm, $options: "i" } },
+            { lastName: { $regex: searchTerm, $options: "i" } }
+        ] };
+    }
+
+    return { $or: standardConditions };
 }
 
 // POST create patient

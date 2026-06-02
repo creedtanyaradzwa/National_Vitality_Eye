@@ -63,4 +63,15 @@ const handoverSchema = new mongoose.Schema({
 // Index for performance
 handoverSchema.index({ patientId: 1, createdAt: -1 });
 
+const { normaliseHospital } = require("../utils/normalise");
+
+handoverSchema.pre("save", async function() {
+    if (this.sourceHospital) {
+        this.sourceHospital = normaliseHospital(this.sourceHospital);
+    }
+    if (this.targetHospital) {
+        this.targetHospital = normaliseHospital(this.targetHospital);
+    }
+});
+
 module.exports = mongoose.model("Handover", handoverSchema);

@@ -5,170 +5,25 @@ import { saveOfflineOperation, isOnline, syncPendingOperations } from '../utils/
 const API = axios.create({
     baseURL: 'http://localhost:5000',
     headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
     }
 });
 
-// Add token to requests
+// Add auth token to every request
 API.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
-    return config;
-});
-
-// ============ AUTH ============
-export const login = (data) => API.post('/api/auth/login', data);
-export const getProfile = () => API.get('/api/auth/profile');
-export const changePassword = (data) => API.post('/api/auth/change-password', data);
-
-// ============ ADMIN ============
-export const getPendingUsers = () => API.get('/api/auth/admin/pending-users');
-export const processApproval = (userId, data) => API.post(`/api/auth/admin/process-approval/${userId}`, data);
-export const getAllUsers = () => API.get('/api/auth/admin/users');
-export const toggleUserStatus = (userId) => API.patch(`/api/auth/admin/users/${userId}/toggle-status`);
-export const changeUserRole = (userId, newRole) => API.patch(`/api/auth/admin/users/${userId}/change-role`, { newRole });
-export const getUserDocuments = (userId) => API.get(`/api/auth/admin/users/${userId}/documents`);
-
-// ============ PATIENTS ============
-export const getPatients = (page = 1, limit = 10, search = "") => API.get(`/patients?page=${page}&limit=${limit}&search=${search}`);
-export const getPatient = (id) => API.get(`/patients/${id}`);
-export const getPatientByNationalId = (nationalId) => API.get(`/patients/national/${nationalId}`);
-export const createPatient = (data) => API.post('/patients', data);
-export const updatePatient = (id, data) => API.patch(`/patients/${id}`, data);
-export const deletePatient = (id) => API.delete(`/patients/${id}`);
-
-// ============ CLINICAL PROFILE ============
-export const getClinicalProfile = (id) => API.get(`/patients/${id}/clinical-profile`);
-export const updateClinicalProfile = (id, data) => API.patch(`/patients/${id}/clinical-profile`, data);
-export const addChronicCondition = (id, data) => API.post(`/patients/${id}/chronic-condition`, data);
-export const addAllergy = (id, data) => API.post(`/patients/${id}/allergy`, data);
-export const addMedication = (id, data) => API.post(`/patients/${id}/medication`, data);
-export const updateVitalSigns = (id, data) => API.patch(`/patients/${id}/vital-signs`, data);
-export const addRiskFactor = (id, data) => API.post(`/patients/${id}/risk-factor`, data);
-
-// ============ MEDICAL RECORDS ============
-export const getMedicalRecords = (page = 1, limit = 10) => API.get(`/medical-records?page=${page}&limit=${limit}`);
-export const getPatientRecords = (patientId) => API.get(`/medical-records/patient/${patientId}`);
-export const createMedicalRecord = (data) => API.post('/medical-records', data);
-export const updateMedicalRecord = (id, data) => API.patch(`/medical-records/${id}`, data);
-export const deleteMedicalRecord = (id) => API.delete(`/medical-records/${id}`);
-export const getHospitalStaff = () => API.get('/medical-records/staff');
-export const getClinicalStaff = getHospitalStaff; // Alias for resilience
-export const uploadRadiologyImages = (patientId, studyType, files) => {
-    const formData = new FormData();
-    formData.append('patientId', patientId);
-    formData.append('studyType', studyType || 'radiology');
-    (files || []).forEach((file) => formData.append('images', file));
-    return API.post('/medical-records/upload/radiology-images', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    });
-};
-
-// ============ STATISTICS ============
-export const getGlobalSummary = () => API.get('/medical-records/stats/summary');
-export const getTopDiseases = () => API.get('/medical-records/stats/top-diseases');
-export const getAllDiseases = () => API.get('/medical-records/stats/all-diseases');
-export const getSystemLoad = () => {
-    const url = `/medical-records/stats/system-load`;
-    return API.get(url);
-};
-// GET province statistics with optional period and disease filter
-export const getProvinceStats = (period = 'all', disease = '') => {
-    const params = new URLSearchParams({ period });
-    if (disease && disease !== 'All Diseases') params.append('disease', disease);
-    return API.get(`/medical-records/stats/by-province?${params.toString()}`).then((res) => {
-        const payload = res.data;
-        if (Array.isArray(payload)) {
-            return {
-                ...res,
-                data: {
-                    provinces: payload.map((p) => ({
-                        ...p,
-                        total: p.total ?? p.count ?? 0
-                    })),
-                    summary: null
-                }
-            };
-        }
-        const provinces = (payload?.provinces || []).map((p) => ({
-            ...p,
-            total: p.total ?? p.count ?? 0
-        }));
-        return { ...res, data: { provinces, summary: payload?.summary ?? null } };
-    });
-};
-// GET deep analytics for a specific disease
-export const getDiseaseAnalytics = (disease, period = 'all') => {
-    const params = new URLSearchParams({ period });
-    return API.get(`/medical-records/stats/disease-analytics/${encodeURIComponent(disease)}?${params}`);
-};
-export const getMonthlyTrends = () => API.get('/medical-records/stats/monthly-trends');
-export const getGrowthRate    = () => API.get('/medical-records/stats/growth-rate');
-export const getPrevalence    = () => API.get('/medical-records/stats/prevalence');
-
-// ============ AI ============
-export const getAIStatus = () => API.get('/ai/status');
-export const getAISymptoms = () => API.get('/ai/symptoms');
-export const predictDisease = (data) => API.post('/ai/predict', data);
-export const getAlerts = () => API.get('/ai/alerts');
-export const getPatientRisk = (patientId) => API.get(`/ai/risk/${patientId}`);
-export const getDiseaseTrends = (disease) => API.get(`/medical-records/stats/disease-trends/${encodeURIComponent(disease)}`);
-export const getDiseaseInsights = (disease, period = 'all') => {
-    const params = new URLSearchParams({ period });
-    return API.get(`/ai/disease-insights/${encodeURIComponent(disease)}?${params}`);
-};
-export const getAIStats = () => API.get('/ai/stats');
-export const getClinicalSnapshot = (patientId) => API.get(`/ai/clinical-snapshot/${patientId}`);
-export const getRecordSnapshot = (recordId) => API.get(`/ai/record-snapshot/${recordId}`);
-export const getAnomalyDetection = (patientId, currentVitals = {}) => API.post(`/ai/anomaly-detection/${patientId}`, { currentVitals });
-export const getSimilarPatients = (patientId, limit = 10) => API.post(`/ai/similar-patients/${patientId}`, { limit });
-export const getPatientTriage = (patientId) => API.get(`/ai/patient-triage/${patientId}`);
-export const predictTriage = (data) => API.post('/ai/predict-triage', data);
-export const refreshAI = () => API.post('/ai/refresh');
-export const getPatientCount = () => API.get('/patients/stats/count');
-// Register new user with documents
-export const registerUser = (formData) => {
-    return API.post('/api/auth/register', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-    });
-};
-// Get vitals history for a patient
-export const getPatientVitalsHistory = (patientId) => API.get(`/medical-records/patient/${patientId}/vitals-history`);
-// Get latest vital signs for a patient
-export const getLatestVitals = (patientId) => API.get(`/medical-records/patient/${patientId}/latest-vitals`);
-
-// Add to your existing api.js file
-
-
-// Add request interceptor for offline handling
-API.interceptors.request.use(async (config) => {
-    // Skip offline handling for GET requests (they use cache)
-    if (config.method === 'get') return config;
     
-    // If offline, save to IndexedDB for later sync
-    if (!isOnline()) {
-        console.log('Offline: Saving operation for later sync', config);
-        
-        await saveOfflineOperation({
-            url: config.url,
-            method: config.method,
-            body: config.data
-        });
-        
-        // Return a custom response indicating offline save
-        return Promise.reject({
-            response: {
-                data: { 
-                    offline: true, 
-                    message: 'Saved offline. Will sync when online.' 
-                },
-                status: 202
-            }
-        });
+    // Gap: Offline Resilience - Check connectivity
+    if (!isOnline() && config.method !== 'get') {
+        const operationId = saveOfflineOperation(config.url, config.method, config.data);
+        // Throw a special error that the frontend can catch
+        const error = new Error('OFFLINE_SAVED');
+        error.offline = true;
+        error.operationId = operationId;
+        return Promise.reject(error);
     }
     
     return config;
@@ -193,6 +48,98 @@ export const syncOfflineData = async () => {
 
 // Add function to check offline status
 export const getOnlineStatus = () => isOnline();
+
+// ============ AUTH ============
+export const login = (data) => API.post('/api/auth/login', data);
+export const register = (data) => API.post('/api/auth/register', data);
+export const registerUser = (formData) => API.post('/api/auth/register', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+});
+export const getProfile = () => API.get('/api/auth/profile');
+export const updateProfile = (data) => API.patch('/api/auth/profile', data);
+export const changePassword = (data) => API.post('/api/auth/change-password', data);
+export const getStaffByHospital = (hospital) => API.get(`/api/auth/staff?hospital=${encodeURIComponent(hospital)}`);
+
+// ============ ADMIN (AUTH-BASED) ============
+export const getPendingUsers = () => API.get('/api/auth/admin/pending-users');
+export const processApproval = (userId, data) => API.post(`/api/auth/admin/process-approval/${userId}`, data);
+export const getAllUsers = () => API.get('/api/auth/admin/users');
+export const toggleUserStatus = (userId) => API.patch(`/api/auth/admin/users/${userId}/toggle-status`);
+export const changeUserRole = (userId, newRole) => API.patch(`/api/auth/admin/users/${userId}/change-role`, { newRole });
+export const getUserDocuments = (userId) => API.get(`/api/auth/admin/users/${userId}/documents`);
+
+// ============ PATIENTS ============
+export const getPatients = (page = 1, limit = 10, search = "", sortBy = "", triage = "") => {
+    let url = `/patients?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`;
+    if (sortBy) url += `&sortBy=${sortBy}`;
+    if (triage) url += `&triage=${triage}`;
+    return API.get(url);
+};
+export const getPatient = (id) => API.get(`/patients/${id}`);
+export const createPatient = (data) => API.post('/patients', data);
+export const updatePatient = (id, data) => API.patch(`/patients/${id}`, data);
+export const deletePatient = (id) => API.delete(`/patients/${id}`);
+export const getPatientByNationalId = (id) => API.get(`/patients/id/${id}`);
+export const getClinicalProfile = (id) => API.get(`/patients/${id}/clinical-profile`);
+export const updateClinicalProfile = (id, data) => API.patch(`/patients/${id}/clinical-profile`, data);
+export const addChronicCondition = (id, data) => API.post(`/patients/${id}/chronic-condition`, data);
+export const addAllergy = (id, data) => API.post(`/patients/${id}/allergy`, data);
+export const addMedication = (id, data) => API.post(`/patients/${id}/medication`, data);
+export const updateVitalSigns = (id, data) => API.patch(`/patients/${id}/vital-signs`, data);
+export const addRiskFactor = (id, data) => API.post(`/patients/${id}/risk-factor`, data);
+
+// ============ MEDICAL RECORDS ============
+export const getMedicalRecords = (page = 1, limit = 10, search = "") => 
+    API.get(`/medical-records?page=${page}&limit=${limit}&search=${encodeURIComponent(search)}`);
+export const getPatientRecords = (patientId) => API.get(`/medical-records/patient/${patientId}`);
+export const getPatientVitalsHistory = (patientId) => API.get(`/medical-records/patient/${patientId}/vitals-history`);
+export const createMedicalRecord = (data) => API.post('/medical-records', data);
+export const updateMedicalRecord = (id, data) => API.patch(`/medical-records/${id}`, data);
+export const deleteMedicalRecord = (id) => API.delete(`/medical-records/${id}`);
+export const getMedicalRecordById = (id) => API.get(`/medical-records/${id}`);
+export const uploadRadiologyImages = (patientId, studyType, files) => {
+    const formData = new FormData();
+    formData.append('patientId', patientId);
+    formData.append('studyType', studyType || 'radiology');
+    (files || []).forEach((file) => formData.append('images', file));
+    return API.post('/medical-records/upload/radiology-images', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+};
+// ============ ANALYTICS ============
+export const getPatientCount = () => API.get('/medical-records/stats/patient-count');
+export const getTopDiseases = () => API.get('/medical-records/stats/top-diseases');
+export const getAllDiseases = () => API.get('/medical-records/stats/all-diseases');
+export const getProvinceStats = () => API.get('/medical-records/stats/provinces');
+export const getDiseaseInsights = (disease) => API.get(`/medical-records/stats/disease-insights?disease=${encodeURIComponent(disease)}`);
+export const getDiseaseAnalytics = (disease) => API.get(`/medical-records/stats/disease-analytics?disease=${encodeURIComponent(disease)}`);
+export const getMonthlyTrends = (disease) => API.get(`/medical-records/stats/monthly-trends?disease=${encodeURIComponent(disease)}`);
+export const getGlobalSummary = (hospital = "") => {
+
+    let url = '/medical-records/stats/summary';
+    if (hospital) url += `?hospital=${encodeURIComponent(hospital)}`;
+    return API.get(url);
+};
+export const getSystemLoad = () => API.get('/medical-records/stats/system-load');
+export const getAIStats = () => API.get('/ai/stats');
+export const getDiseaseTrends = (disease) => API.get(`/medical-records/stats/disease-trends/${encodeURIComponent(disease)}`);
+export const getPrevalence = () => API.get('/medical-records/stats/prevalence');
+export const getGrowthRate = () => API.get('/medical-records/stats/growth-rate');
+
+// ============ ALERTS ============
+export const getAlerts = () => API.get('/api/alerts');
+export const refreshAI = () => API.post('/ai/refresh');
+
+// ============ PATIENT PORTAL ============
+export const getPatientPortalProfile = () => API.get('/api/patient-portal/profile');
+export const getPatientPortalRecords = () => API.get('/api/patient-portal/records');
+export const getPatientPortalVitals = () => API.get('/api/patient-portal/vitals');
+export const getPatientPortalTrustedProviders = () => API.get('/api/patient-portal/trusted-providers');
+export const addPatientPortalTrustedProvider = (providerId) => API.post('/api/patient-portal/trusted-providers', { providerId });
+export const removePatientPortalTrustedProvider = (providerId) => API.delete(`/api/patient-portal/trusted-providers/${providerId}`);
+export const getPatientPortalDashboard = () => API.get('/api/patient-portal/dashboard');
+export const updatePatientPortalVitals = (vitals) => API.patch('/api/patient-portal/vitals', { vitals });
+
 // ============ PATIENT MANAGEMENT (ADMIN) ============
 export const getAllPatientsWithPortal = () => API.get('/patients/admin/all');
 export const getPatientWithPortalDetails = (id) => API.get(`/patients/admin/${id}`);
@@ -208,12 +155,35 @@ export const getPatientAuditLog = (id) =>
     API.get(`/patients/admin/${id}/audit`);
 
 // ============ HANDOVERS & CARE HUB ============
-export const getHospitalHandovers = () => API.get('/api/handovers/my-hospital');
+export const getHospitalHandovers = (hospitalName = "") => {
+    let url = '/api/handovers/my-hospital';
+    if (hospitalName) url += `?hospital=${encodeURIComponent(hospitalName)}`;
+    return API.get(url);
+};
 export const getPatientHandovers = (patientId) => API.get(`/api/handovers/patient/${patientId}`);
 export const createHandover = (data) => API.post('/api/handovers', data);
-export const assignHandoverStaff = (handoverId, assignedUsers) => API.patch(`/api/handovers/${handoverId}/assign`, { assignedUsers });
 export const completeHandoverTask = (handoverId, taskId, status = 'Completed') => 
     API.patch(`/api/handovers/${handoverId}/task/${taskId}`, { status });
 export const getPendingTaskCount = () => API.get('/api/handovers/pending-count');
+export const getHospitalStaff = (hospitalName = "") => API.get(`/api/auth/staff${hospitalName ? `?hospital=${encodeURIComponent(hospitalName)}` : ''}`);
+export const assignHandoverStaff = (handoverId, userIds) => API.patch(`/api/handovers/${handoverId}/assign`, { userIds });
+
+// ============ AI FEATURES ============
+export const getClinicalSnapshot = (patientId) => API.get(`/ai/clinical-snapshot/${patientId}`);
+export const getRecordSnapshot = (recordId) => API.get(`/ai/record-snapshot/${recordId}`);
+export const getPatientTriage = (patientId, data = null) => 
+    data ? API.post('/api/ai/predict-triage', data) : API.get(`/api/ai/patient-triage/${patientId}`);
+export const getPatientAnomalies = (patientId, currentVitals = null) => 
+    API.post(`/api/ai/anomaly-detection/${patientId}`, { currentVitals });
+export const getAnomalyDetection = getPatientAnomalies;
+export const getPatientSimilarPatients = (patientId) => API.post(`/api/ai/similar-patients/${patientId}`);
+export const getSimilarPatients = getPatientSimilarPatients;
+export const getRecordProgress = (recordId) => API.get(`/api/ai/record-progress/${recordId}`);
+export const getClinicalRisk = (patientId) => API.get(`/api/ai/clinical-risk/${patientId}`);
+export const getAIStatus = () => API.get('/ai/status');
+export const predictDisease = (data) => API.post('/ai/predict', data);
+export const getPatientRisk = (patientId) => API.get(`/ai/risk/${patientId}`);
+export const getAISymptoms = () => API.get('/ai/symptoms');
+
 
 export default API;

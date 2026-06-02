@@ -89,28 +89,65 @@ class OutbreakDetector {
         
         // Water-borne detection
         if (lower.includes('cholera') || lower.includes('typhoid') || lower.includes('diarrhea') || lower.includes('shigella') || lower.includes('dysentery')) {
-            recs.push("💧 BOIL all drinking water or use water purification tablets.");
-            recs.push("🧼 Wash hands with soap before handling food.");
-            recs.push("🚫 Avoid eating raw vegetables or unpeeled fruit in affected areas.");
+            recs.push("Immediate community-wide water quality assessment and implementation of point-of-use chlorination.");
+            recs.push("Launch targeted hand-washing awareness campaigns focused on fecal-oral transmission pathways.");
+            recs.push("Establish rapid rehydration centers and ensure adequate supply of Oral Rehydration Salts (ORS) and IV fluids.");
         }
 
         // Respiratory
         if (lower.includes('tb') || lower.includes('influenza') || lower.includes('covid') || lower.includes('measles') || lower.includes('pneumonia')) {
-            recs.push("😷 Wear a face mask in crowded indoor spaces.");
-            recs.push("🪟 Ensure proper ventilation by opening windows.");
+            recs.push("Mandatory droplet precaution protocols in healthcare settings and public transport hubs.");
+            recs.push("Activate contact tracing for all laboratory-confirmed cases to identify potential transmission clusters.");
+            recs.push("Conduct community screening for high-risk individuals showing persistent respiratory symptoms.");
         }
 
         // Vector-borne
         if (lower.includes('malaria') || lower.includes('plasmodium')) {
-            recs.push("🦟 Sleep under treated mosquito nets.");
-            recs.push("🧴 Use insect repellent during evening hours.");
+            recs.push("Distribution of Long-Lasting Insecticidal Nets (LLINs) in identified hotspot sectors.");
+            recs.push("Initiate Indoor Residual Spraying (IRS) in high-density residential areas showing elevated transmission rates.");
+            recs.push("Verify availability of Artemisinin-based Combination Therapy (ACT) at local primary care centers.");
         }
 
         if (recs.length === 0) {
-            recs.push("🏥 Report to the nearest health facility if symptoms persist.");
+            recs.push("Enhanced surveillance and clinical monitoring to establish definitive transmission patterns.");
         }
 
         return recs;
+    }
+
+    generateClinicalJustification(disease, data, location) {
+        const { weightedCount, rawCount, envFactors, hasCitizenSignal, stats, isCritical } = data;
+        const reasoning = [];
+        
+        // 1. Pathogen Risk Assessment
+        if (isCritical) {
+            reasoning.push(`Identified pathogen (${disease}) carries high epidemic potential requiring zero-tolerance surveillance protocols.`);
+        } else if (stats && stats.score > 0.8) {
+            reasoning.push(`Aggregated clinical incidence reflects a significant statistical deviation from established regional baselines.`);
+        }
+
+        // 2. Transmission & Environment
+        if (envFactors && envFactors.length > 0) {
+            reasoning.push(`Coincident environmental triggers detected: ${envFactors.join(', ')}. These factors significantly elevate the probability of secondary transmission chains.`);
+        }
+
+        // 3. Community Signal Integration
+        if (hasCitizenSignal) {
+            reasoning.push(`Corroborating symptomatic reports from the community validate the clinical findings, suggesting undocumented localized clusters.`);
+        }
+
+        // 4. Clinical Severity
+        if (weightedCount > rawCount * 2) {
+            reasoning.push(`High ratio of laboratory-confirmed cases indicates a matured transmission phase with established infectivity.`);
+        }
+
+        const summary = `Surveillance protocols have identified an acute anomaly for ${disease} in ${location.district || location.province}. Clinical data demonstrates a ${stats?.increase || 'sustained'}% increase over the 8-week moving average, complicated by environmental and community-sourced signals.`;
+
+        return {
+            summary,
+            reasoning,
+            evidenceBase: isCritical ? "National Critical Pathogen Surveillance Guidelines" : "Statistical Anomaly Detection Framework (Z-Score Analysis)"
+        };
     }
 
     async runFullCheck() {
@@ -228,6 +265,8 @@ class OutbreakDetector {
             source: "EDLIZ (National Medicine Formulary) 2024"
         } : null;
 
+        const clinicalJustification = this.generateClinicalJustification(disease, data, locationInfo);
+
         if (!alert) {
             // NEW ALERT (Strike 1)
             alert = new Alert({
@@ -246,6 +285,7 @@ class OutbreakDetector {
                     environmentalFactors: data.envFactors,
                     hasCitizenSignal: data.hasCitizenSignal
                 },
+                clinicalJustification,
                 patientIds: data.patientIds,
                 protocol: protocolData,
                 recommendations: this.getRecommendations(disease)
@@ -270,6 +310,7 @@ class OutbreakDetector {
                 rawCount: data.rawCount,
                 score: data.stats?.score || alert.metrics.score
             };
+            alert.clinicalJustification = clinicalJustification;
             alert.patientIds = [...new Set([...alert.patientIds, ...data.patientIds])];
             await alert.save();
             
@@ -340,6 +381,7 @@ class OutbreakDetector {
             forcePush,
             timestamp: alert.lastSeen,
             recommendations: alert.recommendations,
+            clinicalJustification: alert.clinicalJustification,
             data: {
                 currentCases: alert.metrics.rawCount,
                 weightedCases: alert.metrics.weightedCount,

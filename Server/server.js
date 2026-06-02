@@ -13,6 +13,7 @@ const medicalRoutes = require("./routes/medicalRoutes");
 const patientPortalRoutes = require("./routes/patientPortalRoutes");
 const handoverRoutes = require("./routes/handoverRoutes");
 const citizenReportRoutes = require("./routes/citizenReportRoutes");
+const aiFeaturesRoutes = require("./routes/aiFeaturesRoutes");
 const { router: realTimeAIRoutes, setAIInstance } = require("./routes/realTimeAIRoutes");
 const ContinuousLearner = require("./ai/continuousLearner");
 const AlertEmitter = require("./ai/alertEmitter");
@@ -123,6 +124,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // ============ ROUTES ============
 app.use("/api/handovers", handoverRoutes);
 app.use("/api/auth", authRoutes);
+app.use("/api/ai", aiFeaturesRoutes);
 app.use("/patients", patientRoutes);
 app.use("/medical-records", medicalRoutes);
 app.use("/api/patient/surveillance", citizenReportRoutes);

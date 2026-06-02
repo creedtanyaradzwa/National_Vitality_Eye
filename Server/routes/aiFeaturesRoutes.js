@@ -6,6 +6,7 @@ const { protect } = require("../middleware/auth");
 const { hasPermission, isApproved } = require("../middleware/rbac");
 const { predictTriagePriority } = require("../utils/triageAI");
 const { generateClinicalSnapshot, generateRecordSnapshot, getQuickMetrics } = require("../utils/snapshotAI");
+const { analyzeRecordProgress } = require("../utils/progressAI");
 
 // All routes require authentication
 router.use(protect, isApproved);
@@ -102,6 +103,75 @@ router.get("/patient-triage/:patientId", hasPermission("view:analytics"), async 
     }
 });
 
+// ============ CLINICAL RISK ASSESSMENT ============
+
+router.get("/clinical-risk/:patientId", hasPermission("view:analytics"), async (req, res) => {
+    try {
+        const patient = await Patient.findById(req.params.patientId);
+        if (!patient) return res.status(404).json({ error: "Patient not found" });
+
+        const records = await MedicalRecord.find({ patientId: req.params.patientId })
+            .sort({ visitDate: -1 })
+            .limit(10);
+
+        const age = patient.age;
+        const chronicCount = patient.clinicalProfile?.chronicConditions?.length || 0;
+        const latestVitals = records[0]?.vitalSigns || {};
+        const riskFactors = patient.clinicalProfile?.riskFactors || [];
+
+        let riskScore = 0;
+        const insights = [];
+
+        // 1. Demographic Risk
+        if (age > 65) {
+            riskScore += 25;
+            insights.push("Geriatric baseline risk: Elevated susceptibility to acute physiological decompensation.");
+        } else if (age < 5) {
+            riskScore += 20;
+            insights.push("Pediatric baseline risk: Rapid clinical progression potential observed in this age group.");
+        }
+
+        // 2. Comorbidity Burden
+        if (chronicCount >= 3) {
+            riskScore += 30;
+            insights.push(`High comorbidity burden (${chronicCount} active conditions): Significant risk for multi-system failure.`);
+        } else if (chronicCount > 0) {
+            riskScore += 15;
+            insights.push("Existing chronic conditions present: Requires careful management of therapeutic interactions.");
+        }
+
+        // 3. Physiological Instability (Vitals)
+        if (latestVitals.temperature > 39 || latestVitals.temperature < 35.5) {
+            riskScore += 20;
+            insights.push("Active thermoregulatory dysfunction: Suggestive of acute systemic stress.");
+        }
+        if (latestVitals.oxygenSaturation && latestVitals.oxygenSaturation < 92) {
+            riskScore += 25;
+            insights.push("Hypoxemic state detected: Critical risk for respiratory failure.");
+        }
+
+        // 4. Behavioral/Environmental Risk Factors (Data-driven)
+        riskFactors.forEach(rf => {
+            if (rf.severity === 'High') riskScore += 15;
+            else if (rf.severity === 'Moderate') riskScore += 8;
+            insights.push(`Documented risk factor (${rf.factor}): ${rf.notes || 'Clinical impact assessment pending.'}`);
+        });
+
+        const riskLevel = riskScore >= 75 ? "CRITICAL" : riskScore >= 50 ? "HIGH" : riskScore >= 25 ? "MODERATE" : "LOW";
+        
+        res.json({
+            patientId: patient._id,
+            riskScore: Math.min(riskScore, 100),
+            riskLevel,
+            insights,
+            lastAssessment: new Date()
+        });
+    } catch (error) {
+        console.error("Clinical risk error:", error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // ============ HELPER FUNCTIONS ============
 
 // Calculate statistical metrics
@@ -178,70 +248,77 @@ router.post("/anomaly-detection/:patientId", hasPermission("view:analytics"), as
             const o2Stats = calculateStats(o2s);
             const respStats = calculateStats(respiratoryRates);
             
-            // 1. Temperature Anomaly (2 standard deviations)
+            // 1. Temperature Anomaly
             if (currentVitals.temperature && tempStats.stdDev && tempStats.stdDev > 0) {
                 const zScore = Math.abs(currentVitals.temperature - tempStats.avg) / tempStats.stdDev;
                 if (zScore > 2) {
+                    const isHigh = currentVitals.temperature > tempStats.avg;
                     anomalies.push({
-                        type: "TEMPERATURE_ANOMALY",
+                        type: "THERMOREGULATORY_DYSFUNCTION",
                         severity: zScore > 3 ? "HIGH" : "MEDIUM",
-                        currentValue: currentVitals.temperature,
-                        expectedRange: { min: tempStats.avg - tempStats.stdDev, max: tempStats.avg + tempStats.stdDev },
-                        zScore: zScore.toFixed(2),
-                        message: `Temperature ${currentVitals.temperature}°C is ${zScore.toFixed(1)} std dev from mean (${tempStats.avg.toFixed(1)}°C)`,
-                        action: zScore > 3 ? "Immediate clinical review required" : "Monitor temperature closely",
-                        clinicalSignificance: currentVitals.temperature > 38.5 ? "Possible fever/infection" : currentVitals.temperature < 36.0 ? "Possible hypothermia" : "Monitor"
+                        currentValue: `${currentVitals.temperature}°C`,
+                        message: isHigh 
+                            ? `Acute Hyperpyrexia detected: ${currentVitals.temperature}°C. This value represents a significant pathological elevation from the patient's baseline mean (${tempStats.avg.toFixed(1)}°C).`
+                            : `Clinically significant Hypothermia detected: ${currentVitals.temperature}°C. Physiological core temperature is markedly below established baseline parameters.`,
+                        clinicalInsight: isHigh
+                            ? "This presentation is highly suggestive of an acute systemic inflammatory response or infectious process requiring diagnostic evaluation for sepsis or localized infection."
+                            : "Patient demonstrates significant thermoregulatory failure. Evaluate for environmental exposure, metabolic dysfunction, or advanced systemic collapse.",
+                        action: zScore > 3 ? "Immediate clinical intervention and septic workup recommended." : "Continue intensive thermal monitoring and initiate baseline investigation."
                     });
                 }
             }
             
-            // 2. Heart Rate Anomaly (2 standard deviations)
+            // 2. Heart Rate Anomaly
             if (currentVitals.heartRate && hrStats.stdDev && hrStats.stdDev > 0) {
                 const zScore = Math.abs(currentVitals.heartRate - hrStats.avg) / hrStats.stdDev;
                 if (zScore > 2) {
+                    const isHigh = currentVitals.heartRate > hrStats.avg;
                     anomalies.push({
-                        type: "HEART_RATE_ANOMALY",
+                        type: "CARDIAC_RHYTHM_DEVIATION",
                         severity: zScore > 3 ? "HIGH" : "MEDIUM",
-                        currentValue: currentVitals.heartRate,
-                        expectedRange: { min: hrStats.avg - hrStats.stdDev, max: hrStats.avg + hrStats.stdDev },
-                        zScore: zScore.toFixed(2),
-                        message: `Heart rate ${currentVitals.heartRate} bpm is ${zScore.toFixed(1)} std dev from mean (${Math.round(hrStats.avg)} bpm)`,
-                        action: zScore > 3 ? "ECG and cardiac assessment recommended" : "Re-check in 30 minutes",
-                        clinicalSignificance: currentVitals.heartRate > 120 ? "Possible tachycardia" : currentVitals.heartRate < 50 ? "Possible bradycardia" : "Monitor"
+                        currentValue: `${currentVitals.heartRate} BPM`,
+                        message: isHigh
+                            ? `Severe Sinus Tachycardia (${currentVitals.heartRate} bpm). Cardiac rate is substantially elevated beyond the patient's stable baseline.`
+                            : `Clinically significant Bradycardia (${currentVitals.heartRate} bpm). Myocardial conduction or metabolic suppression may be present.`,
+                        clinicalInsight: isHigh
+                            ? "Profound tachycardia often correlates with acute pain, hypovolemia, fever, or primary cardiac stress. A persistent rate at this level requires hemodynamic evaluation."
+                            : "Reduced cardiac output risk detected. Evaluate for potential drug toxicity, electrolyte imbalance (e.g., hyperkalemia), or sinoatrial node dysfunction.",
+                        action: "Perform 12-lead ECG and evaluate hemodynamic stability."
                     });
                 }
             }
             
-            // 3. Systolic BP Anomaly (2 standard deviations)
+            // 3. Systolic BP Anomaly
             if (currentVitals.bloodPressure?.systolic && systolicStats.stdDev && systolicStats.stdDev > 0) {
                 const zScore = Math.abs(currentVitals.bloodPressure.systolic - systolicStats.avg) / systolicStats.stdDev;
                 if (zScore > 2) {
+                    const isHigh = currentVitals.bloodPressure.systolic > systolicStats.avg;
                     anomalies.push({
-                        type: "BLOOD_PRESSURE_ANOMALY",
+                        type: "HEMODYNAMIC_INSTABILITY",
                         severity: zScore > 3 ? "HIGH" : "MEDIUM",
-                        currentValue: `${currentVitals.bloodPressure.systolic}/${currentVitals.bloodPressure.diastolic || '?'}`,
-                        expectedRange: { min: systolicStats.avg - systolicStats.stdDev, max: systolicStats.avg + systolicStats.stdDev },
-                        zScore: zScore.toFixed(2),
-                        message: `Systolic BP ${currentVitals.bloodPressure.systolic} mmHg is ${zScore.toFixed(1)} std dev from mean (${Math.round(systolicStats.avg)} mmHg)`,
-                        action: zScore > 3 ? "Immediate BP medication review" : "Monitor BP daily",
-                        clinicalSignificance: currentVitals.bloodPressure.systolic > 160 ? "Hypertensive urgency" : currentVitals.bloodPressure.systolic < 90 ? "Hypotension risk" : "Monitor"
+                        currentValue: `${currentVitals.bloodPressure.systolic} mmHg`,
+                        message: isHigh
+                            ? `Hypertensive Crisis potential: Systolic BP ${currentVitals.bloodPressure.systolic} mmHg is acutely elevated relative to historical norms.`
+                            : `Critical Hypotension detected: Systolic BP ${currentVitals.bloodPressure.systolic} mmHg indicates potential hypoperfusion state.`,
+                        clinicalInsight: isHigh
+                            ? "Acute elevation in systolic pressure increases risk for cardiovascular accidents (CVA) or end-organ damage. Immediate pharmacological management may be indicated."
+                            : "Patient at high risk for shock (Hypovolemic, Cardiogenic, or Septic). Inadequate mean arterial pressure (MAP) likely present.",
+                        action: isHigh ? "Initiate antihypertensive protocol and monitor for neuro-deficits." : "Initiate fluid resuscitation and evaluate for signs of shock."
                     });
                 }
             }
             
-            // 4. Oxygen Saturation Anomaly (clinical threshold + statistical)
+            // 4. Oxygen Saturation Anomaly
             if (currentVitals.oxygenSaturation && o2Stats.stdDev && o2Stats.stdDev > 0) {
                 const zScore = Math.abs(currentVitals.oxygenSaturation - o2Stats.avg) / o2Stats.stdDev;
                 if (zScore > 2 || currentVitals.oxygenSaturation < 94) {
                     anomalies.push({
-                        type: "OXYGEN_SATURATION_ANOMALY",
+                        type: "PULMONARY_GAS_EXCHANGE_FAILURE",
                         severity: currentVitals.oxygenSaturation < 90 ? "CRITICAL" : (zScore > 3 ? "HIGH" : "MEDIUM"),
-                        currentValue: currentVitals.oxygenSaturation,
-                        expectedRange: { min: o2Stats.avg - o2Stats.stdDev, max: o2Stats.avg + o2Stats.stdDev },
-                        zScore: zScore.toFixed(2),
-                        message: `Oxygen saturation ${currentVitals.oxygenSaturation}% is ${zScore.toFixed(1)} std dev from mean (${Math.round(o2Stats.avg)}%)`,
-                        action: currentVitals.oxygenSaturation < 90 ? "Emergency oxygen therapy required" : "Respiratory assessment needed",
-                        clinicalSignificance: currentVitals.oxygenSaturation < 92 ? "Hypoxemia -可能需要 supplemental oxygen" : "Monitor closely"
+                        currentValue: `${currentVitals.oxygenSaturation}%`,
+                        message: `Significant Hypoxemia (SpO2 ${currentVitals.oxygenSaturation}%). Peripheral oxygen saturation has fallen below critical physiological thresholds.`,
+                        clinicalInsight: "Detected levels indicate impaired ventilation-perfusion matching or diffusion limitation. Persistent hypoxemia leads to rapid tissue hypoxia and metabolic acidosis.",
+                        action: "Administer supplemental oxygen immediately. target SpO2 94-98%. Auscultate lungs for adventitious sounds."
                     });
                 }
             }
@@ -562,10 +639,32 @@ router.post("/similar-patients/:patientId", hasPermission("view:analytics"), asy
             },
             timestamp: new Date()
         });
-    } catch (error) {
+        } catch (error) {
         console.error("Similar patients error:", error);
         res.status(500).json({ error: error.message });
-    }
-});
+        }
+        });
 
-module.exports = router;
+        // ============ CLINICAL RECORD PROGRESS AI ============
+
+        router.get("/record-progress/:recordId", hasPermission("view:records"), async (req, res) => {
+        try {
+        const record = await MedicalRecord.findById(req.params.recordId);
+        if (!record) return res.status(404).json({ error: "Record not found" });
+
+        const history = record.observations || [];
+        const analysis = analyzeRecordProgress(history);
+
+        res.json({
+            recordId: record._id,
+            history,
+            analysis,
+            timestamp: new Date()
+        });
+        } catch (error) {
+        console.error("Record progress error:", error);
+        res.status(500).json({ error: error.message });
+        }
+        });
+
+        module.exports = router;
