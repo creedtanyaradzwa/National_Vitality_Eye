@@ -169,10 +169,25 @@ const MedicalRecords = () => {
                     const passedPatient = location.state.selectedPatient;
                     setSelectedPatient(passedPatient);
                     setSearchTerm(passedPatient.nationalId);
+                } else if (location.state?.searchId) {
+                    const id = location.state.searchId;
+                    setSearchTerm(id);
+                    // Find patient in loaded list or fetch
+                    const match = patientList.find(p => p.nationalId === id);
+                    if (match) {
+                        setSelectedPatient(match);
+                    } else {
+                        // Fallback: use handleSearch logic
+                        const res = await getPatients(1, 10, id);
+                        if (res.data.patients?.length > 0) {
+                            setSelectedPatient(res.data.patients[0]);
+                        }
+                    }
                 }
                 
                 setLoading(false);
-            } catch {
+            } catch (err) {
+                console.error("Failed to load clinical registry", err);
                 toast.error('Failed to load patients');
                 setLoading(false);
             }
@@ -801,37 +816,37 @@ const MedicalRecords = () => {
     return (
         <div className="min-h-screen bg-brand-dark-950 pb-20">
             {/* Header Section */}
-            <div className="bg-brand-dark-900/50 border-b border-white/5 py-12 mb-8">
+            <div className="bg-brand-dark-900/50 border-b border-white/5 py-8 mb-6">
                 <div className="max-w-7xl mx-auto px-4">
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                         <div>
-                            <div className="flex items-center space-x-4 mb-2">
-                                <div className="p-3 rounded-2xl bg-brand-dark-800 border border-cyber-blue/30 shadow-[0_0_20px_rgba(0,242,255,0.1)]">
-                                    <ClipboardDocumentListIcon className="h-8 w-8 text-cyber-blue" />
+                            <div className="flex items-center space-x-3 mb-1">
+                                <div className="p-2.5 rounded-xl bg-brand-dark-800 border border-cyber-blue/30 shadow-[0_0_20px_rgba(0,242,255,0.1)]">
+                                    <ClipboardDocumentListIcon className="h-6 w-6 text-cyber-blue" />
                                 </div>
-                                <h1 className="text-4xl font-bold text-white tracking-tight">Clinical Records</h1>
+                                <h1 className="text-3xl font-bold text-white tracking-tight">Clinical Records</h1>
                             </div>
-                            <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 ml-16">
+                            <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 ml-14">
                                 Precision Healthcare Node v3.0
                             </p>
                         </div>
 
                         {/* Search Bar */}
                         <div className="w-full md:w-auto flex items-center space-x-3">
-                            <div className="relative flex-1 md:w-96 group">
-                                <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-cyber-blue transition-colors" />
+                            <div className="relative flex-1 md:w-80 group">
+                                <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 group-focus-within:text-cyber-blue transition-colors" />
                                 <input
                                     type="text"
                                     placeholder="IDENTIFY PATIENT (ID/NAME)"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                    className="w-full pl-12 pr-4 py-4 rounded-2xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 font-mono text-sm focus:outline-none focus:border-cyber-blue/50 focus:ring-4 focus:ring-cyber-blue/5 transition-all duration-500"
+                                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-brand-dark-950 border border-white/5 text-white placeholder-gray-700 font-mono text-xs focus:outline-none focus:border-cyber-blue/50 focus:ring-4 focus:ring-cyber-blue/5 transition-all duration-500"
                                 />
                             </div>
                             <button
                                 onClick={handleSearch}
-                                className="px-8 py-4 rounded-2xl bg-white text-brand-dark-950 font-bold text-xs uppercase tracking-widest hover:bg-cyber-blue transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                                className="px-6 py-3 rounded-xl bg-white text-brand-dark-950 font-bold text-xs uppercase tracking-widest hover:bg-cyber-blue transition-all duration-300 shadow-[0_0_20px_rgba(255,255,255,0.1)]"
                             >
                                 Scan
                             </button>
@@ -842,32 +857,32 @@ const MedicalRecords = () => {
 
             <div className="max-w-7xl mx-auto px-4">
                 {!selectedPatient ? (
-                    <div className="glass-card-modern p-24 text-center border border-white/5 relative overflow-hidden">
+                    <div className="glass-card-modern p-16 text-center border border-white/5 relative overflow-hidden">
                         <div className="absolute top-0 right-0 w-64 h-64 bg-cyber-blue/5 blur-[100px] pointer-events-none" />
                         <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyber-purple/5 blur-[100px] pointer-events-none" />
                         
-                        <div className="w-24 h-24 rounded-3xl bg-brand-dark-800 border border-white/5 flex items-center justify-center mx-auto mb-8 shadow-2xl group">
-                            <UserIcon className="h-10 w-10 text-gray-700 group-hover:text-cyber-blue transition-colors duration-500" />
+                        <div className="w-20 h-20 rounded-2xl bg-brand-dark-800 border border-white/5 flex items-center justify-center mx-auto mb-6 shadow-2xl group">
+                            <UserIcon className="h-8 w-8 text-gray-700 group-hover:text-cyber-blue transition-colors duration-500" />
                         </div>
-                        <h2 className="text-3xl font-bold text-white mb-4 tracking-tight">INITIALIZE SESSION</h2>
+                        <h2 className="text-2xl font-bold text-white mb-3 tracking-tight">INITIALIZE SESSION</h2>
                         <p className="text-gray-500 max-lg mx-auto leading-relaxed text-sm font-medium">
                             Enter a valid patient identifier in the terminal above to decrypt and access clinical histories, biometric data, and diagnostic records.
                         </p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-10">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                         {/* Patient Summary Card */}
                         <div className="lg:col-span-1">
-                            <div className="glass-card-modern border border-white/5 overflow-hidden sticky top-28">
-                                <div className="bg-gradient-to-br from-cyber-blue/10 via-brand-dark-900 to-transparent p-8 border-b border-white/5">
-                                    <div className="text-center mb-8">
-                                        <div className="relative w-20 h-20 mx-auto mb-6">
-                                            <div className="absolute inset-0 rounded-3xl bg-cyber-blue/20 blur-xl animate-pulse" />
-                                            <div className="relative w-20 h-20 rounded-3xl bg-brand-dark-950 border border-cyber-blue/30 flex items-center justify-center text-2xl font-bold text-cyber-blue shadow-2xl">
+                            <div className="glass-card-modern border border-white/5 overflow-hidden sticky top-24">
+                                <div className="bg-gradient-to-br from-cyber-blue/10 via-brand-dark-900 to-transparent p-6 border-b border-white/5">
+                                    <div className="text-center mb-6">
+                                        <div className="relative w-16 h-16 mx-auto mb-4">
+                                            <div className="absolute inset-0 rounded-2xl bg-cyber-blue/20 blur-xl animate-pulse" />
+                                            <div className="relative w-16 h-16 rounded-2xl bg-brand-dark-950 border border-cyber-blue/30 flex items-center justify-center text-xl font-bold text-cyber-blue shadow-2xl">
                                                 {selectedPatient.firstName[0]}{selectedPatient.lastName[0]}
                                             </div>
                                         </div>
-                                        <h3 className="text-xl font-bold text-white tracking-tight mb-1">
+                                        <h3 className="text-lg font-bold text-white tracking-tight mb-1">
                                             {selectedPatient.firstName} {selectedPatient.lastName}
                                         </h3>
                                         <div className="flex items-center justify-center space-x-2">
@@ -876,14 +891,14 @@ const MedicalRecords = () => {
                                         </div>
                                     </div>
                                     
-                                    <div className="space-y-3">
+                                    <div className="space-y-2.5">
                                         {[
                                             { label: 'Identifier', value: selectedPatient.nationalId, icon: IdentificationIcon },
                                             { label: 'Sector', value: selectedPatient.province, icon: MapPinIcon },
                                             { label: 'Origin', value: new Date(selectedPatient.dateOfBirth).toLocaleDateString(), icon: ClockIcon }
                                         ].map((item, idx) => (
-                                            <div key={idx} className="p-4 rounded-2xl bg-brand-dark-950/50 border border-white/5 flex items-center space-x-4">
-                                                <item.icon className="h-4 w-4 text-gray-600" />
+                                            <div key={idx} className="p-3.5 rounded-xl bg-brand-dark-950/50 border border-white/5 flex items-center space-x-3">
+                                                <item.icon className="h-3.5 w-3.5 text-gray-600" />
                                                 <div>
                                                     <p className="text-[8px] uppercase tracking-[0.2em] font-bold text-gray-700 mb-0.5">{item.label}</p>
                                                     <p className="text-xs text-gray-300 font-bold tracking-wide">{item.value}</p>
@@ -893,11 +908,11 @@ const MedicalRecords = () => {
                                     </div>
                                 </div>
                                 
-                                <div className="p-6 bg-brand-dark-900/50">
+                                <div className="p-5 bg-brand-dark-900/50">
                                     <button
                                         onClick={handleAddRecord}
                                         disabled={!canCreate}
-                                        className="btn-primary-modern w-full py-4 uppercase tracking-[0.2em] text-[10px] font-bold flex items-center justify-center disabled:opacity-20"
+                                        className="btn-primary-modern w-full py-3.5 uppercase tracking-widest text-[10px] font-bold flex items-center justify-center disabled:opacity-20"
                                     >
                                         <PlusIcon className="h-4 w-4 mr-2" />
                                         Create Record
@@ -908,25 +923,25 @@ const MedicalRecords = () => {
 
                         {/* Records List */}
                         <div className="lg:col-span-3">
-                            <div className="flex items-center justify-between mb-8">
-                                <h2 className="text-2xl font-bold text-white tracking-tight flex items-center">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-cyber-purple mr-4 animate-pulse" />
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-xl font-bold text-white tracking-tight flex items-center">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-cyber-purple mr-3 animate-pulse" />
                                     Temporal Timeline
                                 </h2>
                                 <div className="flex items-center space-x-4">
-                                    <span className="px-4 py-1.5 rounded-xl bg-brand-dark-900 border border-white/5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                    <span className="px-3 py-1 rounded-lg bg-brand-dark-900 border border-white/5 text-[9px] font-bold text-gray-500 uppercase tracking-widest">
                                         {records.length} ENCRYPTED ENTRIES
                                     </span>
                                 </div>
                             </div>
 
                             {records.length === 0 ? (
-                                <div className="glass-card-modern p-20 text-center border border-white/5">
-                                    <DocumentTextIcon className="h-12 w-12 mx-auto mb-6 text-brand-dark-800" />
-                                    <p className="text-gray-600 font-bold uppercase tracking-widest text-xs">No clinical history detected</p>
+                                <div className="glass-card-modern p-16 text-center border border-white/5">
+                                    <DocumentTextIcon className="h-10 w-10 mx-auto mb-4 text-brand-dark-800" />
+                                    <p className="text-gray-600 font-bold uppercase tracking-widest text-[10px]">No clinical history detected</p>
                                 </div>
                             ) : (
-                                <div className="space-y-6">
+                                <div className="space-y-4">
                                     {records.map((record) => (
                                         <div 
                                             key={record._id} 
@@ -937,34 +952,34 @@ const MedicalRecords = () => {
                                             }`}
                                         >
                                             <div 
-                                                className="p-8 cursor-pointer relative group"
+                                                className="p-6 cursor-pointer relative group"
                                                 onClick={() => setExpandedRecord(expandedRecord === record._id ? null : record._id)}
                                             >
                                                 <div className="absolute top-0 left-0 w-1 h-full bg-cyber-blue opacity-0 group-hover:opacity-100 transition-opacity" />
                                                 
-                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-                                                    <div className="flex items-center space-x-6">
-                                                        <div className="w-16 h-16 rounded-2xl bg-brand-dark-950 border border-white/5 flex flex-col items-center justify-center shadow-xl">
-                                                            <span className="text-[10px] font-bold text-gray-600 uppercase tracking-widest mb-1">
+                                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                                    <div className="flex items-center space-x-5">
+                                                        <div className="w-14 h-14 rounded-xl bg-brand-dark-950 border border-white/5 flex flex-col items-center justify-center shadow-xl">
+                                                            <span className="text-[9px] font-bold text-gray-600 uppercase tracking-widest mb-0.5">
                                                                 {new Date(record.visitDate).toLocaleString('default', { month: 'short' })}
                                                             </span>
-                                                            <span className="text-2xl font-bold text-white leading-none tracking-tighter">
+                                                            <span className="text-xl font-bold text-white leading-none tracking-tighter">
                                                                 {new Date(record.visitDate).getDate()}
                                                             </span>
                                                         </div>
                                                         <div>
-                                                            <div className="flex items-center space-x-3 mb-2">
-                                                                <h3 className="text-xl font-bold text-white tracking-tight">
+                                                            <div className="flex items-center space-x-3 mb-1.5">
+                                                                <h3 className="text-lg font-bold text-white tracking-tight">
                                                                     {record.primaryDiagnosis?.name || record.disease || 'General Diagnostic'}
                                                                 </h3>
-                                                                <span className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-lg border ${
+                                                                <span className={`text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border ${
                                                                     record.visitType === 'Emergency' 
                                                                         ? 'bg-red-500/10 border-red-500/20 text-red-500' 
                                                                         : 'bg-cyber-blue/10 border-cyber-blue/20 text-cyber-blue'
                                                                 }`}>
                                                                     {record.visitType}
                                                                 </span>
-                                                                <span className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1 rounded-lg border ${
+                                                                <span className={`text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded border ${
                                                                     record.visitStatus === 'Active' ? 'bg-green-500/10 border-green-500/20 text-green-500' :
                                                                     record.visitStatus === 'In Admission' ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' :
                                                                     'bg-brand-dark-800 border-white/10 text-gray-500'
@@ -974,38 +989,38 @@ const MedicalRecords = () => {
                                                                      record.visitStatus}
                                                                 </span>
                                                             </div>
-                                                            <div className="flex items-center space-x-4">
-                                                                <div className="flex items-center text-[10px] font-bold text-gray-600 uppercase tracking-widest">
-                                                                    <BuildingOfficeIcon className="h-3 w-3 mr-2 text-gray-700" />
+                                                            <div className="flex items-center space-x-3">
+                                                                <div className="flex items-center text-[9px] font-bold text-gray-600 uppercase tracking-widest">
+                                                                    <BuildingOfficeIcon className="h-3 w-3 mr-1.5 text-gray-700" />
                                                                     {record.hospital}
                                                                 </div>
                                                                 <div className="w-1 h-1 rounded-full bg-brand-dark-800" />
-                                                                <div className="flex items-center text-[10px] font-bold text-gray-600 uppercase tracking-widest">
-                                                                    <ClockIcon className="h-3 w-3 mr-2 text-gray-700" />
+                                                                <div className="flex items-center text-[9px] font-bold text-gray-600 uppercase tracking-widest">
+                                                                    <ClockIcon className="h-3 w-3 mr-1.5 text-gray-700" />
                                                                     {new Date(record.visitDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
 
-                                                    <div className="flex items-center space-x-8">
+                                                    <div className="flex items-center space-x-6">
                                                         <div className="hidden md:flex flex-col items-end">
-                                                            <p className="text-[8px] uppercase tracking-widest font-bold text-gray-700 mb-1">Attending Officer</p>
-                                                            <div className="flex items-center space-x-2">
+                                                            <p className="text-[7px] uppercase tracking-widest font-bold text-gray-700 mb-0.5">Attending Officer</p>
+                                                            <div className="flex items-center space-x-1.5">
                                                                 <UserIcon className="h-3 w-3 text-cyber-purple" />
-                                                                <span className="text-xs font-bold text-gray-300">Dr. {record.doctorName || 'Unknown'}</span>
+                                                                <span className="text-[11px] font-bold text-gray-300">Dr. {record.doctorName || 'Unknown'}</span>
                                                             </div>
                                                         </div>
                                                         
-                                                        <div className="flex items-center space-x-3">
+                                                        <div className="flex items-center space-x-2.5">
                                                             {record.taggedUsers?.length > 0 && (
-                                                                <div className="px-3 py-1.5 rounded-xl bg-brand-dark-950 border border-white/5 flex items-center space-x-2">
-                                                                    <UserPlusIcon className="h-3.5 w-3.5 text-cyber-blue" />
-                                                                    <span className="text-[10px] font-bold text-cyber-blue">{record.taggedUsers.length}</span>
+                                                                <div className="px-2 py-1 rounded-lg bg-brand-dark-950 border border-white/5 flex items-center space-x-1.5">
+                                                                    <UserPlusIcon className="h-3 w-3 text-cyber-blue" />
+                                                                    <span className="text-[9px] font-bold text-cyber-blue">{record.taggedUsers.length}</span>
                                                                 </div>
                                                             )}
-                                                            <div className={`p-2 rounded-xl bg-brand-dark-950 border border-white/5 transition-transform duration-500 ${expandedRecord === record._id ? 'rotate-180' : ''}`}>
-                                                                <ChevronDownIcon className="h-4 w-4 text-gray-600" />
+                                                            <div className={`p-1.5 rounded-lg bg-brand-dark-950 border border-white/5 transition-transform duration-500 ${expandedRecord === record._id ? 'rotate-180' : ''}`}>
+                                                                <ChevronDownIcon className="h-3.5 w-3.5 text-gray-600" />
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1014,87 +1029,87 @@ const MedicalRecords = () => {
 
                                             {/* Expandable Details Area */}
                                             {expandedRecord === record._id && (
-                                                <div className="px-8 pb-8 animate-in fade-in slide-in-from-top-4 duration-500">
-                                                    <div className="h-px w-full bg-white/5 mb-8" />
+                                                <div className="px-6 pb-6 animate-in fade-in slide-in-from-top-4 duration-500">
+                                                    <div className="h-px w-full bg-white/5 mb-6" />
                                                     
-                                                    {/* Record-Specific AI Snapshot (Information Sifting Gap Fix) */}
-                                                    <div className="mb-10 flex flex-col md:flex-row gap-6">
-                                                        <div className="flex-1 p-6 rounded-2xl bg-gradient-to-br from-cyber-blue/5 to-transparent border border-cyber-blue/10 relative overflow-hidden group">
+                                                    {/* Record-Specific AI Snapshot */}
+                                                    <div className="mb-8 flex flex-col md:flex-row gap-5">
+                                                        <div className="flex-1 p-5 rounded-xl bg-gradient-to-br from-cyber-blue/5 to-transparent border border-cyber-blue/10 relative overflow-hidden group">
                                                             <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-                                                                <SparklesIcon className="h-10 w-10 text-cyber-blue" />
+                                                                <SparklesIcon className="h-8 w-8 text-cyber-blue" />
                                                             </div>
-                                                            <h4 className="text-[9px] font-bold text-cyber-blue uppercase tracking-[0.3em] mb-3 flex items-center">
+                                                            <h4 className="text-[8px] font-bold text-cyber-blue uppercase tracking-[0.3em] mb-2 flex items-center">
                                                                 <CommandLineIcon className="h-3 w-3 mr-2" />
                                                                 AI_RECORD_SYNTHESIS
                                                             </h4>
                                                             {loadingSnapshot ? (
-                                                                <div className="flex items-center space-x-3 animate-pulse">
-                                                                    <div className="w-2 h-2 rounded-full bg-cyber-blue" />
-                                                                    <div className="h-2 w-48 bg-white/5 rounded" />
+                                                                <div className="flex items-center space-x-2 animate-pulse">
+                                                                    <div className="w-1.5 h-1.5 rounded-full bg-cyber-blue" />
+                                                                    <div className="h-1.5 w-40 bg-white/5 rounded" />
                                                                 </div>
                                                             ) : (
-                                                                <p className="text-gray-200 text-sm leading-relaxed italic">
+                                                                <p className="text-gray-200 text-xs leading-relaxed italic">
                                                                     "{recordSnapshot || 'Analyzing clinical encounter patterns...'}"
                                                                 </p>
                                                             )}
                                                         </div>
 
-                                                        {/* Outcome Highlight (Gap: Record Closure & Outcome) */}
+                                                        {/* Outcome Highlight */}
                                                         {(record.visitStatus === 'Finalized' || record.visitStatus === 'Discharged') && (
-                                                            <div className="md:w-72 p-6 rounded-2xl bg-brand-dark-950 border border-cyber-purple/20 flex flex-col justify-center text-center">
-                                                                <p className="text-[8px] font-bold text-gray-600 uppercase tracking-[0.3em] mb-2">Clinical Outcome</p>
-                                                                <div className="text-xl font-black text-cyber-purple tracking-tighter uppercase">{record.disposition || 'Finalized'}</div>
+                                                            <div className="md:w-64 p-5 rounded-xl bg-brand-dark-950 border border-cyber-purple/20 flex flex-col justify-center text-center">
+                                                                <p className="text-[7px] font-bold text-gray-600 uppercase tracking-[0.3em] mb-1.5">Clinical Outcome</p>
+                                                                <div className="text-lg font-black text-cyber-purple tracking-tighter uppercase">{record.disposition || 'Finalized'}</div>
                                                                 {record.dischargeInstructions && (
-                                                                    <p className="text-[9px] text-gray-500 mt-2 italic line-clamp-2">"{record.dischargeInstructions}"</p>
+                                                                    <p className="text-[8px] text-gray-500 mt-1.5 italic line-clamp-2">"{record.dischargeInstructions}"</p>
                                                                 )}
                                                             </div>
                                                         )}
                                                     </div>
 
-                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                                         {/* Symptoms & Diagnosis */}
-                                                        <div className="space-y-6">
+                                                        <div className="space-y-5">
                                                             <div>
-                                                                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyber-blue mb-4 flex items-center">
-                                                                    <BeakerIcon className="h-4 w-4 mr-3" />
+                                                                <h4 className="text-[9px] font-bold uppercase tracking-[0.2em] text-cyber-blue mb-3 flex items-center">
+                                                                    <BeakerIcon className="h-3.5 w-3.5 mr-2" />
                                                                     Clinical Presentation
                                                                 </h4>
-                                                                <div className="flex flex-wrap gap-2">
+                                                                <div className="flex flex-wrap gap-1.5">
                                                                     {record.symptoms?.map((s, i) => (
-                                                                        <span key={i} className="px-3 py-1.5 rounded-xl bg-brand-dark-950 border border-white/5 text-[11px] text-gray-400 font-medium">
+                                                                        <span key={i} className="px-2.5 py-1 rounded-lg bg-brand-dark-950 border border-white/5 text-[10px] text-gray-400 font-medium">
                                                                             {s}
                                                                         </span>
-                                                                    )) || <span className="text-xs text-gray-600 italic">No symptoms recorded</span>}
+                                                                    )) || <span className="text-[10px] text-gray-600 italic">No symptoms recorded</span>}
                                                                 </div>
                                                             </div>
                                                             
                                                             <div>
-                                                                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyber-purple mb-4 flex items-center">
-                                                                    <DocumentTextIcon className="h-4 w-4 mr-3" />
+                                                                <h4 className="text-[9px] font-bold uppercase tracking-[0.2em] text-cyber-purple mb-3 flex items-center">
+                                                                    <DocumentTextIcon className="h-3.5 w-3.5 mr-2" />
                                                                     Differential Profile
                                                                 </h4>
-                                                                <div className="flex flex-wrap gap-2">
+                                                                <div className="flex flex-wrap gap-1.5">
                                                                     {record.differentialDiagnosis?.map((d, i) => (
-                                                                        <span key={i} className="px-3 py-1.5 rounded-xl bg-cyber-purple/10 border border-cyber-purple/20 text-[11px] text-cyber-purple font-bold">
+                                                                        <span key={i} className="px-2.5 py-1 rounded-lg bg-cyber-purple/10 border border-cyber-purple/20 text-[10px] text-cyber-purple font-bold">
                                                                             {d}
                                                                         </span>
-                                                                    )) || <span className="text-xs text-gray-600 italic">No differentials documented</span>}
+                                                                    )) || <span className="text-[10px] text-gray-600 italic">No differentials documented</span>}
                                                                 </div>
                                                             </div>
                                                         </div>
 
                                                         {/* Vital Signs Grid */}
                                                         <div className="md:col-span-2">
-                                                            <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-cyber-green mb-4 flex items-center">
-                                                                <HeartIcon className="h-4 w-4 mr-3" />
+                                                            <h4 className="text-[9px] font-bold uppercase tracking-[0.2em] text-cyber-green mb-3 flex items-center">
+                                                                <HeartIcon className="h-3.5 w-3.5 mr-2" />
                                                                 Biometric Telemetry
                                                             </h4>
-                                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                                                 {buildVitalDisplayRows(record.vitalSigns).map((v, i) => (
-                                                                    <div key={i} className="p-4 rounded-2xl bg-brand-dark-950 border border-white/5 hover:border-cyber-green/30 transition-colors group">
-                                                                        <p className="text-[8px] font-bold text-gray-700 uppercase tracking-widest mb-1 group-hover:text-cyber-green transition-colors">{v.label}</p>
-                                                                        <p className="text-lg font-bold text-white tracking-tighter mb-2">{v.value}</p>
-                                                                        <div className="flex items-center space-x-1.5">
+                                                                    <div key={i} className="p-3.5 rounded-xl bg-brand-dark-950 border border-white/5 hover:border-cyber-green/30 transition-colors group">
+                                                                        <p className="text-[7px] font-bold text-gray-700 uppercase tracking-widest mb-0.5 group-hover:text-cyber-green transition-colors">{v.label}</p>
+                                                                        <p className="text-base font-bold text-white tracking-tighter mb-1.5">{v.value}</p>
+                                                                        <div className="flex items-center space-x-1">
                                                                             <div className={`w-1 h-1 rounded-full ${
                                                                                 v.color === 'red' ? 'bg-red-500' :
                                                                                 v.color === 'orange' ? 'bg-orange-500' :
@@ -1110,13 +1125,13 @@ const MedicalRecords = () => {
                                                     </div>
 
                                                     {(record.treatmentPlan?.medications?.length > 0 || record.investigations?.labTests?.length > 0 || record.investigations?.radiology?.length > 0) && (
-                                                        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+                                                        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-5">
                                                             {record.treatmentPlan?.medications?.length > 0 && (
                                                                 <div>
-                                                                    <h4 className="text-[10px] font-bold uppercase text-cyber-blue mb-3">Prescriptions</h4>
-                                                                    <ul className="space-y-2 text-xs text-gray-300">
+                                                                    <h4 className="text-[9px] font-bold uppercase text-cyber-blue mb-2.5">Prescriptions</h4>
+                                                                    <ul className="space-y-1.5 text-[10px] text-gray-300">
                                                                         {record.treatmentPlan.medications.map((rx, i) => (
-                                                                            <li key={i} className="p-2 rounded-lg bg-brand-dark-950 border border-white/5">
+                                                                            <li key={i} className="p-1.5 rounded-lg bg-brand-dark-950 border border-white/5">
                                                                                 <span className="font-bold text-white">{rx.medication}</span>
                                                                                 {[rx.dosage, rx.frequency, rx.route].filter(Boolean).length > 0 && (
                                                                                     <span className="text-gray-500"> — {[rx.dosage, rx.frequency, rx.route].filter(Boolean).join(' · ')}</span>
@@ -1128,10 +1143,10 @@ const MedicalRecords = () => {
                                                             )}
                                                             {record.investigations?.labTests?.length > 0 && (
                                                                 <div>
-                                                                    <h4 className="text-[10px] font-bold uppercase text-cyber-purple mb-3">Lab tests</h4>
-                                                                    <ul className="space-y-2 text-xs text-gray-300">
+                                                                    <h4 className="text-[9px] font-bold uppercase text-cyber-purple mb-2.5">Lab tests</h4>
+                                                                    <ul className="space-y-1.5 text-[10px] text-gray-300">
                                                                         {record.investigations.labTests.map((t, i) => (
-                                                                            <li key={i} className="p-2 rounded-lg bg-brand-dark-950 border border-white/5">
+                                                                            <li key={i} className="p-1.5 rounded-lg bg-brand-dark-950 border border-white/5">
                                                                                 {t.testName}: {t.result || 'pending'}
                                                                                 {t.abnormal && <span className="text-red-400 ml-1">ABNORMAL</span>}
                                                                             </li>
@@ -1141,14 +1156,14 @@ const MedicalRecords = () => {
                                                             )}
                                                             {record.investigations?.radiology?.length > 0 && (
                                                                 <div>
-                                                                    <h4 className="text-[10px] font-bold uppercase text-cyan-400 mb-3">Radiology</h4>
+                                                                    <h4 className="text-[9px] font-bold uppercase text-cyan-400 mb-2.5">Radiology</h4>
                                                                     {record.investigations.radiology.map((s, i) => (
-                                                                        <div key={i} className="p-2 mb-2 rounded-lg bg-brand-dark-950 border border-white/5 text-xs">
+                                                                        <div key={i} className="p-1.5 mb-1.5 rounded-lg bg-brand-dark-950 border border-white/5 text-[10px]">
                                                                             <p className="font-bold text-white">{s.studyType}{s.bodyPart ? ` · ${s.bodyPart}` : ''}</p>
                                                                             {s.images?.length > 0 && (
-                                                                                <div className="flex flex-wrap gap-1 mt-2">
+                                                                                <div className="flex flex-wrap gap-1 mt-1.5">
                                                                                     {s.images.map((img, j) => (
-                                                                                        <a key={j} href={img.url} target="_blank" rel="noreferrer" className="block w-12 h-12 rounded overflow-hidden border border-white/10">
+                                                                                        <a key={j} href={img.url} target="_blank" rel="noreferrer" className="block w-10 h-10 rounded overflow-hidden border border-white/10">
                                                                                             <img src={img.url} alt={img.originalName || 'scan'} className="w-full h-full object-cover" />
                                                                                         </a>
                                                                                     ))}
@@ -1161,11 +1176,11 @@ const MedicalRecords = () => {
                                                         </div>
                                                         )}
 
-                                                        {/* Clinical Progression (Admission Progress Support) */}
+                                                        {/* Clinical Progression */}
                                                         {record.observations?.length > 0 && (
-                                                        <div className="mt-12 p-8 rounded-[2rem] bg-brand-dark-950/50 border border-cyber-blue/10">
-                                                            <h4 className="text-[10px] font-bold uppercase tracking-[0.3em] text-cyber-blue mb-8 flex items-center">
-                                                                <ChartBarIcon className="h-4 w-4 mr-3" />
+                                                        <div className="mt-8 p-6 rounded-2xl bg-brand-dark-950/50 border border-cyber-blue/10">
+                                                            <h4 className="text-[9px] font-bold uppercase tracking-[0.3em] text-cyber-blue mb-6 flex items-center">
+                                                                <ChartBarIcon className="h-3.5 w-3.5 mr-2" />
                                                                 Dynamic Clinical Progression
                                                             </h4>
                                                             <ClinicalProgression observations={record.observations} />
@@ -1173,18 +1188,18 @@ const MedicalRecords = () => {
                                                         )}
 
                                                         {/* Action Controls */}
-                                                    <div className="mt-10 pt-8 border-t border-white/5 flex justify-end space-x-4">
+                                                    <div className="mt-8 pt-6 border-t border-white/5 flex justify-end space-x-3">
                                                         <button 
                                                             onClick={() => handleEditRecord(record)}
                                                             disabled={!canEdit}
-                                                            className="px-6 py-2.5 rounded-xl bg-brand-dark-800 border border-white/5 text-gray-400 font-bold text-[10px] uppercase tracking-widest hover:text-white hover:bg-brand-dark-700 transition-all disabled:opacity-20"
+                                                            className="px-5 py-2 rounded-xl bg-brand-dark-800 border border-white/5 text-gray-400 font-bold text-[9px] uppercase tracking-widest hover:text-white hover:bg-brand-dark-700 transition-all disabled:opacity-20"
                                                         >
                                                             Modify Entry
                                                         </button>
                                                         <button 
                                                             onClick={() => handleDeleteRecord(record)}
                                                             disabled={!canDelete}
-                                                            className="px-6 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold text-[10px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all disabled:opacity-20"
+                                                            className="px-5 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold text-[9px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all disabled:opacity-20"
                                                         >
                                                             Purge
                                                         </button>
@@ -1198,24 +1213,24 @@ const MedicalRecords = () => {
 
                             {/* Pagination */}
                             {!selectedPatient && totalPages > 1 && (
-                                <div className="mt-12 flex flex-col sm:flex-row justify-between items-center gap-6">
-                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
+                                <div className="mt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
+                                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em]">
                                         Showing {((page - 1) * limit) + 1} to {Math.min(page * limit, totalResults)} of {totalResults} Clinical Records
                                     </p>
-                                    <div className="flex items-center space-x-2">
+                                    <div className="flex items-center space-x-1.5">
                                         <button
                                             onClick={() => setPage(p => Math.max(1, p - 1))}
                                             disabled={page === 1}
-                                            className="px-5 py-3 rounded-2xl bg-brand-dark-900 border border-white/5 text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-all font-mono text-[10px] uppercase tracking-widest"
+                                            className="px-4 py-2.5 rounded-xl bg-brand-dark-900 border border-white/5 text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-all font-mono text-[9px] uppercase tracking-widest"
                                         >
-                                            Previous
+                                            Prev
                                         </button>
-                                        <div className="flex items-center space-x-1.5">
+                                        <div className="flex items-center space-x-1">
                                             {[...Array(totalPages)].map((_, i) => (
                                                 <button
                                                     key={i + 1}
                                                     onClick={() => setPage(i + 1)}
-                                                    className={`w-11 h-11 rounded-2xl border transition-all font-mono text-[10px] ${page === i + 1 ? 'bg-cyber-blue/10 border-cyber-blue text-cyber-blue shadow-[0_0_20px_rgba(0,242,255,0.1)]' : 'bg-brand-dark-900 border-white/5 text-gray-500 hover:text-white'}`}
+                                                    className={`w-9 h-9 rounded-xl border transition-all font-mono text-[9px] ${page === i + 1 ? 'bg-cyber-blue/10 border-cyber-blue text-cyber-blue shadow-[0_0_20px_rgba(0,242,255,0.1)]' : 'bg-brand-dark-900 border-white/5 text-gray-500 hover:text-white'}`}
                                                 >
                                                     {i + 1}
                                                 </button>
@@ -1224,7 +1239,7 @@ const MedicalRecords = () => {
                                         <button
                                             onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                                             disabled={page === totalPages}
-                                            className="px-5 py-3 rounded-2xl bg-brand-dark-900 border border-white/5 text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-all font-mono text-[10px] uppercase tracking-widest"
+                                            className="px-4 py-2.5 rounded-xl bg-brand-dark-900 border border-white/5 text-gray-400 hover:text-white disabled:opacity-30 disabled:hover:text-gray-400 transition-all font-mono text-[9px] uppercase tracking-widest"
                                         >
                                             Next
                                         </button>

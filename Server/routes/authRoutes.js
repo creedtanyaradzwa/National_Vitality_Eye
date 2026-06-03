@@ -471,4 +471,25 @@ router.post("/change-password", protect, isApproved, validatePasswordChange, asy
     }
 });
 
+// 12. Get staff by hospital (for tagging/handovers)
+router.get("/staff", protect, async (req, res) => {
+    try {
+        const hospital = req.query.hospital || req.user.hospitalName;
+        const query = {
+            approvalStatus: "approved",
+            isActive: true,
+            role: { $in: ["doctor", "nurse", "data_entry", "admin"] }
+        };
+
+        if (hospital) {
+            query.hospitalName = hospital;
+        }
+
+        const staff = await User.find(query).select("firstName lastName position role hospitalName");
+        res.json(staff);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 module.exports = router;

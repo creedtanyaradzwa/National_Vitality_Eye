@@ -9,6 +9,7 @@ import {
     PencilIcon, 
     TrashIcon, 
     EyeIcon,
+    DocumentTextIcon,
     UserGroupIcon,
     XMarkIcon,
     SparklesIcon,
@@ -320,6 +321,13 @@ const Patients = () => {
                                                         title="VIEW_PATIENT_DETAILS"
                                                     >
                                                         <EyeIcon className="h-5 w-5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => navigate('/records', { state: { searchId: patient.nationalId } })}
+                                                        className="p-2.5 rounded-xl bg-brand-dark-800 border border-white/5 text-gray-500 hover:text-cyber-green hover:border-cyber-green/30 transition-all duration-300"
+                                                        title="MEDICAL_RECORDS"
+                                                    >
+                                                        <DocumentTextIcon className="h-5 w-5" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleEdit(patient)}

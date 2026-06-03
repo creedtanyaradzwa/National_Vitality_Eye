@@ -95,6 +95,7 @@ export const getPatientRecords = (patientId) => API.get(`/medical-records/patien
 export const getPatientVitalsHistory = (patientId) => API.get(`/medical-records/patient/${patientId}/vitals-history`);
 export const createMedicalRecord = (data) => API.post('/medical-records', data);
 export const updateMedicalRecord = (id, data) => API.patch(`/medical-records/${id}`, data);
+export const addObservation = (id, data) => API.post(`/medical-records/${id}/observations`, data);
 export const deleteMedicalRecord = (id) => API.delete(`/medical-records/${id}`);
 export const getMedicalRecordById = (id) => API.get(`/medical-records/${id}`);
 export const uploadRadiologyImages = (patientId, studyType, files) => {

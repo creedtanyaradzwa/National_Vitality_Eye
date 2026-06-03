@@ -206,31 +206,31 @@ const CareHub = () => {
     return (
         <div className="min-h-screen bg-brand-dark-950 pb-20">
             {/* Header */}
-            <div className="bg-brand-dark-900/50 border-b border-white/5 py-12">
+            <div className="bg-brand-dark-900/50 border-b border-white/5 py-8">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="flex flex-col md:flex-row justify-between items-end gap-6">
                         <div>
                             <div className="flex items-center gap-4 mb-2">
-                                <div className="p-3 rounded-2xl bg-brand-dark-800 border border-cyber-purple/30 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
-                                    <HeartIcon className="h-8 w-8 text-cyber-purple" />
+                                <div className="p-2.5 rounded-xl bg-brand-dark-800 border border-cyber-purple/30 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
+                                    <HeartIcon className="h-7 w-7 text-cyber-purple" />
                                 </div>
-                                <h1 className="text-4xl font-bold text-white tracking-tight">Care Continuity Hub</h1>
+                                <h1 className="text-3xl font-bold text-white tracking-tight">Care Continuity Hub</h1>
                             </div>
-                            <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 ml-16">
+                            <p className="text-[10px] uppercase tracking-[0.4em] font-bold text-gray-500 ml-14">
                                 Individual Patient Management & AI Diagnostics
                             </p>
                         </div>
                         <div className="flex gap-3">
                             <button 
                                 onClick={() => navigate('/patients')}
-                                className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-300 hover:bg-white/10 transition-all"
+                                className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-300 hover:bg-white/10 transition-all"
                             >
                                 <UserGroupIcon className="h-4 w-4 inline mr-2" />
                                 Patient Registry
                             </button>
                             <button 
                                 onClick={() => navigate('/ai-predictor')}
-                                className="px-6 py-3 rounded-xl bg-cyber-purple/10 border border-cyber-purple/20 text-[10px] font-bold uppercase tracking-widest text-cyber-purple hover:bg-cyber-purple hover:text-white transition-all"
+                                className="px-5 py-2.5 rounded-xl bg-cyber-purple/10 border border-cyber-purple/20 text-[10px] font-bold uppercase tracking-widest text-cyber-purple hover:bg-cyber-purple hover:text-white transition-all"
                             >
                                 <BeakerIcon className="h-4 w-4 inline mr-2" />
                                 Neural Diagnostic
@@ -240,7 +240,7 @@ const CareHub = () => {
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 mt-12 space-y-8">
+            <div className="max-w-7xl mx-auto px-4 mt-8 space-y-8">
                 
                 {/* Stats Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -260,13 +260,13 @@ const CareHub = () => {
                         <div 
                             key={i} 
                             onClick={s.onClick}
-                            className={`glass-card-modern p-6 border border-white/5 relative overflow-hidden group ${s.clickable ? 'cursor-pointer hover:border-red-500/30 hover:bg-red-500/5' : ''}`}
+                            className={`glass-card-modern p-5 border border-white/5 relative overflow-hidden group ${s.clickable ? 'cursor-pointer hover:border-red-500/30 hover:bg-red-500/5' : ''}`}
                         >
                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                                <s.icon className={`h-12 w-12 ${s.color}`} />
+                                <s.icon className={`h-10 w-10 ${s.color}`} />
                             </div>
                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">{s.label}</p>
-                            <p className="text-3xl font-black text-white">{s.value}</p>
+                            <p className="text-2xl font-black text-white">{s.value}</p>
                         </div>
                     ))}
                 </div>
@@ -294,7 +294,7 @@ const CareHub = () => {
                                 >
                                     {/* Patient Header */}
                                     <div 
-                                        className="p-5 cursor-pointer group"
+                                        className="p-4 cursor-pointer group"
                                         onClick={() => setExpandedPatientId(expandedPatientId === group.patient?._id ? null : group.patient?._id)}
                                     >
                                         <div className="flex justify-between items-start mb-4">
@@ -397,7 +397,7 @@ const CareHub = () => {
                 {/* Staff Assignment Modal (For Admins) */}
                 {showAssignModal && (
                     <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-                        <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+                        <div className="w-full max-w-md bg-slate-900 border border-white/10 rounded-2xl overflow-hidden shadow-2xl">
                             <div className="p-6 border-b border-white/5 flex justify-between items-center">
                                 <div>
                                     <h2 className="text-xl font-black text-white uppercase tracking-tighter">Assign Clinical Team</h2>

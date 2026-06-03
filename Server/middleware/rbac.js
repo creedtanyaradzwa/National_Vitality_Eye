@@ -23,7 +23,7 @@ exports.hasPermission = (permission) => {
                 ],
                 nurse: [
                     "view:patients", "create:patients",
-                    "view:records", "create:records",
+                    "view:records", "create:records", "edit:records",
                     "view:analytics", "use:ai_predictor", "view:logs"
                 ],
                 data_entry: [

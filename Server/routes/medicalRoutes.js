@@ -109,6 +109,26 @@ router.use(protect, isApproved);
 
 // ============ STATISTICS ENDPOINTS ============
 
+// Client compatibility: Patient Count
+router.get("/stats/patient-count", hasPermission("view:analytics"), async (req, res) => {
+    try {
+        const count = await Patient.countDocuments({ isActive: { $ne: false } });
+        res.json({ count });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Client compatibility: Province Stats
+router.get("/stats/provinces", hasPermission("view:analytics"), async (req, res) => {
+    try {
+        const provinces = await buildMapProvinceStats();
+        res.json({ provinces });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // GET global summary stats
 router.get("/stats/summary", hasPermission("view:analytics"), async (req, res) => {
     try {
@@ -619,6 +639,74 @@ router.patch("/:id", hasPermission("edit:records"), async (req, res) => {
             .populate("taggedUsers", "firstName lastName position"));
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// POST append observation to record
+router.post("/:id/observations", hasPermission("edit:records"), async (req, res) => {
+    try {
+        console.log(`[POST /medical-records/${req.params.id}/observations] Body:`, JSON.stringify(req.body));
+        const record = await MedicalRecord.findOne({ _id: req.params.id, ...await getRecordAccessFilter(req.user) });
+        if (!record) {
+            console.error(`[POST /medical-records/${req.params.id}/observations] Record not found or access denied`);
+            return res.status(404).json({ error: "Record not found or access denied" });
+        }
+
+        // If it's a direct ivBag update (Start/Pause/Change Bag)
+        if (req.body.ivBag) {
+            console.log("Processing direct ivBag update");
+            const oldStatus = record.ivBag ? record.ivBag.status : null;
+            
+            // Initialize if missing
+            if (!record.ivBag) {
+                record.ivBag = req.body.ivBag;
+            } else {
+                // Use Mongoose .set() for partial updates on subdocuments
+                record.ivBag.set(req.body.ivBag);
+            }
+            
+            // Set start time if transition to Running
+            if (req.body.ivBag.status === 'Running' && oldStatus !== 'Running') {
+                record.ivBag.startTime = new Date();
+            }
+            
+            record.observations.push({
+                timestamp: new Date(),
+                recordedBy: req.user._id,
+                notes: req.body.notes || `IV status updated to ${req.body.ivBag.status}`
+            });
+        } else {
+            console.log("Processing new observation");
+            const observation = {
+                ...req.body,
+                timestamp: new Date(),
+                recordedBy: req.user._id
+            };
+
+            record.observations.push(observation);
+            
+            // If the observation includes an IV update (e.g. "Logged 500ml intake"), update the bag
+            if (observation.fluidBalance && (observation.fluidBalance.type === 'IV' || observation.fluidBalance.type === 'IV/Oral') && record.ivBag) {
+                console.log("Updating ivBag volume from observation");
+                const intake = observation.fluidBalance.intake || 0;
+                record.ivBag.currentVolume = Math.max(0, (record.ivBag.currentVolume || 0) - intake);
+                if (record.ivBag.currentVolume === 0) {
+                    record.ivBag.status = 'Completed';
+                }
+            }
+        }
+
+        console.log("Saving record...");
+        await record.save();
+        console.log("Record saved successfully");
+        
+        res.status(201).json(record);
+    } catch (error) {
+        console.error(`[POST /medical-records/${req.params.id}/observations] Full Error:`, error);
+        res.status(500).json({ 
+            error: error.message,
+            details: error.errors ? Object.keys(error.errors).map(k => `${k}: ${error.errors[k].message}`) : undefined
+        });
     }
 });
 

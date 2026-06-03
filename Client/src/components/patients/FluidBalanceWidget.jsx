@@ -34,46 +34,103 @@ const FluidBalanceWidget = ({ patientId, activeRecord, onUpdate }) => {
             setIntake(totalIn);
             setOutput(totalOut);
         }
+
+        if (activeRecord?.ivBag) {
+            setIvBag(activeRecord.ivBag);
+        }
     }, [activeRecord]);
 
-    // Live Countdown Timer logic
+    // Live Simulation Logic (The Neural Fluid Engine)
+    const [displayVolume, setLiveVolume] = useState(ivBag.currentVolume);
     const [timeLeft, setTimeLeft] = useState(null);
 
     useEffect(() => {
-        if (ivBag.status === 'Running' && ivBag.currentVolume > 0 && ivBag.dripRate > 0) {
-            const hoursLeft = ivBag.currentVolume / ivBag.dripRate;
-            setTimeLeft(Math.floor(hoursLeft * 60)); // minutes
-            
-            const timer = setInterval(() => {
-                setTimeLeft(prev => prev > 0 ? prev - 1 : 0);
-            }, 60000); // update every minute
-            
-            return () => clearInterval(timer);
-        } else {
-            setTimeLeft(null);
-        }
+        let interval;
+        
+        const updateSimulation = () => {
+            if (ivBag.status === 'Running' && ivBag.currentVolume > 0 && ivBag.dripRate > 0) {
+                const startTime = new Date(ivBag.startTime || new Date());
+                const now = new Date();
+                const elapsedHours = (now - startTime) / (1000 * 60 * 60);
+                const volumeConsumed = elapsedHours * ivBag.dripRate;
+                
+                const currentLiveVol = Math.max(0, Math.floor(ivBag.currentVolume - volumeConsumed));
+                setLiveVolume(currentLiveVol);
+
+                // Update Time Left
+                if (currentLiveVol > 0) {
+                    const minutesLeft = Math.floor((currentLiveVol / ivBag.dripRate) * 60);
+                    setTimeLeft(minutesLeft);
+                } else {
+                    setTimeLeft(0);
+                }
+            } else {
+                setLiveVolume(ivBag.currentVolume);
+                setTimeLeft(null);
+            }
+        };
+
+        // Initial run
+        updateSimulation();
+        
+        // Run every 5 seconds for smooth UI but low overhead
+        interval = setInterval(updateSimulation, 5000);
+        
+        return () => clearInterval(interval);
     }, [ivBag]);
 
     const formatTime = (minutes) => {
         if (minutes === null) return "--:--";
+        if (minutes <= 0) return "EMPTY";
         const hrs = Math.floor(minutes / 60);
         const mins = minutes % 60;
         return `${hrs}h ${mins}m`;
     };
 
     const handleQuickAdd = async (type, amount) => {
-        // This would call the API to add a new observation or update the bag
         const newObs = {
             timestamp: new Date().toISOString(),
             fluidBalance: {
                 intake: type === 'in' ? amount : 0,
                 output: type === 'out' ? amount : 0,
-                type: type === 'in' ? 'Quick Log' : 'Loss'
+                type: type === 'in' ? 'IV/Oral' : 'Loss'
             },
-            notes: `Auto-logged ${amount}ml ${type === 'in' ? 'intake' : 'output'}`
+            notes: `Logged ${amount}ml ${type === 'in' ? 'intake' : 'output'}`
         };
         
         if (onUpdate) onUpdate(newObs);
+    };
+
+    const toggleIVStatus = async () => {
+        console.log('[FluidBalanceWidget] toggleIVStatus called. Current status:', ivBag.status, 'Volume:', ivBag.currentVolume);
+        
+        let updatedBag;
+        // If starting an empty or completed bag, refill it automatically
+        if (ivBag.currentVolume <= 0 || ivBag.status === 'Completed' || ivBag.status === 'Empty') {
+            console.log('[FluidBalanceWidget] Refilling empty/completed bag to 1000ml');
+            updatedBag = { 
+                ...ivBag, 
+                status: 'Running', 
+                currentVolume: 1000, 
+                totalVolume: 1000,
+                startTime: new Date().toISOString()
+            };
+        } else {
+            const newStatus = ivBag.status === 'Running' ? 'Paused' : 'Running';
+            updatedBag = { ...ivBag, status: newStatus };
+        }
+        
+        console.log('[FluidBalanceWidget] Requesting update to status:', updatedBag.status);
+        setIvBag(updatedBag); // Optimistic UI update
+        
+        if (onUpdate) {
+            onUpdate({ 
+                ivBag: updatedBag,
+                notes: `IV status changed to ${updatedBag.status}${updatedBag.currentVolume === 1000 ? ' (New Bag Started)' : ''}`
+            });
+        } else {
+            console.warn('[FluidBalanceWidget] onUpdate prop is missing!');
+        }
     };
 
     const netBalance = intake - output;
@@ -179,22 +236,29 @@ const FluidBalanceWidget = ({ patientId, activeRecord, onUpdate }) => {
                                     <BoltIcon className="h-4 w-4 text-cyber-purple" />
                                     <span className="text-[10px] font-black text-white uppercase tracking-widest">Active IV Bag</span>
                                 </div>
-                                <span className={`px-2 py-0.5 rounded text-[8px] font-black uppercase ${ivBag.status === 'Running' ? 'bg-cyber-blue/20 text-cyber-blue' : 'bg-gray-800 text-gray-500'}`}>
-                                    {ivBag.status}
-                                </span>
+                                <button 
+                                    onClick={toggleIVStatus}
+                                    className={`px-2 py-0.5 rounded text-[8px] font-black uppercase transition-all ${
+                                        ivBag.status === 'Running' 
+                                            ? 'bg-cyber-blue/20 text-cyber-blue border border-cyber-blue/30' 
+                                            : 'bg-gray-800 text-gray-500 border border-white/5 hover:text-white hover:bg-gray-700'
+                                    }`}
+                                >
+                                    {ivBag.status === 'Running' ? 'PAUSE' : 'START'}
+                                </button>
                             </div>
 
                             <div className="relative h-4 w-full bg-white/5 rounded-full overflow-hidden mb-4">
                                 <div 
                                     className="absolute inset-y-0 left-0 bg-gradient-to-r from-cyber-blue to-cyber-purple transition-all duration-1000"
-                                    style={{ width: `${(ivBag.currentVolume / ivBag.totalVolume) * 100}%` }}
+                                    style={{ width: `${(displayVolume / ivBag.totalVolume) * 100}%` }}
                                 />
                             </div>
 
                             <div className="flex justify-between items-end mb-8">
                                 <div>
                                     <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest">Remaining</p>
-                                    <p className="text-xl font-black text-white">{ivBag.currentVolume} <span className="text-[10px] opacity-40">ml</span></p>
+                                    <p className="text-xl font-black text-white">{displayVolume} <span className="text-[10px] opacity-40">ml</span></p>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-[8px] font-bold text-gray-500 uppercase tracking-widest">Prescribed Rate</p>

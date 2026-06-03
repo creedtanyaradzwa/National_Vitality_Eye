@@ -105,7 +105,7 @@ const medicalRecordSchema = new mongoose.Schema({
         fluidBalance: {
             intake: Number, // ml
             output: Number, // ml
-            type: String // e.g., "IV Fluids", "Oral", "Urine", "Drainage"
+            type: { type: String } // e.g., "IV Fluids", "Oral", "Urine", "Drainage"
         },
         symptoms: [String],
         notes: String,
