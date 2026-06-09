@@ -18,6 +18,7 @@ const { router: realTimeAIRoutes, setAIInstance } = require("./routes/realTimeAI
 const ContinuousLearner = require("./ai/continuousLearner");
 const AlertEmitter = require("./ai/alertEmitter");
 const RealTimeLearner = require("./ai/realTimeLearner");
+const OutbreakDetector = require("./ai/outbreakDetector");
 const MedicalRecord = require("./models/MedicalRecord");
 const Patient = require("./models/Patient");
 
@@ -209,9 +210,14 @@ async function initializeAI() {
         // Set in the routes module
         setAIInstance(ai, emitter);
         
+        // Initialize and start the persistent Outbreak Detector
+        const outbreakDetector = new OutbreakDetector(io, emitter);
+        outbreakDetector.start();
+        
         // Make available to other routes via app.locals
         app.locals.aiInstance = ai;
         app.locals.alertEmitter = emitter;
+        app.locals.outbreakDetector = outbreakDetector;
         
         return ai;
     } catch (error) {

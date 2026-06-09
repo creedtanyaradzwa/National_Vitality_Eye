@@ -510,7 +510,7 @@ const Dashboard = () => {
                             selectedDisease={selectedDisease}
                         />
                     </div>
-                    <div className="lg:col-span-2">
+                    <div className="lg:col-span-2 min-h-[400px]">
                         <DiseaseChart
                             data={topDiseases || []}
                             totalCases={totalCases}

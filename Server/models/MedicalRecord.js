@@ -267,6 +267,16 @@ const medicalRecordSchema = new mongoose.Schema({
     dischargeInstructions: String,
     dischargeSummary: String,
     
+    // ============ ENVIRONMENTAL CONTEXT (Gap B) ============
+    environmentalContext: {
+        factor: String,         // e.g., "Broken sewage pipe", "Contaminated well", "Standing water"
+        severity: { 
+            type: String, 
+            enum: ["Low", "Moderate", "High", "Critical"] 
+        },
+        description: String
+    },
+    
     // ============ CLINICAL NOTES ============
     doctorNotes: String,
     nursingNotes: String,

@@ -118,6 +118,11 @@ const MedicalRecords = () => {
         province: '',
         district: '',
         department: '',
+        environmentalContext: {
+            factor: '',
+            severity: 'Low',
+            description: ''
+        },
         historyOfPresentIllness: '',
         doctorNotes: '',
         nursingNotes: '',
@@ -436,6 +441,11 @@ const MedicalRecords = () => {
             nursingNotes: record.nursingNotes || '',
             notes: record.notes || '',
             taggedUsers: record.taggedUsers?.map(u => u._id || u) || [],
+            environmentalContext: record.environmentalContext || {
+                factor: '',
+                severity: 'Low',
+                description: ''
+            },
             physicalExam: record.physicalExam || {
                 general: '',
                 cardiovascular: '',
@@ -748,6 +758,7 @@ const MedicalRecords = () => {
             province: formData.province,
             district: formData.district,
             department: formData.department,
+            environmentalContext: formData.environmentalContext,
             historyOfPresentIllness: formData.historyOfPresentIllness,
             doctorNotes: formData.doctorNotes,
             nursingNotes: formData.nursingNotes,
@@ -1402,6 +1413,66 @@ const MedicalRecords = () => {
                                             </div>
                                         </section>
                                     )}
+
+                                    {/* Environmental Context Section (Gap B) */}
+                                    <section className="p-8 rounded-[2rem] bg-emerald-500/5 border border-emerald-500/10">
+                                        <h3 className="text-[10px] font-bold text-emerald-400 uppercase tracking-[0.3em] mb-8 flex items-center">
+                                            <div className="w-2 h-2 bg-emerald-400 rounded-full mr-3 animate-pulse" />
+                                            ENVIRONMENTAL_RISK_FACTORS
+                                        </h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Risk Trigger</label>
+                                                <select
+                                                    value={formData.environmentalContext.factor}
+                                                    onChange={(e) => setFormData({
+                                                        ...formData, 
+                                                        environmentalContext: { ...formData.environmentalContext, factor: e.target.value }
+                                                    })}
+                                                    className="w-full bg-brand-dark-950 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:border-emerald-400/30 transition-all outline-none appearance-none"
+                                                >
+                                                    <option value="">No environmental factor identified</option>
+                                                    <option value="Contaminated well/water source">Contaminated well/water source</option>
+                                                    <option value="Broken sewage pipe/system">Broken sewage pipe/system</option>
+                                                    <option value="Standing water/Mosquito breeding">Standing water/Mosquito breeding</option>
+                                                    <option value="Recent heavy flooding">Recent heavy flooding</option>
+                                                    <option value="Crowded/Informal settlement">Crowded/Informal settlement</option>
+                                                    <option value="Industrial chemical exposure">Industrial chemical exposure</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Environmental Severity</label>
+                                                <select
+                                                    value={formData.environmentalContext.severity}
+                                                    onChange={(e) => setFormData({
+                                                        ...formData, 
+                                                        environmentalContext: { ...formData.environmentalContext, severity: e.target.value }
+                                                    })}
+                                                    className="w-full bg-brand-dark-950 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:border-emerald-400/30 transition-all outline-none appearance-none"
+                                                >
+                                                    <option value="Low">Low Risk</option>
+                                                    <option value="Moderate">Moderate Concern</option>
+                                                    <option value="High">High Outbreak Risk</option>
+                                                    <option value="Critical">Immediate Crisis Signal</option>
+                                                </select>
+                                            </div>
+                                            <div className="md:col-span-2 space-y-2">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest ml-1">Environmental Notes</label>
+                                                <textarea
+                                                    value={formData.environmentalContext.description}
+                                                    onChange={(e) => setFormData({
+                                                        ...formData, 
+                                                        environmentalContext: { ...formData.environmentalContext, description: e.target.value }
+                                                    })}
+                                                    placeholder="Describe the environmental context (e.g., 'Patient reports large sewage leak 50m from home')..."
+                                                    className="w-full bg-brand-dark-950 border border-white/5 rounded-2xl py-4 px-6 text-sm text-white focus:border-emerald-400/30 transition-all min-h-[80px] outline-none"
+                                                />
+                                            </div>
+                                        </div>
+                                        <p className="mt-4 text-[9px] text-emerald-500/60 font-bold uppercase tracking-widest italic">
+                                            * These signals are weighted by AI to lower the outbreak detection threshold for this ward.
+                                        </p>
+                                    </section>
 
                                     {/* Symptoms Section */}
                                     <section>

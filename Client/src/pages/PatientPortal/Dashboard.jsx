@@ -222,13 +222,14 @@ const PatientDashboard = () => {
                         <ArrowRightIcon className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </button>
                     <button 
-                        className="flex items-center justify-between p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 transition-all group opacity-50 cursor-not-allowed"
+                        onClick={() => navigate('/patient/surveillance')}
+                        className="flex items-center justify-between p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 hover:bg-purple-500/20 transition-all group"
                     >
                         <div className="flex items-center space-x-3">
                             <BellAlertIcon className="h-5 w-5" />
-                            <span className="font-bold">Health Assistant</span>
+                            <span className="font-bold">Community Health</span>
                         </div>
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-500/20">Coming Soon</span>
+                        <ArrowRightIcon className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>
             </div>

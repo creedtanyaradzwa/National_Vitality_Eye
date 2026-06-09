@@ -13,7 +13,8 @@ import {
     addChronicCondition,
     addMedication,
     addAllergy,
-    updateClinicalProfile
+    updateClinicalProfile,
+    predictDisease
 } from '../services/api';
 import { useAuth } from '../context/AuthProvider';
 import { 
@@ -59,9 +60,11 @@ const PatientDetailsPage = () => {
     const [snapshot, setSnapshot] = useState(null);
     const [clinicalRisk, setClinicalRisk] = useState(null);
     const [anomalies, setAnomalies] = useState([]);
+    const [aiPredictions, setAiPredictions] = useState(null);
     const [loading, setLoading] = useState(true);
     const [loadingRisk, setLoadingRisk] = useState(false);
     const [loadingAnomalies, setLoadingAnomalies] = useState(false);
+    const [loadingPredictions, setLoadingPredictions] = useState(false);
     const [activeTab, setActiveTab] = useState('overview');
     const [editingField, setEditingField] = useState(null);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -71,6 +74,39 @@ const PatientDetailsPage = () => {
     const canEdit = currentUser?.role !== 'viewer' && currentUser?.role !== 'patient';
     const activeRecord = records.find(r => r.visitStatus === 'Active' || r.visitStatus === 'In Admission');
     const latestVitals = records.find(r => r.vitalSigns)?.vitalSigns;
+
+    const hereditaryHistory = clinicalProfile?.familyHistory ? [
+        ...(clinicalProfile.familyHistory.mother || []),
+        ...(clinicalProfile.familyHistory.father || []),
+        ...(clinicalProfile.familyHistory.siblings || []),
+        ...(clinicalProfile.familyHistory.other || [])
+    ] : [];
+
+    const fetchAIPrediction = useCallback(async (currentPatient, currentRecords) => {
+        const latestRecord = currentRecords.find(r => r.visitStatus === 'Active' || r.visitStatus === 'In Admission') || currentRecords[0];
+        const symptoms = latestRecord?.symptoms || [];
+        
+        if (symptoms.length === 0) {
+            setAiPredictions(null);
+            return;
+        }
+
+        setLoadingPredictions(true);
+        try {
+            const requestData = {
+                symptoms: symptoms,
+                province: currentPatient.province,
+                vitals: latestRecord.vitalSigns,
+                patientId: currentPatient._id
+            };
+            const response = await predictDisease(requestData);
+            setAiPredictions(response.data);
+        } catch (error) {
+            console.error('AI Prediction failed', error);
+        } finally {
+            setLoadingPredictions(false);
+        }
+    }, [id]);
 
     const fetchData = useCallback(async () => {
         try {
@@ -88,6 +124,7 @@ const PatientDetailsPage = () => {
             // Immediate Fetch for Intelligence Stack
             fetchClinicalRisk(patientRes.data._id);
             fetchAnomalies(patientRes.data._id);
+            fetchAIPrediction(patientRes.data, recordsRes.data);
         } catch (error) {
             console.error('Failed to fetch patient data', error);
             toast.error('Clinical data sync failed');
@@ -484,7 +521,7 @@ const PatientDetailsPage = () => {
                         </div>
 
                         {/* --- CLINICAL BASELINE SUMMARY --- */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                             {/* Conditions Summary */}
                             <div className="rounded-2xl bg-brand-dark-900 border border-white/5 p-5 hover:border-purple-500/30 transition-all cursor-pointer" onClick={() => setActiveTab('conditions')}>
                                 <div className="flex items-center justify-between mb-4">
@@ -530,7 +567,7 @@ const PatientDetailsPage = () => {
                             {/* Allergies Summary */}
                             <div className="rounded-2xl bg-brand-dark-900 border border-white/5 p-5 hover:border-red-500/30 transition-all cursor-pointer" onClick={() => setActiveTab('allergies')}>
                                 <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-[9px] font-black text-red-400 uppercase tracking-[0.3em]">IMMUNO_ALERTS</h3>
+                                    <h3 className="text-[9px] font-black text-red-400 uppercase tracking-[0.3em]">ALLERGY_PROFILE</h3>
                                     <span className="px-1.5 py-0.5 rounded bg-red-500/10 text-[8px] font-black text-red-400 border border-red-500/20">
                                         {clinicalProfile?.allergies?.length || 0} ALERTS
                                     </span>
@@ -547,6 +584,119 @@ const PatientDetailsPage = () => {
                                     )}
                                 </div>
                             </div>
+
+                            {/* Special Needs Summary */}
+                            <div className="rounded-2xl bg-brand-dark-900 border border-white/5 p-5 hover:border-amber-500/30 transition-all cursor-pointer" onClick={() => setActiveTab('special')}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-[9px] font-black text-amber-400 uppercase tracking-[0.3em]">SPECIAL_NEEDS</h3>
+                                    <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-[8px] font-black text-amber-400 border border-amber-500/20">
+                                        {clinicalProfile?.specialNeeds?.length || 0} ACTIVE
+                                    </span>
+                                </div>
+                                <div className="space-y-2">
+                                    {clinicalProfile?.specialNeeds?.slice(0, 3).map((need, i) => (
+                                        <div key={i} className="flex items-center gap-2">
+                                            <div className="w-1 h-1 rounded-full bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]" />
+                                            <p className="text-[11px] text-amber-400 font-black uppercase truncate">{need}</p>
+                                        </div>
+                                    )) || <p className="text-[10px] text-gray-600 italic uppercase">No special needs</p>}
+                                    {clinicalProfile?.specialNeeds?.length > 3 && (
+                                        <p className="text-[9px] text-amber-500 font-black uppercase mt-1">+{clinicalProfile.specialNeeds.length - 3} MORE</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Hereditary Summary */}
+                            <div className="rounded-2xl bg-brand-dark-900 border border-white/5 p-5 hover:border-cyber-green/30 transition-all cursor-pointer" onClick={() => setActiveTab('family')}>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-[9px] font-black text-cyber-green uppercase tracking-[0.3em]">HEREDITARY_CONTEXT</h3>
+                                    <span className="px-1.5 py-0.5 rounded bg-cyber-green/10 text-[8px] font-black text-cyber-green border border-cyber-green/20">
+                                        {hereditaryHistory.length} HITS
+                                    </span>
+                                </div>
+                                <div className="space-y-2">
+                                    {hereditaryHistory.slice(0, 3).map((cond, i) => (
+                                        <div key={i} className="flex items-center gap-2">
+                                            <div className="w-1 h-1 rounded-full bg-cyber-green shadow-[0_0_5px_rgba(57,255,20,0.5)]" />
+                                            <p className="text-[11px] text-cyber-green font-black uppercase truncate">{cond}</p>
+                                        </div>
+                                    )) || <p className="text-[10px] text-gray-600 italic uppercase">No hereditary history</p>}
+                                    {hereditaryHistory.length > 3 && (
+                                        <p className="text-[9px] text-cyber-green font-black uppercase mt-1">+{hereditaryHistory.length - 3} MORE</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 4. AI PREDICTOR HUB (Strategic Decision Support) */}
+                        <div className="rounded-2xl bg-brand-dark-900 border border-purple-500/20 p-6 shadow-[0_0_20px_rgba(168,85,247,0.05)]">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-[10px] font-black text-purple-400 uppercase tracking-[0.3em] flex items-center">
+                                    <SparklesIcon className="h-4 w-4 mr-2 animate-pulse" />
+                                    AI_DIAGNOSTIC_PREDICTOR
+                                </h3>
+                                <div className="flex items-center gap-2">
+                                    <span className="px-2 py-0.5 rounded bg-purple-500/10 text-[8px] font-black text-purple-400 border border-purple-500/20 uppercase">
+                                        Clinical_Decision_Support
+                                    </span>
+                                </div>
+                            </div>
+
+                            {loadingPredictions ? (
+                                <div className="flex items-center justify-center py-10">
+                                    <div className="w-8 h-8 border-2 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+                                    <span className="ml-3 text-[10px] font-black text-gray-500 uppercase tracking-widest">Running Neural Analysis...</span>
+                                </div>
+                            ) : aiPredictions ? (
+                                <div className="space-y-6">
+                                    <div className="p-3 rounded-lg bg-white/5 border border-white/5 text-[9px] text-gray-400 uppercase tracking-widest flex items-center justify-between">
+                                        <span>Results based on Patient Profile ({patient.province}) + Current Symptoms</span>
+                                        <span className="text-purple-400 font-black">AI Model v3.0</span>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        {aiPredictions.predictions?.slice(0, 3).map((pred, i) => (
+                                            <div key={i} className="p-4 rounded-xl bg-brand-dark-800 border border-white/5 hover:border-purple-500/30 transition-all group">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <h4 className="text-white font-bold text-sm uppercase tracking-tight">{pred.disease}</h4>
+                                                    <span className={`text-lg font-black ${pred.confidence > 70 ? 'text-green-400' : pred.confidence > 40 ? 'text-yellow-400' : 'text-red-400'}`}>
+                                                        {pred.confidence}%
+                                                    </span>
+                                                </div>
+                                                <div className="w-full bg-black/40 rounded-full h-1 mb-3 overflow-hidden">
+                                                    <div 
+                                                        className={`h-full transition-all duration-1000 ${pred.confidence > 70 ? 'bg-green-500' : pred.confidence > 40 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                                                        style={{ width: `${pred.confidence}%` }}
+                                                    />
+                                                </div>
+                                                <p className="text-[10px] text-gray-500 italic line-clamp-2">
+                                                    {pred.reasons?.[0] || 'Statistical correlation identified from clinical dataset.'}
+                                                </p>
+                                            </div>
+                                        )) || (
+                                            <div className="col-span-full py-4 text-center text-gray-500 text-[10px] uppercase">
+                                                No direct pathology matches identified.
+                                            </div>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="p-3 rounded-lg bg-yellow-500/5 border border-yellow-500/10 text-[8px] text-yellow-500/70 uppercase tracking-[0.1em] font-medium">
+                                        Disclaimer: This is a decision support tool based on historical patterns. Final clinical judgment rests with the attending medical officer.
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-10 border border-dashed border-white/10 rounded-2xl">
+                                    <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
+                                        <ExclamationTriangleIcon className="h-6 w-6 text-gray-700" />
+                                    </div>
+                                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                                        No recent symptoms recorded to run AI prediction
+                                    </p>
+                                    <p className="text-[8px] text-gray-700 uppercase mt-1 tracking-widest">
+                                        Please update the current record with patient symptoms to activate decision support
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         {/* 4. Longitudinal Vitals Trend (The Context) */}

@@ -122,8 +122,8 @@ router.get("/stats/patient-count", hasPermission("view:analytics"), async (req, 
 // Client compatibility: Province Stats
 router.get("/stats/provinces", hasPermission("view:analytics"), async (req, res) => {
     try {
-        const provinces = await buildMapProvinceStats();
-        res.json({ provinces });
+        const result = await buildMapProvinceStats({ MedicalRecord });
+        res.json(result);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

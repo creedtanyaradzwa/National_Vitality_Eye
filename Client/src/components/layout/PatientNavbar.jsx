@@ -40,6 +40,7 @@ const PatientNavbar = () => {
         { path: '/patient/dashboard',         icon: HomeIcon,           label: 'Home' },
         { path: '/patient/records',            icon: DocumentTextIcon,   label: 'My Records' },
         { path: '/patient/vitals',             icon: HeartIcon,          label: 'My Vitals' },
+        { path: '/patient/surveillance',       icon: BellAlertIcon,      label: 'Community Health' },
         { path: '/patient/trusted-providers',  icon: UserGroupIcon,      label: 'My Care Team' },
         { path: '/patient/ai/health-summary',  icon: ChartBarIcon,       label: 'Health Score' },
     ];

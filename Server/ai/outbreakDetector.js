@@ -19,6 +19,18 @@ try {
     console.warn("⚠️ Failed to load edliz.json:", e.message);
 }
 
+// Load Citizen Recommendations (Gap B - Configurable)
+let RECOMMENDATIONS_CONFIG = { categories: [], default_recommendations: [] };
+try {
+    const recsPath = path.join(__dirname, 'recommendations.json');
+    if (fs.existsSync(recsPath)) {
+        RECOMMENDATIONS_CONFIG = JSON.parse(fs.readFileSync(recsPath));
+        console.log(`✅ Loaded ${RECOMMENDATIONS_CONFIG.categories.length} recommendation categories.`);
+    }
+} catch (e) {
+    console.warn("⚠️ Failed to load recommendations.json:", e.message);
+}
+
 const PATHOGEN_CONFIG = {
     // --- ZERO-TOLERANCE CRITICAL PATHOGENS ---
     'Acinetobacter baumannii': { floor: 1, weight: 1.0, ignoreFloor: true, priority: 'CRITICAL' },
@@ -87,29 +99,17 @@ class OutbreakDetector {
         const recs = [];
         const lower = diseaseName.toLowerCase();
         
-        // Water-borne detection
-        if (lower.includes('cholera') || lower.includes('typhoid') || lower.includes('diarrhea') || lower.includes('shigella') || lower.includes('dysentery')) {
-            recs.push("Immediate community-wide water quality assessment and implementation of point-of-use chlorination.");
-            recs.push("Launch targeted hand-washing awareness campaigns focused on fecal-oral transmission pathways.");
-            recs.push("Establish rapid rehydration centers and ensure adequate supply of Oral Rehydration Salts (ORS) and IV fluids.");
-        }
+        // Find matching category from the loaded config
+        const category = RECOMMENDATIONS_CONFIG.categories.find(cat => 
+            cat.match_keywords.some(kw => lower.includes(cat.id.replace('_', ' ')) || lower.includes(kw))
+        );
 
-        // Respiratory
-        if (lower.includes('tb') || lower.includes('influenza') || lower.includes('covid') || lower.includes('measles') || lower.includes('pneumonia')) {
-            recs.push("Mandatory droplet precaution protocols in healthcare settings and public transport hubs.");
-            recs.push("Activate contact tracing for all laboratory-confirmed cases to identify potential transmission clusters.");
-            recs.push("Conduct community screening for high-risk individuals showing persistent respiratory symptoms.");
-        }
-
-        // Vector-borne
-        if (lower.includes('malaria') || lower.includes('plasmodium')) {
-            recs.push("Distribution of Long-Lasting Insecticidal Nets (LLINs) in identified hotspot sectors.");
-            recs.push("Initiate Indoor Residual Spraying (IRS) in high-density residential areas showing elevated transmission rates.");
-            recs.push("Verify availability of Artemisinin-based Combination Therapy (ACT) at local primary care centers.");
+        if (category) {
+            recs.push(...category.recommendations);
         }
 
         if (recs.length === 0) {
-            recs.push("Enhanced surveillance and clinical monitoring to establish definitive transmission patterns.");
+            recs.push(...(RECOMMENDATIONS_CONFIG.default_recommendations || ["📢 STAY INFORMED through official health channels and report unusual symptoms to your clinic."]));
         }
 
         return recs;

@@ -191,6 +191,21 @@ const CitizenSurveillance = () => {
                 </div>
             </div>
 
+            {/* Public Health Assistant Intro (Bot Simulation) */}
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-3xl p-6 mb-10 flex items-start gap-4">
+                <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
+                    <ChatBubbleLeftRightIcon className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                    <h3 className="text-blue-400 font-bold text-sm uppercase tracking-wider mb-1">Public Health Assistant</h3>
+                    <p className="text-slate-300 text-sm leading-relaxed italic">
+                        "Hello! I am your automated Health Assistant. I monitor environmental signals and community reports to keep you safe. 
+                        Below you will find active alerts for <span className="text-white font-bold">{patient?.district || patient?.province || 'your region'}</span> and recommended safety protocols. 
+                        You can also report symptoms anonymously to help our Rapid Response teams."
+                    </p>
+                </div>
+            </div>
+
             {/* Localized Alerts Section */}
             <div className="mb-12">
                 <h2 className="text-sm font-bold text-white uppercase tracking-widest mb-6 px-2 flex items-center gap-2">

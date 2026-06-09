@@ -1,0 +1,38 @@
+{
+    "categories": [
+        {
+            "id": "water_borne",
+            "match_keywords": ["cholera", "typhoid", "diarrhea", "shigella", "dysentery", "giardia", "amoebic"],
+            "recommendations": [
+                "💧 BOIL all drinking water before consumption to prevent infection.",
+                "🧼 WASH your hands thoroughly with soap and clean water after using the toilet and before eating.",
+                "🏥 REPORT immediately to the nearest health facility if you experience watery diarrhea or vomiting.",
+                "💧 USE Oral Rehydration Salts (ORS) at home while traveling to the health facility."
+            ]
+        },
+        {
+            "id": "respiratory",
+            "match_keywords": ["tb", "tuberculosis", "influenza", "flu", "covid", "measles", "pneumonia", "cough"],
+            "recommendations": [
+                "😷 WEAR a mask in crowded public places to prevent spreading or catching the infection.",
+                "🤧 COVER your mouth and nose with a tissue or your elbow when coughing or sneezing.",
+                "🪟 ENSURE good ventilation by keeping windows open in homes and public transport.",
+                "🤒 SEEK medical advice if you have a persistent cough, fever, or difficulty breathing."
+            ]
+        },
+        {
+            "id": "vector_borne",
+            "match_keywords": ["malaria", "plasmodium", "dengue", "zika", "chikungunya"],
+            "recommendations": [
+                "🦟 SLEEP under a treated mosquito net every night to prevent mosquito bites.",
+                "🚫 ELIMINATE standing water around your home where mosquitoes can breed.",
+                "🩺 GET TESTED for Malaria immediately if you develop a fever or chills.",
+                "👕 WEAR long-sleeved clothing and trousers during peak mosquito hours (dusk and dawn)."
+            ]
+        }
+    ],
+    "default_recommendations": [
+        "📢 STAY INFORMED through official health channels and report unusual symptoms to your clinic.",
+        "🏥 Visit your nearest health facility for a professional diagnosis if you feel unwell."
+    ]
+}

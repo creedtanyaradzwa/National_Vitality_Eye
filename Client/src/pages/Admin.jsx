@@ -55,6 +55,7 @@ const Admin = () => {
         role: '' 
     });
     const [aiStats, setAiStats] = useState(null);
+    const [communityReports, setCommunityReports] = useState([]);
     const [refreshingAI, setRefreshingAI] = useState(false);
     const [lastUpdated, setLastUpdated] = useState(new Date());
 
@@ -63,6 +64,7 @@ const Admin = () => {
         { id: 'pending', label: 'Pending Approvals', icon: UserGroupIcon },
         { id: 'all', label: 'All Users', icon: UsersIcon },
         { id: 'patients', label: 'Patient Management', icon: UserGroupIcon },
+        { id: 'surveillance', label: 'Community Signals', icon: MagnifyingGlassIcon },
         { id: 'ai', label: 'AI Control', icon: CpuChipIcon },
     ];
 
@@ -75,6 +77,9 @@ const Admin = () => {
             } else if (activeTab === 'all') {
                 const response = await getAllUsers();
                 setAllUsers(response.data);
+            } else if (activeTab === 'surveillance') {
+                const response = await require('../services/api').getCommunityReports();
+                setCommunityReports(response.data.reports || []);
             } else if (activeTab === 'ai') {
                 const response = await getAIStatus();
                 setAiStats(response.data);
@@ -291,6 +296,73 @@ const Admin = () => {
             {/* Patient Management Tab */}
             {activeTab === 'patients' ? (
                 <PatientManagement />
+            ) : activeTab === 'surveillance' ? (
+                <div className="space-y-6">
+                    <div className="rounded-xl bg-white/5 border border-white/10 p-4 mb-6">
+                        <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+                            <MagnifyingGlassIcon className="h-5 w-5 text-purple-400" />
+                            Community Health Signals
+                        </h2>
+                        <p className="text-sm text-gray-400">
+                            Real-time reports submitted by citizens. These signals influence the AI's outbreak detection thresholds.
+                        </p>
+                    </div>
+
+                    {loading ? (
+                        <div className="flex justify-center py-12"><ArrowPathIcon className="h-8 w-8 text-purple-500 animate-spin" /></div>
+                    ) : communityReports.length === 0 ? (
+                        <div className="rounded-2xl border border-dashed border-white/10 p-20 text-center">
+                            <EnvelopeIcon className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                            <p className="text-gray-500 font-medium">No community signals received yet.</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {communityReports.map((report, idx) => (
+                                <div key={idx} className="rounded-2xl bg-white/5 border border-white/10 p-6 hover:bg-white/10 transition-all group">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                                                <ChatBubbleLeftRightIcon className="h-5 w-5 text-purple-400" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold text-purple-400 uppercase tracking-widest">{report.location?.district || report.location?.province}</p>
+                                                <p className="text-white font-bold">{new Date(report.createdAt).toLocaleDateString()} {new Date(report.createdAt).toLocaleTimeString()}</p>
+                                            </div>
+                                        </div>
+                                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
+                                            report.verificationStatus === 'Verified' ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
+                                            report.verificationStatus === 'Flagged' ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
+                                            'bg-yellow-500/10 text-yellow-400 border border-yellow-500/20'
+                                        }`}>
+                                            {report.verificationStatus}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="space-y-4">
+                                        <div>
+                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Reported Symptoms</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {report.symptoms.map((s, i) => (
+                                                    <span key={i} className="px-3 py-1 rounded-lg bg-slate-900 border border-white/5 text-[10px] font-bold text-gray-300 uppercase">{s}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                                            <div className="flex items-center gap-2 text-xs text-gray-500">
+                                                <MapPinIcon className="h-3 w-3" />
+                                                <span>Ward: {report.location?.ward || 'N/A'}, Village: {report.location?.village || 'N/A'}</span>
+                                            </div>
+                                            <p className="text-[10px] text-gray-600 font-bold italic">
+                                                {report.contactInfo?.isAnonymous ? 'Anonymous Reporter' : `Contact: ${report.contactInfo?.phone}`}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             ) : activeTab === 'ai' ? (
                 <div className="space-y-6">
                     <div className="rounded-2xl overflow-hidden bg-gradient-to-r from-cyan-500 to-blue-500 p-[1px]">

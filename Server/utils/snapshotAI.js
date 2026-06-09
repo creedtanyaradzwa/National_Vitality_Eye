@@ -3,7 +3,13 @@
  * Generates a concise clinical story based on historical and current patient data.
  */
 
-const { calculateAge } = require('./vitalSigns');
+const { 
+    calculateAge, 
+    classifyTemperature, 
+    classifyHeartRate, 
+    classifySpO2, 
+    classifyBloodPressure 
+} = require('./vitalSigns');
 
 /**
  * Generates a natural language summary of the patient's current clinical state.
@@ -157,21 +163,69 @@ function generateClinicalSnapshot(patient, records) {
  */
 function generateRecordSnapshot(record) {
     const condition = record.disease || record.primaryDiagnosis?.name || "General Encounter";
-    let summary = `Encounter for ${condition}. `;
+    const lowerCondition = condition.toLowerCase();
+    let summary = `Clinical synthesis for ${condition} encounter. `;
     
+    // 1. Abnormality Detection (Baseline/Initial)
+    const vitals = record.vitalSigns || {};
+    const abnormalities = [];
+    
+    if (classifyTemperature(vitals.temperature).status !== 'NORMAL') abnormalities.push(`Temp ${vitals.temperature}°C`);
+    if (classifyHeartRate(vitals.heartRate).status !== 'NORMAL') abnormalities.push(`HR ${vitals.heartRate}bpm`);
+    if (classifySpO2(vitals.oxygenSaturation).status !== 'NORMAL') abnormalities.push(`SpO2 ${vitals.oxygenSaturation}%`);
+    if (classifyBloodPressure(vitals.bloodPressure?.systolic, vitals.bloodPressure?.diastolic).status !== 'NORMAL') {
+        abnormalities.push(`BP ${vitals.bloodPressure?.systolic}/${vitals.bloodPressure?.diastolic}`);
+    }
+
+    if (abnormalities.length > 0) {
+        summary += `Initial presentation shows abnormal parameters: ${abnormalities.join(', ')}. `;
+    } else {
+        summary += "Patient was hemodynamically stable at baseline. ";
+    }
+
+    // 2. Admission/Progress Logic
     if (record.visitStatus === 'In Admission' || record.visitStatus === 'Active') {
-        const obsCount = record.observations?.length || 0;
+        const obs = record.observations || [];
+        const obsCount = obs.length;
         const statusType = record.visitStatus === 'In Admission' ? 'admission' : 'active care';
-        summary += `Currently in ${statusType} with ${obsCount} recorded observations. `;
+        summary += `The patient is currently in ${statusType} (${obsCount} follow-up points). `;
         
-        if (obsCount > 0) {
-            const latestObs = record.observations[obsCount - 1];
-            summary += `Latest status (${new Date(latestObs.timestamp).toLocaleTimeString()}): ${latestObs.status || 'Stable'}. `;
-            if (latestObs.notes) summary += `Note: ${latestObs.notes}`;
+        if (obsCount >= 2) {
+            const first = obs[0];
+            const last = obs[obsCount - 1];
+            
+            // Trend Analysis
+            let trajectory = "";
+            if (last.vitalSigns?.temperature < first.vitalSigns?.temperature - 0.5) trajectory += "cooling trend noted; ";
+            if (last.vitalSigns?.heartRate < first.vitalSigns?.heartRate - 10) trajectory += "pulse stabilizing; ";
+            if (last.vitalSigns?.oxygenSaturation > first.vitalSigns?.oxygenSaturation + 2) trajectory += "oxygenation improving; ";
+            
+            if (trajectory) summary += `Trajectory: ${trajectory.trim()}. `;
+            
+            if (last.status === 'Deteriorating') summary += "⚠️ WARNING: Latest clinical assessment indicates acute deterioration. ";
+            else if (last.status === 'Improving') summary += "Trajectory is positive with visible clinical improvement. ";
         }
-    } else if (record.visitStatus === 'Finalized' || record.visitStatus === 'Discharged') {
-        summary += `Case closed with outcome: ${record.disposition || 'Finalized'}. `;
-        if (record.dischargeInstructions) summary += `Instructions: ${record.dischargeInstructions.substring(0, 100)}...`;
+
+        // 3. Pathogen-Specific Deep Insights
+        if (lowerCondition.includes('cholera') || lowerCondition.includes('diarrhea')) {
+            const lastObs = obs[obsCount - 1];
+            if (lastObs?.fluidBalance?.output > lastObs?.fluidBalance?.intake) {
+                summary += "CRITICAL: Negative fluid balance detected. High risk of hypovolemic shock. ";
+            } else if (lastObs?.fluidBalance?.intake > 0) {
+                summary += "Rehydration therapy is currently outstripping losses. ";
+            }
+        }
+
+        if (lowerCondition.includes('pneumonia') || lowerCondition.includes('asthma') || lowerCondition.includes('tb')) {
+            const lastSpO2 = obs[obsCount - 1]?.vitalSigns?.oxygenSaturation || vitals.oxygenSaturation;
+            if (lastSpO2 < 94) summary += "Respiratory burden remains significant; continue O2 support. ";
+        }
+    } else {
+        // Finalized/Discharged Logic
+        summary += `Case reached final outcome: ${record.disposition || 'Finalized'}. `;
+        if (record.dischargeInstructions) {
+            summary += `Discharge Summary: "${record.dischargeInstructions.substring(0, 150)}..."`;
+        }
     }
 
     return summary;

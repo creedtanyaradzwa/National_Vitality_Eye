@@ -111,9 +111,13 @@ export const uploadRadiologyImages = (patientId, studyType, files) => {
 export const getPatientCount = () => API.get('/medical-records/stats/patient-count');
 export const getTopDiseases = () => API.get('/medical-records/stats/top-diseases');
 export const getAllDiseases = () => API.get('/medical-records/stats/all-diseases');
-export const getProvinceStats = () => API.get('/medical-records/stats/provinces');
-export const getDiseaseInsights = (disease) => API.get(`/medical-records/stats/disease-insights?disease=${encodeURIComponent(disease)}`);
-export const getDiseaseAnalytics = (disease) => API.get(`/medical-records/stats/disease-analytics?disease=${encodeURIComponent(disease)}`);
+export const getProvinceStats = (period = 'all', disease = '') => {
+    let url = `/medical-records/stats/by-province?period=${period}`;
+    if (disease) url += `&disease=${encodeURIComponent(disease)}`;
+    return API.get(url);
+};
+export const getDiseaseInsights = (disease, period = 'all') => API.get(`/ai/disease-insights/${encodeURIComponent(disease)}?period=${period}`);
+export const getDiseaseAnalytics = (disease, period = 'all') => API.get(`/medical-records/stats/disease-analytics/${encodeURIComponent(disease)}?period=${period}`);
 export const getMonthlyTrends = (disease) => API.get(`/medical-records/stats/monthly-trends?disease=${encodeURIComponent(disease)}`);
 export const getGlobalSummary = (hospital = "") => {
 
@@ -128,7 +132,7 @@ export const getPrevalence = () => API.get('/medical-records/stats/prevalence');
 export const getGrowthRate = () => API.get('/medical-records/stats/growth-rate');
 
 // ============ ALERTS ============
-export const getAlerts = () => API.get('/api/alerts');
+export const getAlerts = () => API.get('/ai/alerts');
 export const refreshAI = () => API.post('/ai/refresh');
 
 // ============ PATIENT PORTAL ============
@@ -186,5 +190,12 @@ export const predictDisease = (data) => API.post('/ai/predict', data);
 export const getPatientRisk = (patientId) => API.get(`/ai/risk/${patientId}`);
 export const getAISymptoms = () => API.get('/ai/symptoms');
 
+// ============ COMMUNITY SURVEILLANCE ============
+export const getCommunityReports = (params = {}) => {
+    let url = '/api/patient/surveillance/reports';
+    const query = new URLSearchParams(params).toString();
+    if (query) url += `?${query}`;
+    return API.get(url);
+};
 
 export default API;
