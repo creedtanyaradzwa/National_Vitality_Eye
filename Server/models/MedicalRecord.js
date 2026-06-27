@@ -320,10 +320,7 @@ const medicalRecordSchema = new mongoose.Schema({
     
 }, { timestamps: true });
 
-// ── Pre-save normalisation hook ───────────────────────────────────────────────
-// Ensures consistent casing/spacing for all free-text fields so that
-// "MALARIA", "malaria fever", "Malaria" all resolve to the same disease key
-// in analytics, AI, and search.
+
 medicalRecordSchema.pre('save', async function () {
     if (this.disease) {
         this.disease = normaliseDisease(this.disease);

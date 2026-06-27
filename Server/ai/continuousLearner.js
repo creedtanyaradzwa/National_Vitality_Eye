@@ -1,7 +1,3 @@
-// ai/continuousLearner.js - COMPLETE PRODUCTION READY
-// Includes: Disease Prediction, Risk Assessment, Anomaly Detection, Patient Similarity, Confidence Calibration
-// All edge cases handled, no division by zero, percentages capped at 100%
-
 const {
     normaliseDisease,
     normaliseSymptom,
@@ -25,16 +21,16 @@ class ContinuousLearner {
         this.familyHistoryCorrelations = new Map();
         
         // Performance tracking
-        this.predictionAccuracy = new Map();  // Track accuracy per disease
-        this.calibrationFactor = 0.92;        // Base calibration factor
-        this.minimumConfidence = 15;           // Minimum confidence for predictions
+        this.predictionAccuracy = new Map();  
+        this.calibrationFactor = 0.92;       
+        this.minimumConfidence = 15;           
         this.totalPredictions = 0;
         this.correctPredictions = 0;
         
         // Global stats
         this.totalRecords = 0;
         this.lastUpdated = null;
-        this.uniqueSymptoms = new Set(); // Track all unique symptoms globally
+        this.uniqueSymptoms = new Set(); 
         
         // Cache for patient data
         this.patientCache = new Map();
