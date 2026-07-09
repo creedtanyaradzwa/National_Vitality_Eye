@@ -3,19 +3,9 @@ import ReactDOM from 'react-dom/client'
 import App from './App'
 import './index.css'
 import { initOfflineDB } from './utils/offlineSync'
+import { registerSW } from 'virtual:pwa-register'
 
-// Register service worker
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
-            .then(() => {
-                console.log('Service Worker registered successfully');
-            })
-            .catch(error => {
-                console.log('Service Worker registration failed:', error);
-            });
-    });
-}
+registerSW({ immediate: true })
 
 // Initialize offline database
 initOfflineDB().catch(console.error);

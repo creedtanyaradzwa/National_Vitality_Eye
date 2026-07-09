@@ -1,0 +1,989 @@
+[
+  {
+    "chapter": "3",
+    "chapterTitle": "Paediatric Conditions",
+    "diseaseCategory": "Neonatal Conditions",
+    "pageRange": "42-63",
+    "diseases": [
+      {
+        "conditionName": "Routine Management at Birth",
+        "caseDefinition": "Normal newborn care at birth",
+        "diagnosticCriteria": "Newborn infant at birth",
+        "management": {
+          "general": [
+            "Do not routinely suction mouth but suction only if there is something (e.g., thick meconium) to suck out",
+            "Dry and wrap up, preferably in a dry pre-warmed soft towel",
+            "Delayed cord clamping - clamping the umbilical cord after 1 minute is recommended for all normal births except in intrauterine growth restriction (IUGR), infants of diabetic mothers and asphyxia",
+            "Hand the baby to the mother for her to put immediately to breast"
+          ],
+          "medications": [
+            {
+              "medicine": "Tetracycline eye ointment 1%",
+              "codes": "C V",
+              "dose": "Instill into both eyes once only",
+              "frequency": "Once only at birth",
+              "duration": "Single dose"
+            },
+            {
+              "medicine": "Vitamin K",
+              "codes": "C V",
+              "dose": ">1.5kg = 1mg, <1.5kg = 0.5mg",
+              "frequency": "Once only",
+              "duration": "Single dose"
+            }
+          ]
+        }
+      },
+      {
+        "conditionName": "Neonatal Sepsis",
+        "caseDefinition": "Suspected or confirmed infection in newborn",
+        "diagnosticCriteria": {
+          "majorCriteria": [
+            "Confirmed sepsis or chorioamnionitis in mother",
+            "Confirmed or suspected sepsis in twin",
+            "Seizures",
+            "Severe Respiratory Distress in a term infant"
+          ],
+          "minorCriteria": [
+            "Antenatal: ROM >18h, Spontaneous Preterm Birth, GBS sepsis in previous baby or documented GBS carriage in this pregnancy (urine or vaginal swab)",
+            "Natal: Born Before Arrival, Meconium Stained Liquor",
+            "Postnatal: Respiratory distress not obviously related to environmental hypothermia or delayed transition to extra-uterine life, Hypoxia, Apnoea, Hypoglycaemia/Hyperglycaemia not otherwise explained, Temperature instability not explained by environmental factors, Acidosis not obviously related to HIE, Unexplained bleeding or thrombocytopenia, Mild encephalopathy/Altered responsiveness, Altered tone not otherwise explained, Feed intolerance/feeding difficulty, Abnormal heart rate (<90 or >160), Jaundice in first 24h, Signs of shock"
+          ],
+          "indications": "Any Major Criteria OR two or more Minor Criteria → do blood culture and start antibiotics; One minor criterion present → observe for 12h, start antibiotics if not feeding well, has respiratory distress or appears lethargic/sick"
+        },
+        "management": {
+          "first48Hours": [
+            {
+              "medicine": "Benzylpenicillin",
+              "route": "im/iv",
+              "codes": "C V",
+              "dose": "0.1MU/kg",
+              "frequency": "Per Table 3.1",
+              "duration": "10 days"
+            },
+            {
+              "medicine": "Gentamicin",
+              "route": "im/iv",
+              "codes": "C V",
+              "dose": "2.5mg/kg",
+              "frequency": "Per Table 3.3",
+              "duration": "10 days"
+            }
+          ],
+          "after48Hours": [
+            {
+              "medicine": "Gentamicin",
+              "route": "im/iv",
+              "codes": "C V",
+              "dose": "2.5mg/kg",
+              "frequency": "Per Table 3.3",
+              "duration": "10 days"
+            },
+            {
+              "medicine": "Cloxacillin",
+              "route": "im/iv",
+              "codes": "B V",
+              "dose": "30mg/kg",
+              "frequency": "Per Table 3.1",
+              "duration": "10 days"
+            }
+          ],
+          "alternative": [
+            {
+              "medicine": "Kanamycin",
+              "dose": "7.5mg/kg/dose",
+              "frequency": "BD",
+              "note": "Can be used if gentamicin unavailable"
+            }
+          ]
+        },
+        "gentamicinDosage": {
+          "lessThan1000g": "5mg/kg once every 48 hours for first two weeks, then once every 36 hours",
+          "1000gTo2000g": "5mg/kg, less than 1 week old: once every 48 hours; >1 week old: once every 36 hours",
+          "moreThan2000g": "4mg/kg, less than 1 week old: once every 24 hours; 1 week and above: once every 24-48 hours"
+        }
+      },
+      {
+        "conditionName": "Neonatal Meningitis",
+        "caseDefinition": "Infection of meninges in newborn",
+        "diagnosticCriteria": "Clinical suspicion of meningitis in neonate",
+        "management": {
+          "medications": [
+            {
+              "medicine": "Benzylpenicillin",
+              "route": "im/iv",
+              "codes": "C V",
+              "dose": "0.1MU/kg",
+              "frequency": "Per Table 3.1",
+              "duration": "14-21 days"
+            },
+            {
+              "medicine": "Gentamicin",
+              "route": "im/iv",
+              "codes": "C V",
+              "dose": "2.5mg/kg",
+              "frequency": "Per Table 3.3",
+              "duration": "14-21 days"
+            },
+            {
+              "medicine": "Chloramphenicol",
+              "route": "iv",
+              "codes": "B V",
+              "dose": "12.5mg/kg",
+              "frequency": "Per Table 3.1",
+              "duration": "14-21 days"
+            }
+          ],
+          "alternatives": [
+            {
+              "medicine": "Ampicillin",
+              "dose": "50mg/kg",
+              "note": "Can be used if benzyl penicillin not available"
+            },
+            {
+              "medicine": "Ceftriaxone",
+              "dose": "50mg/kg/dose",
+              "note": "Can be used as alternative for meningitis"
+            }
+          ]
+        }
+      },
+      {
+        "conditionName": "Necrotising Enterocolitis",
+        "caseDefinition": "Inflammation and necrosis of bowel in newborn",
+        "diagnosticCriteria": "Clinical suspicion of necrotising enterocolitis",
+        "management": {
+          "general": [
+            "Give nothing by mouth",
+            "Supportive care is vital: oxygen, intravenous fluids, warmth, and nasogastric continuous drainage",
+            "Anticipate complications such as bleeding, vomiting, perforation, seizures",
+            "Refer for specialist diagnosis and care"
+          ],
+          "medications": [
+            {
+              "medicine": "Benzylpenicillin",
+              "route": "im/iv",
+              "codes": "C V",
+              "dose": "0.1MU/kg",
+              "frequency": "Per Table 3.1",
+              "duration": "10 days"
+            },
+            {
+              "medicine": "Gentamicin",
+              "route": "im/iv",
+              "codes": "C V",
+              "dose": "2.5mg/kg",
+              "frequency": "Per Table 3.3",
+              "duration": "10 days"
+            },
+            {
+              "medicine": "Metronidazole",
+              "route": "iv",
+              "codes": "A N",
+              "dose": "7.5mg/kg",
+              "frequency": "Per Table 3.1",
+              "duration": "10 days"
+            }
+          ]
+        }
+      },
+      {
+        "conditionName": "Neonatal Tetanus",
+        "caseDefinition": "Tetanus infection in newborn",
+        "diagnosticCriteria": "Clinical suspicion of neonatal tetanus",
+        "management": {
+          "general": [
+            "The important principle in treating these babies is minimal handling"
+          ],
+          "medications": [
+            {
+              "medicine": "Benzylpenicillin",
+              "route": "im/iv",
+              "codes": "C V",
+              "dose": "0.05MU per kg",
+              "frequency": "12 hourly",
+              "duration": "5-7 days"
+            },
+            {
+              "medicine": "Procaine penicillin",
+              "route": "im",
+              "codes": "C V",
+              "dose": "50mg/kg",
+              "frequency": "Once a day",
+              "duration": "5-7 days"
+            },
+            {
+              "medicine": "Anti-tetanus immunoglobulin",
+              "route": "im",
+              "codes": "B E",
+              "dose": "500-1000 units",
+              "frequency": "Once only",
+              "duration": "Single dose"
+            }
+          ],
+          "muscleSpasmControl": [
+            {
+              "medicine": "Diazepam",
+              "route": "iv",
+              "codes": "C V",
+              "dose": "0.25-1mg/kg (to a max total dose of 10mg)",
+              "frequency": "4-8hrly, titrated according to response"
+            },
+            {
+              "medicine": "Chlorpromazine",
+              "route": "iv/im/nasogastric",
+              "codes": "C V",
+              "dose": "2mg/kg/24hrs in 4-6 divided doses"
+            },
+            {
+              "medicine": "Phenobarbitone",
+              "route": "iv/im/nasogastric",
+              "codes": "B E",
+              "dose": "2.5-5mg/kg",
+              "frequency": "12hrly",
+              "duration": "For as long as necessary"
+            }
+          ]
+        }
+      },
+      {
+        "conditionName": "Congenital Syphilis",
+        "caseDefinition": "Syphilis infection in newborn",
+        "diagnosticCriteria": "Clinical suspicion of congenital syphilis",
+        "management": {
+          "medications": [
+            {
+              "medicine": "Procaine penicillin",
+              "codes": "C V",
+              "dose": "50mg/kg",
+              "frequency": "Once a day",
+              "duration": "10 days"
+            }
+          ],
+          "note": "Also see section on STIs"
+        }
+      },
+      {
+        "conditionName": "Neonatal Jaundice",
+        "caseDefinition": "Jaundice in newborn infant",
+        "diagnosticCriteria": {
+          "urgentReferral": [
+            "Jaundice developing within 24 hours of birth → refer to unit capable of performing exchange transfusion",
+            "Jaundiced babies who look ill → refer"
+          ],
+          "wellBabies": "Jaundice developing in well babies may be treated with phototherapy"
+        },
+        "management": {
+          "phototherapy": {
+            "ifUnavailable": "Expose to the sun intermittently for a maximum of two hours (keep warm), shade the baby's eyes with a loose-fitting bandage over cotton wool pads. Continue until the baby is no longer yellow",
+            "additional": "Give an extra 20ml/kg/24hrs of fluid. Be very careful that the baby does not get cold (or hot). Encourage increased breastfeeding"
+          },
+          "serumBilirubin": "Where possible check the serum bilirubin levels"
+        }
+      },
+      {
+        "conditionName": "Neonatal Convulsions",
+        "caseDefinition": "Seizures in newborn infant",
+        "diagnosticCriteria": "Seizure activity in neonate",
+        "management": {
+          "hypoglycaemiaCheck": "Always check for hypoglycaemia. If dextrose <2.2mmol/l (45mg%) immediately give:",
+          "hypoglycaemiaTreatment": [
+            {
+              "medicine": "Dextrose 10%",
+              "route": "iv infusion",
+              "codes": "A N",
+              "dose": "4ml/kg per hour OR 2ml/kg given as a bolus followed by continuous infusion of dextrose at 6-8mg/kg/minute"
+            },
+            {
+              "medicine": "Dextrose 50%",
+              "route": "slow iv",
+              "codes": "C V",
+              "dose": "1ml/kg diluted with equal quantity of water for injection",
+              "frequency": "As slow bolus"
+            }
+          ],
+          "ifIvImpossible": "If intravenous route is impossible give breast milk through nasogastric route - 10-20ml/kg initially and continue normal requirement two hourly. Dextrose should not be given by nasogastric tube. If blood glucose cannot be measured give empirical treatment with glucose.",
+          "generalManagement": "ABC: Manage Airways and Breathing (have bag and mask ready); Ensure Circulatory access",
+          "anticonvulsants": [
+            {
+              "medicine": "Phenobarbitone",
+              "route": "iv",
+              "codes": "B E",
+              "loadingDose": "20mg per kg, repeat in 30 minutes if still convulsing, add dose of 10mg/kg every 30 minutes until a maximum dose of 40mg/kg",
+              "maintenanceDose": "5mg/kg/day over 5-10 mins",
+              "note": "Drug of choice for neonatal seizures"
+            },
+            {
+              "medicine": "Phenytoin",
+              "route": "iv",
+              "codes": "C V",
+              "loadingDose": "20mg/kg iv, repeat dose of 10mg/kg may be repeated in refractory seizures",
+              "maintenanceDose": "3-5mg/kg/day in 2-4 divided doses",
+              "note": "Indicated when maximum dose of phenobarbitone 40mg/kg fails to resolve seizures or adverse effects like respiratory depression, bradycardia or hypotension occur; Dilute phenytoin in Normal saline - Do Not Use Dextrose"
+            }
+          ],
+          "benzodiazepines": {
+            "note": "May be required in 15-20% of neonatal seizures",
+            "medications": [
+              {
+                "medicine": "Lorazepam",
+                "dose": "0.05mg/kg iv bolus over 2-5 minutes (may be repeated)"
+              },
+              {
+                "medicine": "Midazolam",
+                "dose": "0.15mg/kg iv bolus followed by an infusion of 0.1-0.4mg/kg/hr"
+              }
+            ],
+            "warning": "Avoid diazepam in neonatal seizures because of its short duration of anti-epileptic effect and its very prolonged sedative effect"
+          },
+          "additionalMeasures": [
+            "Perform lumbar puncture to rule out any CNS infection and start meningitis treatment while waiting for results",
+            "Check blood levels of calcium, magnesium",
+            "If there is hypocalcaemia give 2mls/kg of 10% Calcium Gluconate"
+          ]
+        }
+      },
+      {
+        "conditionName": "Respiratory Distress Syndrome (RDS)",
+        "caseDefinition": "Surfactant deficiency in premature infants",
+        "diagnosticCriteria": "Respiratory distress in premature infant",
+        "management": {
+          "general": [
+            "Minimal handling",
+            "Supplemental Oxygen with nasal prongs, Maintain Oxygen saturation 90-94%",
+            "Use Continuous Positive Airways Pressure (CPAP) ventilation if available",
+            "Initially no oral feeds if severe respiratory distress",
+            "Intravenous fluids (see section on fluids)",
+            "Treat for neonatal sepsis with antibiotics (see section on NNS)",
+            "Maintain normal temperature range by Kangaroo Mother Care or using an incubator if available",
+            "If respiratory distress persists do a chest x-ray to rule out pneumothorax"
+          ],
+          "surfactant": [
+            {
+              "medicine": "Surfactant",
+              "dose": "100mg/kg",
+              "timing": "Within 8 hours of birth",
+              "repetition": "Dose may be repeated within 48 hours at intervals of at least 6 hours for up to 4 doses"
+            }
+          ],
+          "prevention": [
+            {
+              "medicine": "Dexamethasone",
+              "dose": "12mg/kg",
+              "frequency": "24-hours apart",
+              "duration": "3 days",
+              "indication": "For pregnant mothers <34/40 and at risk of premature delivery"
+            },
+            {
+              "medicine": "Surfactant",
+              "dose": "100mg/kg",
+              "timing": "Preferably within 15 minutes of birth",
+              "repetition": "Dose may be repeated within 48 hours at intervals of at least 6 hours for up to 4 doses",
+              "indication": "For preterm neonates"
+            }
+          ]
+        }
+      },
+      {
+        "conditionName": "Apnoea of Prematurity",
+        "caseDefinition": "Apnoea due to immaturity of respiratory centre in premature infants",
+        "diagnosticCriteria": "Apnoea in premature infant",
+        "management": {
+          "prevention": [
+            {
+              "medicine": "Caffeine citrate",
+              "route": "iv infusion",
+              "codes": "B V",
+              "loadingDose": "20mg/kg",
+              "maintenanceDose": "5mg/kg",
+              "frequency": "Once daily",
+              "infusionTime": "Over 30 minutes",
+              "duration": "Until 34/40 weeks postpartum",
+              "indication": "For those <32/40 weeks"
+            },
+            {
+              "medicine": "Aminophylline",
+              "codes": "B V",
+              "loadingDose": "6mg/kg",
+              "maintenanceDose": "2.5mg/kg",
+              "frequency": "12 hourly",
+              "note": "If caffeine citrate is not available give loading dose of aminophylline at 6mg/kg iv over 20 minutes followed by maintenance dose of 2.5mg/kg every 12 hours"
+            }
+          ],
+          "monitoring": [
+            "Use an apnoea monitor if available or a Pulse oximeter with alarm turned on for hypoxaemia"
+          ],
+          "excludeOtherCauses": [
+            "Central nervous system infections",
+            "Hypoxic Ischaemic encephalopathy",
+            "Respiratory distress syndrome",
+            "Hypoglycaemia",
+            "Severe Anaemia",
+            "Congestive cardiac failure"
+          ]
+        }
+      },
+      {
+        "conditionName": "Neonatal Vitamin and Iron Supplementation",
+        "caseDefinition": "Nutritional supplementation for newborns",
+        "diagnosticCriteria": "Newborn infants, particularly premature",
+        "management": {
+          "general": "Normal newborn babies do not require any long-term vitamin or mineral supplementation",
+          "prematureInfants": "Those babies born at <36 weeks gestation and/or <1.5kg should be given from age 2 weeks:",
+          "medications": [
+            {
+              "medicine": "Vitamin D",
+              "route": "po",
+              "codes": "B V",
+              "dose": "800 units",
+              "frequency": "Once a day",
+              "duration": "Weekly to age of 3 months"
+            },
+            {
+              "medicine": "Folic acid",
+              "route": "po",
+              "codes": "C E",
+              "dose": "5mg weekly"
+            }
+          ],
+          "ironSupplementation": "Starting from the age of one month:",
+          "ironMedication": [
+            {
+              "medicine": "Ferrous sulphate",
+              "route": "po",
+              "codes": "C E",
+              "dose": "3-6 mg/kg elemental iron",
+              "frequency": "Once a day",
+              "duration": "To age of 6 months",
+              "note": "(60mg/5mls = 12mg elemental iron/5mls)"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "chapter": "3",
+    "chapterTitle": "Paediatric Conditions",
+    "diseaseCategory": "Paediatric Acute Respiratory Infections",
+    "pageRange": "64-74",
+    "diseases": [
+      {
+        "conditionName": "General Danger Signs",
+        "caseDefinition": "Signs indicating severe illness in child",
+        "diagnosticCriteria": {
+          "ask": [
+            "If the child is not able to drink or breastfeed",
+            "If the child is vomiting everything",
+            "If the child has had convulsions",
+            "If there are periods of not breathing"
+          ],
+          "look": [
+            "If the child is lethargic or unconscious"
+          ]
+        },
+        "management": "A child with any general danger sign needs urgent attention"
+      },
+      {
+        "conditionName": "Pneumonia",
+        "caseDefinition": "Lower respiratory tract infection in child",
+        "diagnosticCriteria": {
+          "fastBreathingDefinition": {
+            "<2 months": "60 breaths per minute",
+            "2 months to 12 months": "50 breaths per minute",
+            "12 months to 5 years": "40 breaths per minute"
+          },
+          "chestIndrawing": "When the lower part of the chest moves in when the child breathes in",
+          "grunting": "A soft short sound that the infant makes when breathing out"
+        },
+        "management": {
+          "severePneumonia": {
+            "classification": "Any general danger sign OR chest indrawing OR stridor in a calm child",
+            "treatment": [
+              "Give first dose of an appropriate antibiotic (Benzylpenicillin and gentamycin)",
+              "Treat to prevent low blood sugar (see below)",
+              "Keep the child warm",
+              "Treat wheeze if present",
+              "Refer URGENTLY to hospital"
+            ]
+          },
+          "pneumonia": {
+            "classification": "Fast breathing",
+            "treatment": [
+              "Give an appropriate antibiotic for 5 days",
+              "Treat wheeze if present",
+              "Advise mother to return immediately if condition worsens",
+              "Follow-up in 2 days"
+            ]
+          },
+          "noPneumonia": {
+            "classification": "No signs of pneumonia or of very severe disease",
+            "treatment": [
+              "If coughing more than 21 days, refer for assessment",
+              "Treat wheeze if present",
+              "Advise mother to return immediately if condition worsens",
+              "Follow-up in 7 days if not improving"
+            ]
+          },
+          "severePneumoniaMedications": {
+            "note": "Paediatric dose starts at 2 months in IMNCI. For babies 1-2 months see neonatal doses Table 3.5",
+            "wellNourished": "Well-nourished children over 6 months with severe pneumonia can be managed with benzylpenicillin only",
+            "medications": [
+              {
+                "medicine": "Benzylpenicillin",
+                "route": "im",
+                "codes": "C V",
+                "dose": "0.05-0.1MU/kg",
+                "frequency": "6 hourly",
+                "duration": "10 days"
+              },
+              {
+                "medicine": "Gentamicin",
+                "codes": "C V",
+                "dose": "5-7mg/kg",
+                "frequency": "Once daily",
+                "duration": "10 days"
+              }
+            ],
+            "note2": "Change to oral amoxicillin when patient improves and tolerates oral drugs",
+            "ifLessThan6Months": "If less than 6 months add high dose cotrimoxazole for 21 days and check HIV status. In HIV positive children consider steroids",
+            "cotrimoxazoleDosage": {
+              "2-6 months (4-5.9kg)": "1 tablet, 2.5mls",
+              "6 months-3yrs (6-13.9kg)": "2 tablets, 5mls",
+              "3-5yrs (14-19kg)": "3 tablets, 7.5mls"
+            },
+            "alternatives": [
+              {
+                "medicine": "Ampicillin",
+                "route": "iv",
+                "codes": "B E",
+                "dose": "50mg/kg",
+                "frequency": "6 hourly",
+                "duration": "5 days"
+              },
+              {
+                "medicine": "Procaine penicillin",
+                "route": "im",
+                "codes": "C V",
+                "dose": "<1yr=150mg, 1-3yrs=300mg, 3-5yrs=450mg",
+                "frequency": "Once a day",
+                "duration": "5 days"
+              }
+            ]
+          },
+          "pneumoniaFirstLine": [
+            {
+              "medicine": "Amoxicillin",
+              "route": "po",
+              "codes": "C V",
+              "dose": "4-<6kg=62.5mg, 6-<14kg=125mg, 14-19kg=250mg",
+              "frequency": "3 times a day",
+              "duration": "5 days"
+            }
+          ],
+          "supportiveMeasures": {
+            "lowBloodSugarPrevention": [
+              "If the child is able to breastfeed ask the mother to breast feed the child",
+              "If the child cannot breastfeed but is able to swallow give expressed breast milk or a breast milk substitute. If neither are available give sugar water = 4 level teaspoons sugar (20gm) in 200ml clean water",
+              "If the child is not able to swallow, give 50ml of milk or sugar water by nasogastric tube"
+            ],
+            "fluids": "Fluids (po/iv/nasogastric) 100ml/kg/24hrs - iv fluids monitored closely",
+            "airway": "Nasal suction (or normal saline nasal drops) to clear the airway",
+            "feeding": "Continued feeding",
+            "oxygen": "Check oxygen saturation, Give Oxygen"
+          },
+          "painAndFever": [
+            {
+              "medicine": "Paracetamol",
+              "route": "po/iv",
+              "codes": "C N",
+              "dose": "10mg/kg",
+              "frequency": "6hrly",
+              "duration": "As required",
+              "note": "Do not give paracetamol to children under 3 months of age due to liver immaturity, if indicated give cautiously"
+            }
+          ],
+          "homeCareAdvice": [
+            "Continue breast-feeding",
+            "Maintain nutrition by giving easy-to-digest high-energy food 5-7 times a day",
+            "Plenty of fluids a day"
+          ],
+          "followUpAdvice": "Advise mother to return with the child in 2 days for re-assessment, or earlier if the child is getting worse: increased difficulty in breathing, increased difficulty in drinking, increased respiratory rate. If the child returns with any of these, refer",
+          "monitoring": {
+            "worse": [
+              "Not able to drink",
+              "Has chest indrawing",
+              "Has other danger signs"
+            ],
+            "same": [
+              "Fast breathing"
+            ],
+            "better": [
+              "Slower breathing",
+              "Fever reduced",
+              "Eating better"
+            ]
+          }
+        }
+      },
+      {
+        "conditionName": "Cough/Cold",
+        "caseDefinition": "Upper respiratory tract infection",
+        "diagnosticCriteria": "Cough or cold without pneumonia signs",
+        "management": {
+          "general": "Home care and instructions on when to return are all that are needed. No antibiotics, antihistamines or cough mixtures are required",
+          "homeCare": [
+            "Continue breast-feeding",
+            "Maintain nutrition by giving easy-to-digest high-energy food 5-7 times a day",
+            "Plenty of fluids a day"
+          ],
+          "followUp": "Advise mother/caregiver to return with the child in 2 days for reassessment, or earlier if the child is getting worse: breathing becomes difficult, child is not able to drink, breathing becomes fast, child seems worse. If the child returns with any of these, reassess",
+          "feverTreatment": [
+            {
+              "medicine": "Paracetamol",
+              "route": "po",
+              "codes": "C N",
+              "dose": "10mg/kg",
+              "frequency": "6hrly",
+              "duration": "As required"
+            }
+          ]
+        }
+      },
+      {
+        "conditionName": "Wheezing",
+        "caseDefinition": "Wheezing in child",
+        "diagnosticCriteria": {
+          "youngInfant": "In a young infant below 2 months, wheeze is a sign of serious illness - refer",
+          "bronchiolitis": "An infant between 2 months and 12 months may wheeze because of bronchiolitis, usually viral infection. If a child with bronchiolitis is breathing fast, refer. If not, give home care",
+          "asthma": "In a child more than one-year wheezing may be due to asthma. If it is the first episode refer. If this child is in distress, give a rapid-acting bronchodilator for example salbutamol and refer"
+        },
+        "management": {
+          "firstEpisodeUnder1Year": {
+            "ifChestIndrawingOrDangerSignsOrFastBreathing": [
+              "Give first dose of benzyl penicillin",
+              "Refer urgently to hospital"
+            ],
+            "ifNoFastBreathing": [
+              "Treat as \"no pneumonia, cough/cold\"",
+              "Follow up after 2 days"
+            ]
+          },
+          "firstEpisodeOver1Year": {
+            "ifChestIndrawingOrDangerSigns": [
+              "Give rapid-acting bronchodilator, oral prednisolone and antibiotic",
+              "Refer urgently to hospital"
+            ],
+            "ifFastBreathing": [
+              "Nebulise with salbutamol or give oral bronchodilator",
+              "Send home on treatment as \"pneumonia\"",
+              "Follow up in 2 days"
+            ],
+            "ifNoFastBreathing": [
+              "Nebulise with salbutamol or give oral bronchodilator",
+              "Send home on treatment as \"no pneumonia, cough/cold\"",
+              "Follow up in 7 days"
+            ]
+          },
+          "previousEpisodesUnder1Year": {
+            "ifChestIndrawingOrDangerSigns": [
+              "Nebulise with salbutamol or give oral bronchodilator",
+              "Give first dose of antibiotic",
+              "Refer urgently to hospital"
+            ],
+            "ifFastBreathing": [
+              "Nebulise with salbutamol or give oral bronchodilator",
+              "Send home on treatment as \"pneumonia\"",
+              "Follow up in 2 days"
+            ],
+            "ifNoFastBreathing": [
+              "Nebulise with salbutamol or give oral bronchodilator",
+              "Send home on treatment as \"no pneumonia, cough/cold\"",
+              "Follow up in 7 days"
+            ]
+          },
+          "previousEpisodesOver1Year": {
+            "startWith": "Give a rapid acting bronchodilator. Assess the child's condition 30 minutes later and treat according to this assessment",
+            "ifChestIndrawingOrDangerSigns": [
+              "Give first dose of antibiotic and prednisolone",
+              "Refer urgently to hospital"
+            ],
+            "ifFastBreathing": [
+              "Give oral bronchodilator",
+              "Send home on treatment as \"pneumonia\"",
+              "Follow up in 2 days"
+            ],
+            "ifNoFastBreathing": [
+              "Send home on treatment as \"no pneumonia, cough/cold\"",
+              "Give oral bronchodilator",
+              "Follow up in 7 days"
+            ]
+          },
+          "prednisoloneDosage": [
+            {
+              "medicine": "Prednisolone",
+              "route": "po",
+              "codes": "B V",
+              "dose": "<1yr=10mg, >1yr=20mg",
+              "frequency": "Once",
+              "note": "Repeat in 6hrs if required"
+            }
+          ],
+          "rapidActingBronchodilators": [
+            {
+              "medicine": "Salbutamol",
+              "formulation": "nebulised 5mg/ml in 2ml sterile water",
+              "codes": "B V",
+              "dose": "<1yr=2.5mg, >1yr=5mg",
+              "frequency": "As required"
+            },
+            {
+              "medicine": "Salbutamol syrup",
+              "route": "po",
+              "codes": "B V",
+              "dose": "2-12 months=1mg, 1-5yrs=2mg",
+              "frequency": "3 times a day"
+            },
+            {
+              "medicine": "Adrenaline",
+              "route": "subcutaneously 1:1000",
+              "codes": "C V",
+              "dose": "0.01ml/kg up to a max of 0.25ml",
+              "frequency": "Repeat after 20mins if required"
+            }
+          ],
+          "note": "If asthma is suspected refer to Asthma section for detailed management"
+        }
+      },
+      {
+        "conditionName": "Stridor/Croup",
+        "caseDefinition": "Harsh noise made when a child breathes in",
+        "diagnosticCriteria": {
+          "mildCroup": "Stridor present only when upset. Likely to be of viral origin. An antibiotic is not required. Home care",
+          "severeCroup": "Stridor in a calm child at rest with chest indrawing"
+        },
+        "management": {
+          "mildCroup": "Home care",
+          "severeCroup": [
+            "Refer to higher centre of care",
+            "Do not examine the throat in case it's Epiglottitis!",
+            "If referral not possible or there is a delay give chloramphenicol or ceftriaxone and cloxacillin"
+          ],
+          "medications": [
+            {
+              "medicine": "Chloramphenicol",
+              "route": "iv",
+              "codes": "B V",
+              "dose": "12.5mg/kg",
+              "frequency": "6 hourly",
+              "duration": "7 days"
+            },
+            {
+              "medicine": "Ceftriaxone",
+              "route": "iv",
+              "codes": "C V",
+              "dose": "50mg/kg",
+              "frequency": "Once daily",
+              "duration": "7 days"
+            },
+            {
+              "medicine": "Cloxacillin",
+              "route": "iv",
+              "codes": "B V",
+              "dose": "12.5-25mg/kg",
+              "frequency": "6 hourly",
+              "duration": "7 days"
+            }
+          ],
+          "epiglottitisSuspicion": "Suspect Epiglottitis if child very ill, toxic and drooling saliva",
+          "additional": [
+            "Continue antibiotics",
+            "Watch carefully for signs of obstruction. Intubation or a tracheostomy may be required (poor air entry; severe chest indrawing, restlessness, pallor)",
+            "Minimal handling (keep on mother's lap)",
+            "NB. Remember cyanosis is a very late sign"
+          ]
+        }
+      },
+      {
+        "conditionName": "Foreign Body",
+        "caseDefinition": "Inhaled foreign body in airway",
+        "diagnosticCriteria": "Common in age 1-2 years: sudden onset (choking); sometimes local wheeze and/or decreased air entry. May cause stridor/cough; there is usually a history that suggests inhalation of foreign body",
+        "management": [
+          "Admit for bronchoscopy to remove the foreign body",
+          "X-ray: opacity and/or air trapping",
+          "Use antibiotics if there is fast breathing (secondary infection)",
+          "Whenever Foreign Body is suspected consult cardiothoracic surgeons"
+        ]
+      },
+      {
+        "conditionName": "Retropharyngeal Abscess",
+        "caseDefinition": "Abscess in retropharyngeal space",
+        "diagnosticCriteria": "Clinical suspicion of retropharyngeal abscess",
+        "management": {
+          "surgical": "Surgical drainage is required",
+          "medications": [
+            {
+              "medicine": "Cloxacillin",
+              "route": "im/iv",
+              "codes": "B V",
+              "dose": "25mg/kg/dose",
+              "frequency": "6 hourly",
+              "duration": "7 days"
+            },
+            {
+              "medicine": "Gentamicin",
+              "route": "im/iv",
+              "codes": "C V",
+              "dose": "6mg/kg",
+              "frequency": "24 hourly",
+              "duration": "7 days"
+            }
+          ]
+        }
+      },
+      {
+        "conditionName": "Lung Abscess",
+        "caseDefinition": "Abscess in lung parenchyma",
+        "diagnosticCriteria": "Clinical suspicion of lung abscess",
+        "management": {
+          "medications": [
+            {
+              "medicine": "Cloxacillin",
+              "route": "iv/im/po",
+              "codes": "B V",
+              "dose": "12.5-25mg/kg",
+              "frequency": "6hrly",
+              "duration": "6 weeks"
+            },
+            {
+              "medicine": "Gentamicin",
+              "route": "im/iv",
+              "codes": "C V",
+              "dose": "5-7mg/kg",
+              "frequency": "24hrly",
+              "duration": "14 days"
+            }
+          ]
+        }
+      },
+      {
+        "conditionName": "Diphtheria",
+        "caseDefinition": "Diphtheria infection",
+        "diagnosticCriteria": "Clinical suspicion of diphtheria",
+        "management": {
+          "general": "Give antitoxin and antibiotics",
+          "medications": [
+            {
+              "medicine": "Benzyl penicillin",
+              "route": "im",
+              "codes": "C V",
+              "dose": "100 000 unit/kg per dose",
+              "frequency": "6hrly",
+              "duration": "7 days"
+            }
+          ]
+        }
+      },
+      {
+        "conditionName": "Pertussis",
+        "caseDefinition": "Whooping cough infection",
+        "diagnosticCriteria": "Clinical suspicion of pertussis",
+        "management": {
+          "medications": [
+            {
+              "medicine": "Erythromycin",
+              "route": "po",
+              "codes": "C V",
+              "dose": "12.5mg/kg/dose",
+              "frequency": "6hrly",
+              "duration": "10 days"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "chapter": "3",
+    "chapterTitle": "Paediatric Conditions",
+    "diseaseCategory": "Paediatric Ear Problems",
+    "pageRange": "74",
+    "diseases": [
+      {
+        "conditionName": "Ear Problems - General Precautions",
+        "caseDefinition": "Care for child with ear problems",
+        "diagnosticCriteria": "Child with ear problem (see also Chapter on Ear, Nose and Throat Disorders)",
+        "management": {
+          "drainingEarAdvice": [
+            "Not to leave anything in the ear, such as cotton wool, between wicking treatments",
+            "Not to put oil or any fluid into the ear",
+            "Not to let the child go swimming or get water in the ear"
+          ]
+        }
+      },
+      {
+        "conditionName": "Mastoiditis",
+        "caseDefinition": "Infection of mastoid process",
+        "diagnosticCriteria": "Tender swelling behind the ear",
+        "management": {
+          "general": [
+            "Give first dose of antibiotics",
+            "Paracetamol for pain",
+            "Refer to hospital"
+          ],
+          "medications": [
+            {
+              "medicine": "Benzylpenicillin",
+              "route": "im",
+              "codes": "C V",
+              "dose": "0.05-0.1MU/kg",
+              "frequency": "6hrly",
+              "duration": "10 days"
+            },
+            {
+              "medicine": "Gentamicin",
+              "route": "im",
+              "codes": "C V",
+              "dose": "5-7 mg/kg",
+              "frequency": "24hrly",
+              "duration": "10 days"
+            },
+            {
+              "medicine": "Paracetamol",
+              "route": "po",
+              "codes": "C N",
+              "dose": "10mg/kg",
+              "frequency": "6hrly",
+              "duration": "As required"
+            }
+          ]
+        }
+      },
+      {
+        "conditionName": "Acute Ear Infection",
+        "caseDefinition": "Acute otitis media",
+        "diagnosticCriteria": "Pus is seen draining from the ear and discharge is reported for less than 14 days; or ear pain",
+        "management": {
+          "medications": [
+            {
+              "medicine": "Amoxicillin",
+              "route": "po",
+              "codes": "C V",
+              "dose": "4-<6kg=62.5mg, 6-<14kg=125mg, 14-19kg=250mg",
+              "frequency": "12hrly",
+              "duration": "5 days"
+            },
+            {
+              "medicine": "Paracetamol",
+              "route": "po",
+              "codes": "C N",
+              "dose": "10mg/kg",
+              "frequency": "6hrly",
+              "duration": "As required"
+            }
+          ]
+        }
+      }
+    ]
+  }
+]

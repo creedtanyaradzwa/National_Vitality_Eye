@@ -1,41 +1,47 @@
 import axios from 'axios';
 import { saveOfflineOperation, isOnline, syncPendingOperations } from '../utils/offlineSync';
+import toast from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const API = axios.create({
-    baseURL: 'http://localhost:5000',
+    baseURL: API_BASE_URL,
     headers: {
         'Content-Type': 'application/json'
     }
 });
 
 // Add auth token to every request
-API.interceptors.request.use((config) => {
+API.interceptors.request.use(async (config) => {
     const token = localStorage.getItem('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
     
-    // Gap: Offline Resilience - Check connectivity
-    if (!isOnline() && config.method !== 'get') {
-        const operationId = saveOfflineOperation(config.url, config.method, config.data);
-        // Throw a special error that the frontend can catch
+    // Only intercept NON-GET requests for offline saving
+    if (!isOnline() && config.method.toLowerCase() !== 'get') {
+        await saveOfflineOperation(config.url, config.method, config.data);
+        toast.success('Saved locally! Data will sync when you are back online.');
         const error = new Error('OFFLINE_SAVED');
         error.offline = true;
-        error.operationId = operationId;
         return Promise.reject(error);
     }
     
     return config;
 });
 
-// Add response interceptor to handle offline saves
+// Add response interceptor to handle errors
 API.interceptors.response.use(
     response => response,
     async error => {
-        if (error.response?.data?.offline === true) {
-            // This is our offline save response
-            return Promise.resolve(error.response);
+        if (error.offline) {
+            // Return a fake response that has offline flag for non-GET requests
+            return Promise.resolve({ 
+                data: { 
+                    offline: true, 
+                    message: 'Saved locally, will sync when online' 
+                } 
+            });
         }
         return Promise.reject(error);
     }

@@ -15,12 +15,8 @@ export async function initOfflineDB() {
             upgrade(db, oldVersion, newVersion) {
                 console.log('Upgrading database from version', oldVersion, 'to', newVersion);
                 
-                // Delete old store if it exists (to fix schema issues)
-                if (oldVersion < 2) {
-                    if (db.objectStoreNames.contains(STORE_NAME)) {
-                        db.deleteObjectStore(STORE_NAME);
-                    }
-                    // Create new store with correct schema
+                // Always create the store if it doesn't exist
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
                     const store = db.createObjectStore(STORE_NAME, { 
                         keyPath: 'id', 
                         autoIncrement: true 
@@ -28,6 +24,18 @@ export async function initOfflineDB() {
                     store.createIndex('timestamp', 'timestamp');
                     store.createIndex('type', 'type');
                     store.createIndex('synced', 'synced');
+                } else {
+                    // If store exists, make sure indexes are present
+                    const store = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME);
+                    if (!store.indexNames.contains('timestamp')) {
+                        store.createIndex('timestamp', 'timestamp');
+                    }
+                    if (!store.indexNames.contains('type')) {
+                        store.createIndex('type', 'type');
+                    }
+                    if (!store.indexNames.contains('synced')) {
+                        store.createIndex('synced', 'synced');
+                    }
                 }
             }
         });
@@ -40,12 +48,15 @@ export async function initOfflineDB() {
 }
 
 // Save operation for offline sync
-export async function saveOfflineOperation(operation) {
+export async function saveOfflineOperation(url, method, body, type = 'api') {
     if (!db) await initOfflineDB();
     if (!db) return null;
     
     const pendingOp = {
-        ...operation,
+        url,
+        method,
+        body,
+        type,
         timestamp: Date.now(),
         synced: false,
         id: crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random()
@@ -134,10 +145,12 @@ export async function clearSyncedOperations() {
     if (!db) return;
     
     try {
-        const ops = await getPendingOperations();
-        for (const op of ops) {
+        const tx = db.transaction(STORE_NAME, 'readwrite');
+        const store = tx.objectStore(STORE_NAME);
+        const allItems = await store.getAll();
+        for (const op of allItems) {
             if (op.synced) {
-                await deleteOperation(op.id);
+                await store.delete(op.id);
             }
         }
     } catch (error) {
@@ -154,10 +167,11 @@ export async function syncPendingOperations() {
     const token = localStorage.getItem('token');
     if (!token) return;
     
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    
     for (const op of pendingOps) {
         try {
-            // Fix: Use full backend URL instead of relative path
-            const apiUrl = `http://localhost:5000${op.url}`;
+            const apiUrl = `${API_BASE_URL}${op.url}`;
             
             const response = await fetch(apiUrl, {
                 method: op.method,

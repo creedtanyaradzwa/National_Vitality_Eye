@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { getPatients, createPatient, updatePatient, deletePatient, getPatientByNationalId } from '../services/api';
+import { getPatients, createPatient, updatePatient, deletePatient } from '../services/api';
 import { useAuth } from '../context/AuthProvider';
 import { useDataRefresh } from '../context/DataRefreshProvider.jsx';
 import { 
@@ -62,9 +62,13 @@ const Patients = () => {
         setLoading(true);
         try {
             const response = await getPatients(page, limit, searchTerm, triageFilter ? 'priority' : '', triageFilter);
-            setPatients(response.data.patients);
-            setTotalPages(response.data.pages);
-            setTotalResults(response.data.total);
+            if (response.data.offline) {
+                // If offline, don't try to update state (but GET requests shouldn't be here anyway)
+            } else {
+                setPatients(response.data.patients);
+                setTotalPages(response.data.pages);
+                setTotalResults(response.data.total);
+            }
         } catch {
             toast.error('Failed to load patients');
         } finally {
@@ -97,13 +101,14 @@ const Patients = () => {
         e.preventDefault();
         
         try {
-            if (editingPatient) {
-                await updatePatient(editingPatient._id, formData);
-                toast.success('Patient updated successfully');
-                refreshData();
+            const response = editingPatient 
+                ? await updatePatient(editingPatient._id, formData)
+                : await createPatient(formData);
+            
+            if (response.data.offline) {
+                toast.success('Saved locally! Will sync when online');
             } else {
-                await createPatient(formData);
-                toast.success('Patient created successfully');
+                toast.success(editingPatient ? 'Patient updated successfully' : 'Patient created successfully');
                 refreshData();
             }
             
@@ -145,9 +150,13 @@ const Patients = () => {
     const handleDelete = async (patient) => {
         if (window.confirm(`Are you sure you want to delete ${patient.firstName} ${patient.lastName}?`)) {
             try {
-                await deletePatient(patient._id);
-                toast.success('Patient deleted successfully');
-                refreshData();
+                const response = await deletePatient(patient._id);
+                if (response.data.offline) {
+                    toast.success('Saved locally! Will delete when online');
+                } else {
+                    toast.success('Patient deleted successfully');
+                    refreshData();
+                }
                 loadPatients();
             } catch {
                 toast.error('Failed to delete patient');

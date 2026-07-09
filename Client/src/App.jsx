@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthProvider.jsx';
@@ -20,6 +20,7 @@ import Alerts from './pages/Alerts';
 import Register from './pages/Register';
 import Profile from './pages/Profile';
 import VitalsTrendPage from './pages/VitalsTrendPage';
+import OfflineStatus from './components/ui/OfflineStatus';
 
 // Patient Portal Components
 import PatientLogin from './pages/PatientPortal/Login';
@@ -71,18 +72,8 @@ export function ProtectedRoute({ children }) {
 // Patient Portal Protected Route
 export function PatientProtectedRoute({ children }) {
     const token = localStorage.getItem('patientToken');
-    const [isAuthenticated, setIsAuthenticated] = useState(!!token);
-    const [loading, setLoading] = useState(false);
     
-    if (loading) {
-        return (
-            <div className="flex justify-center items-center h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-400"></div>
-            </div>
-        );
-    }
-    
-    if (!isAuthenticated) {
+    if (!token) {
         return <Navigate to="/patient/login" />;
     }
     
@@ -159,6 +150,7 @@ export function App() {
                                 },
                             }}
                         />
+                        <OfflineStatus />
                         <AppRoutes />
                     </DataRefreshProvider>
                 </AlertProvider>

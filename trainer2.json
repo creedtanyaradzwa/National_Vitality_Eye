@@ -1,0 +1,14 @@
+[
+  {"name": "Hepatitis B", "vital_signs": {"temp_range": "36.0-37.5°C", "hr_range": "60-100 bpm", "rr_range": "12-20 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "95%"}},
+  {"name": "Hepatitis C", "vital_signs": {"temp_range": "36.0-37.5°C", "hr_range": "60-100 bpm", "rr_range": "12-20 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "95%"}},
+  {"name": "Typhoid", "vital_signs": {"temp_range": ">38.0°C", "hr_range": "60-90 bpm (may have relative bradycardia)", "rr_range": "12-20 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "94%"}},
+  {"name": "Cholera", "vital_signs": {"temp_range": "36.0-37.0°C", "hr_range": "90-130 bpm", "rr_range": "18-28 bpm", "bp_target": "<90/60 mmHg", "spo2_min": "94%"}},
+  {"name": "COVID-19", "vital_signs": {"temp_range": "36.0-39.0°C", "hr_range": "60-110 bpm", "rr_range": "12-25 bpm", "bp_target": "90/60-130/85 mmHg", "spo2_min": "<94% (caution)"}},
+  {"name": "Tetanus", "vital_signs": {"temp_range": "36.0-38.5°C", "hr_range": "80-140 bpm", "rr_range": "16-30 bpm", "bp_target": "Labile (fluctuating)", "spo2_min": "92%"}},
+  {"name": "Diphtheria", "vital_signs": {"temp_range": "36.0-38.0°C", "hr_range": "70-110 bpm", "rr_range": "14-24 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "94%"}},
+  {"name": "Gonorrhoea", "vital_signs": {"temp_range": "36.0-37.5°C", "hr_range": "60-100 bpm", "rr_range": "12-20 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "95%"}},
+  {"name": "Mpox", "vital_signs": {"temp_range": ">37.5°C", "hr_range": "60-100 bpm", "rr_range": "12-20 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "95%"}},
+  {"name": "Ebola", "vital_signs": {"temp_range": ">38.0°C", "hr_range": "90-140 bpm", "rr_range": "18-30 bpm", "bp_target": "<90/60 mmHg", "spo2_min": "90%"}},
+  {"name": "Mumps", "vital_signs": {"temp_range": "36.5-38.5°C", "hr_range": "60-100 bpm", "rr_range": "12-20 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "95%"}},
+  {"name": "Measles", "vital_signs": {"temp_range": ">38.5°C", "hr_range": "80-120 bpm", "rr_range": "16-25 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "94%"}}
+]
