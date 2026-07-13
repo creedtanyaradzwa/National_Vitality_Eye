@@ -142,7 +142,7 @@ const Welcome = () => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyber-green opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-cyber-green"></span>
             </span>
-            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400">Clinical Intelligence Node v3.0</span>
+            <span className="text-[10px] uppercase tracking-[0.3em] font-bold text-gray-400">Clinical Intelligence Node v5.0</span>
           </div>
           
           <h1 className="text-6xl md:text-8xl font-black mb-8 tracking-tighter">

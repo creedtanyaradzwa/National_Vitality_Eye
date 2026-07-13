@@ -166,7 +166,7 @@ const Login = () => {
                 <div className="mt-8 flex justify-between items-center px-4">
                     <p className="text-[9px] font-bold uppercase tracking-widest text-gray-600">© 2026 Clinical Intelligence Node</p>
                     <div className="flex space-x-4">
-                        <span className="text-[9px] font-bold uppercase tracking-widest text-gray-700">v3.0.4-LTS</span>
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-gray-700">v5.0.0-LTS</span>
                     </div>
                 </div>
             </div>

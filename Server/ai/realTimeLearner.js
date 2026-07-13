@@ -4,10 +4,11 @@ const MedicalRecord = require("../models/MedicalRecord");
 const ContinuousLearner = require("./continuousLearner");
 
 class RealTimeLearner {
-    constructor(io, alertEmitter, existingAI = null) {
+    constructor(io, alertEmitter, existingAI = null, outbreakDetector = null) {
         this.ai = existingAI || new ContinuousLearner();
         this.io = io;
         this.alertEmitter = alertEmitter;
+        this.outbreakDetector = outbreakDetector; // persistent engine
         this.isListening = false;
         this.changeStream = null;
         this.lastAlertCheck = new Date();
@@ -17,10 +18,8 @@ class RealTimeLearner {
     async start() {
         console.log("🎧 Real-time AI learner starting...");
         
-        // Start listening to changes
         this.watchChanges();
         
-        // Send initial status
         this.alertEmitter.sendSystemStatus({
             status: 'active',
             message: 'AI System Online',
@@ -30,7 +29,7 @@ class RealTimeLearner {
         return this.ai;
     }
 
-    // Load all existing records for initial training (Deprecated: use initializeAI in server.js)
+    // Deprecated: handled by server.js
     async loadHistoricalData() {
         console.log("ℹ️ Skipping loadHistoricalData in RealTimeLearner (handled by server.js)");
     }
@@ -38,28 +37,34 @@ class RealTimeLearner {
     // Watch for new records in real-time
     watchChanges() {
         try {
-            // Create change stream on MedicalRecord collection
             this.changeStream = MedicalRecord.watch([], { fullDocument: 'updateLookup' });
             
             this.changeStream.on('change', async (change) => {
-                console.log("🔄 Database change detected:", change.operationType);
-                
                 if (change.operationType === 'insert') {
-                    // New record added
                     const newRecord = await MedicalRecord.findById(change.documentKey._id)
                         .populate('patientId');
                     
                     if (newRecord) {
+                        // 1. Update the in-memory AI learning engine
                         this.ai.processNewRecord(newRecord);
                         console.log(`✨ AI updated with new ${newRecord.disease} case`);
                         
-                        // Send AI update to clients
+                        // 2. Broadcast AI stats update to all clients
                         this.alertEmitter.sendAIUpdate(this.ai.getStats());
                         
-                        // Check for outbreaks after new data
-                        this.checkForOutbreaks();
+                        // 3. Route to the PERSISTENT OutbreakDetector for zero-tolerance
+                        //    pathogens (e.g. Cholera, TB, Ebola) — immediate alert, no delay.
+                        //    Statistical pathogens are handled by the hourly runFullCheck cycle.
+                        if (this.outbreakDetector) {
+                            this.outbreakDetector.checkNewRecord(newRecord).catch(err =>
+                                console.error("❌ Real-time outbreak check error:", err.message)
+                            );
+                        } else {
+                            // Fallback: use the lightweight in-memory check if detector not wired
+                            this.checkForOutbreaks();
+                        }
                         
-                        // Emit to disease-specific room
+                        // 4. Notify disease-specific room subscribers
                         this.io.to(`disease-${newRecord.disease}`).emit('new-case', {
                             disease: newRecord.disease,
                             province: newRecord.province,
@@ -69,13 +74,11 @@ class RealTimeLearner {
                 }
                 
                 if (change.operationType === 'update') {
-                    // Record updated
                     const updatedRecord = await MedicalRecord.findById(change.documentKey._id)
                         .populate('patientId');
                     
                     if (updatedRecord) {
                         console.log(`📝 Record updated: ${updatedRecord.disease}`);
-                        // You could emit update events here
                     }
                 }
             });
@@ -86,6 +89,13 @@ class RealTimeLearner {
                     status: 'error',
                     message: error.message
                 });
+                // Attempt reconnect after 10 seconds
+                setTimeout(() => {
+                    if (this.isListening) {
+                        console.log("🔄 Attempting change stream reconnect...");
+                        this.watchChanges();
+                    }
+                }, 10000);
             });
             
             this.isListening = true;
@@ -96,50 +106,37 @@ class RealTimeLearner {
         }
     }
 
-    // Check for outbreaks and send alerts
+    // Lightweight fallback outbreak check (used when outbreakDetector is not wired)
     checkForOutbreaks() {
         const now = new Date();
-        
-        // Only check every 5 minutes to avoid alert spam
-        if (now - this.lastAlertCheck < 5 * 60 * 1000) {
-            return;
-        }
-        
+        if (now - this.lastAlertCheck < 5 * 60 * 1000) return;
         this.lastAlertCheck = now;
         
         const alerts = this.ai.detectOutbreaks();
-        
         alerts.forEach(alert => {
-            // Check if this is a new outbreak (not already alerted)
             const activeAlerts = this.alertEmitter.getActiveAlerts();
-            const existingAlert = activeAlerts.find(a => 
-                a.province === alert.province && 
-                a.disease === alert.disease
+            const existing = activeAlerts.find(a =>
+                a.province === alert.province && a.disease === alert.disease
             );
-            
-            if (!existingAlert) {
-                this.alertEmitter.sendOutbreakAlert(alert);
-            }
+            if (!existing) this.alertEmitter.sendOutbreakAlert(alert);
         });
         
-        // Check if any active alerts should be resolved
+        // Resolve alerts for diseases with no recent cases
         const activeAlerts = this.alertEmitter.getActiveAlerts();
         activeAlerts.forEach(alert => {
-            // If no new cases in the last 7 days, resolve alert
-            const recentCases = this.ai.provinceStats.get(alert.province)?.diseases.get(alert.disease) || 0;
+            const recentCases = this.ai.provinceStats
+                .get(alert.province)?.diseases.get(alert.disease) || 0;
             if (recentCases === 0) {
                 this.alertEmitter.resolveAlert(alert.province, alert.disease);
             }
         });
     }
 
-    // Stop listening
     stop() {
         if (this.changeStream) {
             this.changeStream.close();
             this.isListening = false;
             console.log("🛑 Real-time AI learner stopped");
-            
             this.alertEmitter.sendSystemStatus({
                 status: 'stopped',
                 message: 'AI System Stopped'
@@ -147,7 +144,6 @@ class RealTimeLearner {
         }
     }
 
-    // Get AI instance
     getAI() {
         return this.ai;
     }

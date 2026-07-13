@@ -408,6 +408,9 @@ class OutbreakDetector {
     emitAlertEvent(alert, forcePush) {
         if (!this.alertEmitter) return;
 
+        // Get the full trainer2 protocol for this disease
+        const fullProtocols = this.getFullProtocols(alert.disease);
+
         const alertData = {
             id: alert._id,
             severity: alert.status === 'CONFIRMED' ? alert.severity : 'MONITORING',
@@ -428,7 +431,18 @@ class OutbreakDetector {
                 patientIds: alert.patientIds,
                 hasCitizenSignal: alert.context.hasCitizenSignal,
                 envFactors: alert.context.environmentalFactors,
-                protocol: alert.protocol
+                protocol: {
+                    // Legacy EDLIZ fields
+                    ...(alert.protocol || {}),
+                    // Rich trainer2 protocol lines (always present if disease is in trainer2)
+                    treatmentLines:  fullProtocols?.treatmentLines  || [],
+                    preventionLines: fullProtocols?.preventionLines || [],
+                    outbreakStatus:  fullProtocols ? (TRAINER2_BASELINE?.get(
+                        require('../utils/normalise').toAIKey(
+                            require('../utils/normalise').normaliseDisease(alert.disease)
+                        )
+                    )?.outbreakStatus || null) : null
+                }
             }
         };
 

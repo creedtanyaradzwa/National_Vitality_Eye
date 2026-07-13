@@ -69,11 +69,33 @@ io.on('connection', (socket) => {
     console.log(`🔌 Client connected: ${socket.user?.firstName} ${socket.user?.lastName} (${socket.user?.role})`);
 
     // Send welcome event with current active alerts so the client
-    // can populate its state immediately without an HTTP round-trip
-    const currentAlerts = alertEmitter ? alertEmitter.getActiveAlerts() : [];
+    // can populate its state immediately without an HTTP round-trip.
+    // Enrich each alert with EDLIZ protocol lines from the live AI engine.
+    const rawAlerts = alertEmitter ? alertEmitter.getActiveAlerts() : [];
+    const enrichAlert = (alert) => {
+        if (!global.aiInstance) return alert;
+        try {
+            const { toAIKey, normaliseDisease } = require('./utils/normalise');
+            const key = toAIKey(normaliseDisease(alert.disease));
+            const pat = global.aiInstance.diseasePatterns?.get(key);
+            if (!pat?.clinicalProtocols) return alert;
+            return {
+                ...alert,
+                data: {
+                    ...(alert.data || {}),
+                    protocol: {
+                        ...(alert.data?.protocol || {}),
+                        treatmentLines:  pat.clinicalProtocols.treatmentLines  || [],
+                        preventionLines: pat.clinicalProtocols.preventionLines || [],
+                        outbreakStatus:  pat.outbreakStatus || null
+                    }
+                }
+            };
+        } catch (_) { return alert; }
+    };
     socket.emit('welcome', {
         message: 'Connected to National Vitality Eye',
-        activeAlerts: currentAlerts,
+        activeAlerts: rawAlerts.map(enrichAlert),
         timestamp: new Date()
     });
 
@@ -210,19 +232,22 @@ async function initializeAI() {
         // Store references
         realTimeAI = ai;
         alertEmitter = emitter;
-
-        // Pass the already trained AI instance to RealTimeLearner
-        const rtLearner = new RealTimeLearner(io, emitter, ai);
-        rtLearner.start().catch(err =>
-            console.error("❌ RealTimeLearner start error:", err.message)
-        );
+        global.aiInstance = ai;  // expose for welcome event enrichment
 
         // Set in the routes module
         setAIInstance(ai, emitter);
-        
-        // Initialize and start the persistent Outbreak Detector
+
+        // Initialize the persistent Outbreak Detector FIRST so it can be
+        // passed into RealTimeLearner for immediate zero-tolerance alerts
         const outbreakDetector = new OutbreakDetector(io, emitter);
         outbreakDetector.start();
+
+        // Pass the already trained AI instance to RealTimeLearner.
+        // outbreakDetector is now available for real-time insert hooks.
+        const rtLearner = new RealTimeLearner(io, emitter, ai, outbreakDetector);
+        rtLearner.start().catch(err =>
+            console.error("❌ RealTimeLearner start error:", err.message)
+        );
         
         // Make available to other routes via app.locals
         app.locals.aiInstance = ai;

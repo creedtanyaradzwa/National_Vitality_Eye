@@ -651,7 +651,7 @@ const PatientDetailsPage = () => {
                                 <div className="space-y-6">
                                     <div className="p-3 rounded-lg bg-white/5 border border-white/5 text-[9px] text-gray-400 uppercase tracking-widest flex items-center justify-between">
                                         <span>Results based on Patient Profile ({patient.province}) + Current Symptoms</span>
-                                        <span className="text-purple-400 font-black">AI Model v3.0</span>
+                                        <span className="text-purple-400 font-black">AI Model v5.0 — EDLIZ Pre-trained</span>
                                     </div>
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -672,6 +672,51 @@ const PatientDetailsPage = () => {
                                                 <p className="text-[10px] text-gray-500 italic line-clamp-2">
                                                     {pred.reasons?.[0] || 'Statistical correlation identified from clinical dataset.'}
                                                 </p>
+
+                                                {/* Outbreak Status */}
+                                                {pred.outbreakStatus && (
+                                                    <div className="mt-3 pt-3 border-t border-white/5">
+                                                        <p className="text-[9px] font-bold text-orange-400">⚠️ {pred.outbreakStatus}</p>
+                                                    </div>
+                                                )}
+
+                                                {/* EDLIZ Treatment — compact */}
+                                                {pred.dataSource?.edlizTreatment && (
+                                                    <div className="mt-2 pt-2 border-t border-white/5">
+                                                        <p className="text-[9px] font-bold text-cyan-400 mb-1">💊 EDLIZ First-line:</p>
+                                                        <p className="text-[9px] text-gray-400">{pred.dataSource.edlizTreatment}</p>
+                                                    </div>
+                                                )}
+
+                                                {/* Full treatment lines (expandable) */}
+                                                {pred.treatmentRecommendations?.length > 0 && (
+                                                    <div className="mt-2 pt-2 border-t border-white/5">
+                                                        <p className="text-[9px] font-bold text-cyan-400 mb-1">Treatment Protocol:</p>
+                                                        <div className="max-h-28 overflow-y-auto space-y-0.5">
+                                                            {pred.treatmentRecommendations.slice(0, 8).map((line, li) => (
+                                                                <p key={li} className={`text-[9px] leading-relaxed ${
+                                                                    line.startsWith('💊') ? 'text-cyan-300 font-semibold' :
+                                                                    line.startsWith('  •') ? 'text-gray-400 ml-2' : 'text-gray-500'
+                                                                }`}>{line}</p>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Prevention lines */}
+                                                {pred.preventiveRecommendations?.length > 0 && (
+                                                    <div className="mt-2 pt-2 border-t border-white/5">
+                                                        <p className="text-[9px] font-bold text-green-400 mb-1">Prevention:</p>
+                                                        <div className="max-h-24 overflow-y-auto space-y-0.5">
+                                                            {pred.preventiveRecommendations.slice(0, 6).map((line, li) => (
+                                                                <p key={li} className={`text-[9px] leading-relaxed ${
+                                                                    line.startsWith('🛡️') ? 'text-green-300 font-semibold' :
+                                                                    line.startsWith('  •') ? 'text-gray-400 ml-2' : 'text-gray-500'
+                                                                }`}>{line}</p>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </div>
                                         )) || (
                                             <div className="col-span-full py-4 text-center text-gray-500 text-[10px] uppercase">

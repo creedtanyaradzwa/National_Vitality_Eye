@@ -240,19 +240,87 @@ const AISymptomChecker = () => {
                             <h3 className="text-sm font-bold text-white uppercase tracking-widest mb-6 flex items-center gap-2">
                                 <SparklesIcon className="h-5 w-5 text-emerald-400" /> Pattern Recognition
                             </h3>
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 {result.aiPredictions.map((p, i) => (
-                                    <div key={i} className="p-5 rounded-2xl bg-slate-950 border border-white/5 flex items-center justify-between gap-6">
-                                        <div>
-                                            <p className="text-lg font-bold text-white">{p.condition}</p>
-                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">AI Correlation Pattern</p>
-                                        </div>
-                                        <div className="text-right flex flex-col items-end">
-                                            <div className="w-24 h-2 bg-slate-900 rounded-full overflow-hidden border border-white/5">
-                                                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${p.likelihood}%` }} />
+                                    <div key={i} className="p-5 rounded-2xl bg-slate-950 border border-white/5">
+                                        {/* Header row */}
+                                        <div className="flex items-center justify-between gap-6 mb-4">
+                                            <div>
+                                                <p className="text-lg font-bold text-white capitalize">{p.condition}</p>
+                                                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                                    {p.icd11Code && (
+                                                        <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-[10px] font-bold">
+                                                            ICD-11: {p.icd11Code}
+                                                        </span>
+                                                    )}
+                                                    {p.severity && (
+                                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                                            p.severity === 'Emergency' ? 'bg-red-500/20 text-red-400' :
+                                                            p.severity === 'High' ? 'bg-orange-500/20 text-orange-400' :
+                                                            'bg-yellow-500/20 text-yellow-400'
+                                                        }`}>
+                                                            {p.severity}
+                                                        </span>
+                                                    )}
+                                                    {p.commonIn && (
+                                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{p.commonIn}</p>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <span className="text-xs font-bold text-emerald-400 mt-2">{Math.round(p.likelihood)}% Correlation</span>
+                                            <div className="text-right flex flex-col items-end flex-shrink-0">
+                                                <div className="w-24 h-2 bg-slate-900 rounded-full overflow-hidden border border-white/5">
+                                                    <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${p.likelihood}%` }} />
+                                                </div>
+                                                <span className="text-xs font-bold text-emerald-400 mt-2">{Math.round(p.likelihood)}% Correlation</span>
+                                            </div>
                                         </div>
+
+                                        {/* Outbreak status */}
+                                        {p.outbreakStatus && (
+                                            <div className="mb-4 px-4 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20">
+                                                <p className="text-xs font-bold text-orange-400">⚠️ {p.outbreakStatus}</p>
+                                            </div>
+                                        )}
+
+                                        {/* EDLIZ first-line treatment */}
+                                        {p.edlizTreatment && (
+                                            <div className="mb-4 px-4 py-3 rounded-xl bg-cyan-500/5 border border-cyan-500/20">
+                                                <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider mb-1">💊 EDLIZ First-line Treatment</p>
+                                                <p className="text-xs text-slate-300">{p.edlizTreatment}</p>
+                                            </div>
+                                        )}
+
+                                        {/* Full treatment protocol */}
+                                        {p.treatmentRecommendations?.length > 0 && (
+                                            <div className="mb-4">
+                                                <p className="text-[10px] font-bold text-cyan-400 uppercase tracking-wider mb-2">Treatment Protocol</p>
+                                                <div className="rounded-xl bg-cyan-500/5 border border-cyan-500/10 p-3 max-h-40 overflow-y-auto space-y-0.5">
+                                                    {p.treatmentRecommendations.map((line, li) => (
+                                                        <p key={li} className={`text-xs leading-relaxed ${
+                                                            line.startsWith('💊') ? 'text-cyan-300 font-semibold mt-1' :
+                                                            line.startsWith('  •') ? 'text-slate-300 ml-3' :
+                                                            'text-slate-400'
+                                                        }`}>{line}</p>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Prevention protocol */}
+                                        {p.preventiveRecommendations?.length > 0 && (
+                                            <div>
+                                                <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider mb-2">🛡️ Prevention Measures</p>
+                                                <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3 max-h-36 overflow-y-auto space-y-0.5">
+                                                    {p.preventiveRecommendations.map((line, li) => (
+                                                        <p key={li} className={`text-xs leading-relaxed ${
+                                                            line.startsWith('🛡️') ? 'text-emerald-300 font-semibold mt-1' :
+                                                            line.startsWith('  •') ? 'text-slate-300 ml-3' :
+                                                            'text-slate-400'
+                                                        }`}>{line}</p>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>

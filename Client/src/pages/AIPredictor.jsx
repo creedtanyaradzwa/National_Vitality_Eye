@@ -19,7 +19,10 @@ import {
     TagIcon,
     FunnelIcon,
     Squares2X2Icon,
-    ListBulletIcon
+    ListBulletIcon,
+    BellAlertIcon,
+    BookOpenIcon,
+    InformationCircleIcon
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 
@@ -280,12 +283,13 @@ const AIPredictor = () => {
                                 <p className="text-xs text-gray-400">
                                     Learning from {aiStatus.stats?.totalRecords || 0} medical records • 
                                     Tracking {aiStatus.stats?.diseasesTracked || 0} diseases
+                                    {aiStatus.stats?.pretrainedDiseases > 0 && ` (${aiStatus.stats.pretrainedDiseases} EDLIZ pre-trained)`}
                                 </p>
                             </div>
                         </div>
                         <div className="flex items-center space-x-2">
                             <CpuChipIcon className="h-4 w-4 text-purple-400" />
-                            <span className="text-xs text-purple-400">Enhanced: Vital Signs + Chronic Conditions + Family History</span>
+                            <span className="text-xs text-purple-400">Enhanced: EDLIZ Baseline + Vital Signs + Chronic Conditions + Family History</span>
                         </div>
                     </div>
                 </div>
@@ -735,13 +739,107 @@ const AIPredictor = () => {
                                                     </ul>
                                                 </div>
                                             )}
+
+                                            {/* Outbreak Status */}
+                                            {pred.outbreakStatus && (
+                                                <div className="mt-3 pt-3 border-t border-white/10">
+                                                    <div className="flex items-center space-x-2">
+                                                        <BellAlertIcon className="h-4 w-4 text-orange-400 flex-shrink-0" />
+                                                        <p className="text-xs font-semibold text-orange-400">Surveillance Status</p>
+                                                    </div>
+                                                    <p className="text-xs text-orange-300 mt-1 ml-6">{pred.outbreakStatus}</p>
+                                                </div>
+                                            )}
+
+                                            {/* Data Source Transparency */}
+                                            {pred.dataSource && (
+                                                <div className="mt-3 pt-3 border-t border-white/10">
+                                                    <div className="flex items-center space-x-2 mb-2">
+                                                        <InformationCircleIcon className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                                                        <p className="text-xs font-semibold text-blue-400">Data Source</p>
+                                                    </div>
+                                                    <div className="ml-6 flex flex-wrap gap-2 text-xs">
+                                                        <span className={`px-2 py-0.5 rounded-full ${pred.dataSource.isPrimarilyReal ? 'bg-green-500/20 text-green-400' : 'bg-blue-500/20 text-blue-400'}`}>
+                                                            {pred.dataSource.isPrimarilyReal ? '✓ Primarily real patient data' : '📚 EDLIZ pre-trained baseline'}
+                                                        </span>
+                                                        <span className="px-2 py-0.5 rounded-full bg-white/10 text-gray-400">
+                                                            {pred.dataSource.realRecords} real records
+                                                        </span>
+                                                        {pred.dataSource.icd11Code && (
+                                                            <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-400">
+                                                                ICD-11: {pred.dataSource.icd11Code}
+                                                            </span>
+                                                        )}
+                                                        {pred.dataSource.severity && (
+                                                            <span className={`px-2 py-0.5 rounded-full ${
+                                                                pred.dataSource.severity === 'Emergency' ? 'bg-red-500/20 text-red-400' :
+                                                                pred.dataSource.severity === 'High' ? 'bg-orange-500/20 text-orange-400' :
+                                                                'bg-yellow-500/20 text-yellow-400'
+                                                            }`}>
+                                                                {pred.dataSource.severity} severity
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Treatment Recommendations from EDLIZ */}
+                                            {pred.treatmentRecommendations && pred.treatmentRecommendations.length > 0 && (
+                                                <div className="mt-3 pt-3 border-t border-white/10">
+                                                    <div className="flex items-center space-x-2 mb-3">
+                                                        <BookOpenIcon className="h-4 w-4 text-cyan-400 flex-shrink-0" />
+                                                        <p className="text-xs font-bold text-cyan-400 uppercase tracking-wider">EDLIZ Treatment Protocol</p>
+                                                    </div>
+                                                    <div className="rounded-xl bg-cyan-500/5 border border-cyan-500/20 p-3 space-y-1 max-h-48 overflow-y-auto">
+                                                        {pred.treatmentRecommendations.map((line, i) => (
+                                                            <p key={i} className={`text-xs leading-relaxed ${
+                                                                line.startsWith('💊') ? 'text-cyan-300 font-semibold mt-2' :
+                                                                line.startsWith('  •') ? 'text-gray-300 ml-3' :
+                                                                'text-gray-400'
+                                                            }`}>
+                                                                {line}
+                                                            </p>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* Preventive Recommendations from EDLIZ */}
+                                            {pred.preventiveRecommendations && pred.preventiveRecommendations.length > 0 && (
+                                                <div className="mt-3 pt-3 border-t border-white/10">
+                                                    <div className="flex items-center space-x-2 mb-3">
+                                                        <ShieldCheckIcon className="h-4 w-4 text-green-400 flex-shrink-0" />
+                                                        <p className="text-xs font-bold text-green-400 uppercase tracking-wider">EDLIZ Prevention Protocol</p>
+                                                    </div>
+                                                    <div className="rounded-xl bg-green-500/5 border border-green-500/20 p-3 space-y-1 max-h-40 overflow-y-auto">
+                                                        {pred.preventiveRecommendations.map((line, i) => (
+                                                            <p key={i} className={`text-xs leading-relaxed ${
+                                                                line.startsWith('🛡️') ? 'text-green-300 font-semibold mt-2' :
+                                                                line.startsWith('  •') ? 'text-gray-300 ml-3' :
+                                                                'text-gray-400'
+                                                            }`}>
+                                                                {line}
+                                                            </p>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {/* EDLIZ First-Line Treatment summary (compact) */}
+                                            {pred.dataSource?.edlizTreatment && !pred.treatmentRecommendations?.length && (
+                                                <div className="mt-3 pt-3 border-t border-white/10">
+                                                    <p className="text-xs font-semibold text-cyan-400 mb-1">
+                                                        💊 EDLIZ First-line: <span className="text-gray-300 font-normal">{pred.dataSource.edlizTreatment}</span>
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
                                 
                                 <div className="mt-4 p-3 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-xs text-yellow-400">
-                                    <p>⚠️ This is an AI-assisted prediction based on historical data including vital signs, chronic conditions, and family history.</p>
-                                    <p>Always verify with clinical diagnosis and professional medical judgment.</p>
+                                    <p>⚠️ AI-assisted prediction using EDLIZ clinical knowledge base + real patient data.</p>
+                                    <p className="mt-1">Treatment and prevention protocols are sourced from Zimbabwe's Essential Drugs List (EDLIZ). Always verify with clinical diagnosis and professional medical judgment.</p>
                                 </div>
                             </div>
                         ) : (

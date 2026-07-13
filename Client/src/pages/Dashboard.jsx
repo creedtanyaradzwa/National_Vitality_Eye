@@ -8,13 +8,15 @@ import {
     getDiseaseAnalytics,
     getMonthlyTrends,
     getGlobalSummary,
-    getSystemLoad
+    getSystemLoad,
+    getCommunityReports
 } from '../services/api';
 import { useAlerts } from '../context/AlertProvider.jsx';
 import { useDataRefresh } from '../context/DataRefreshProvider.jsx';
 import StatsCards from '../components/dashboard/StatsCards';
 import RecentAlerts from '../components/dashboard/RecentAlerts';
 import DiseaseChart from '../components/dashboard/DiseaseChart';
+import CitizenSignalsFeed from '../components/dashboard/CitizenSignalsFeed';
 import {
     SparklesIcon,
     ArrowPathIcon,
@@ -45,6 +47,10 @@ const Dashboard = () => {
     const [systemLoad, setSystemLoad]           = useState(null);
     const [loading, setLoading]                 = useState(true);
     const [lastUpdated, setLastUpdated]         = useState(new Date());
+
+    // Citizen signals state
+    const [citizenSignals, setCitizenSignals]   = useState([]);
+    const [signalsLoading, setSignalsLoading]   = useState(false);
 
     // Disease focus state
     const [selectedDisease, setSelectedDisease]     = useState('');
@@ -99,6 +105,14 @@ const Dashboard = () => {
             }
 
             setLastUpdated(new Date());
+
+            // Fetch citizen signals separately (non-blocking — don't let it fail the whole dashboard)
+            setSignalsLoading(true);
+            getCommunityReports({ limit: 20, sort: 'recent' })
+                .then(r => setCitizenSignals(r.data?.reports || r.data || []))
+                .catch(() => setCitizenSignals([]))
+                .finally(() => setSignalsLoading(false));
+
         } catch (error) {
             console.error('Failed to load dashboard data:', error);
             toast.error('Failed to load dashboard data');
@@ -313,7 +327,9 @@ const Dashboard = () => {
                         <div className="absolute top-0 right-0 p-4">
                             <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-500/30">
                                 <CpuChipIcon className="h-3 w-3 text-purple-400 animate-pulse" />
-                                <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">Neural Model Accuracy: 94.2%</span>
+                                <span className="text-[10px] font-black text-purple-400 uppercase tracking-widest">
+                                    AI Model v5.0 — EDLIZ Pre-trained
+                                </span>
                             </div>
                         </div>
                         
@@ -333,12 +349,57 @@ const Dashboard = () => {
                                         Neural analysis of <span className="text-purple-400 font-bold">{selectedDisease}</span> data indicates a potential hotspot emergence in <span className="text-white font-bold">{diseaseStats?.hotspot}</span>. 
                                         Prioritize resource allocation and clinical staffing in this sector to mitigate risk.
                                     </p>
+
+                                    {/* Outbreak status from trainer2 */}
+                                    {diseaseInsights.outbreakStatus && (
+                                        <p className="text-xs text-orange-400 font-bold mt-2">
+                                            ⚠️ {diseaseInsights.outbreakStatus}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                             <button className="w-full md:w-auto px-6 py-2.5 rounded-xl bg-purple-500 hover:bg-purple-600 text-white text-sm font-bold transition-all duration-300 shadow-lg shadow-purple-500/25">
                                 View Detailed Analysis
                             </button>
                         </div>
+
+                        {/* EDLIZ Treatment and Prevention from trainer2 */}
+                        {diseaseInsights.edlizProtocol && (
+                            <div className="mt-4 pt-4 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {diseaseInsights.edlizProtocol.treatmentLines?.length > 0 && (
+                                    <div>
+                                        <p className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-2">
+                                            💊 EDLIZ Treatment Protocol
+                                        </p>
+                                        <div className="rounded-xl bg-cyan-500/5 border border-cyan-500/20 p-3 max-h-32 overflow-y-auto space-y-0.5">
+                                            {diseaseInsights.edlizProtocol.treatmentLines.slice(0, 10).map((line, i) => (
+                                                <p key={i} className={`text-[10px] leading-relaxed ${
+                                                    line.startsWith('💊') ? 'text-cyan-300 font-semibold mt-1' :
+                                                    line.startsWith('  •') ? 'text-gray-300 ml-3' :
+                                                    'text-gray-400'
+                                                }`}>{line}</p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                                {diseaseInsights.edlizProtocol.preventionLines?.length > 0 && (
+                                    <div>
+                                        <p className="text-[10px] font-black text-green-400 uppercase tracking-widest mb-2">
+                                            🛡️ Prevention Protocol
+                                        </p>
+                                        <div className="rounded-xl bg-green-500/5 border border-green-500/20 p-3 max-h-32 overflow-y-auto space-y-0.5">
+                                            {diseaseInsights.edlizProtocol.preventionLines.slice(0, 8).map((line, i) => (
+                                                <p key={i} className={`text-[10px] leading-relaxed ${
+                                                    line.startsWith('🛡️') ? 'text-green-300 font-semibold mt-1' :
+                                                    line.startsWith('  •') ? 'text-gray-300 ml-3' :
+                                                    'text-gray-400'
+                                                }`}>{line}</p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -502,12 +563,16 @@ const Dashboard = () => {
                 </div>
                 </div>
 
-                {/* Charts + Alerts */}
+                {/* Charts + Alerts + Citizen Signals */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-1">
+                    <div className="lg:col-span-1 space-y-6">
                         <RecentAlerts
                             alerts={activeAlerts || []}
                             selectedDisease={selectedDisease}
+                        />
+                        <CitizenSignalsFeed
+                            signals={citizenSignals}
+                            loading={signalsLoading}
                         />
                     </div>
                     <div className="lg:col-span-2 min-h-[400px]">

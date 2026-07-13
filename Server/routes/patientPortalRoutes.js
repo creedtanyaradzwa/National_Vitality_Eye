@@ -737,10 +737,18 @@ router.post("/ai/symptom-check", async (req, res) => {
                     patient.age,
                     patient.gender
                 );
+                // Pass through full trainer2 protocol data so the patient portal
+                // can display EDLIZ treatment and preventive recommendations
                 aiPredictions = (result.predictions || []).slice(0, 3).map(p => ({
                     condition: p.disease,
                     likelihood: p.confidence,
-                    commonIn: p.totalCases > 0 ? `${p.totalCases} similar cases on record` : null
+                    commonIn: p.totalCases > 0 ? `${p.totalCases} similar cases on record` : null,
+                    outbreakStatus:            p.outbreakStatus            || null,
+                    edlizTreatment:            p.dataSource?.edlizTreatment || null,
+                    icd11Code:                 p.dataSource?.icd11Code      || null,
+                    severity:                  p.dataSource?.severity       || null,
+                    treatmentRecommendations:  p.treatmentRecommendations   || [],
+                    preventiveRecommendations: p.preventiveRecommendations  || []
                 }));
             }
         } catch (_) { /* AI not available — use rule-based only */ }

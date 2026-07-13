@@ -681,17 +681,102 @@ router.post("/similar-patients/:patientId", hasPermission("view:analytics"), asy
 // ============ OUTBREAK ALERTS ============
 
 // GET outbreak alerts
+// Returns persistent MongoDB alerts flattened to the same shape as WebSocket alerts
+// so the frontend components work identically for both sources.
+// Protocol lines are pulled from the already-loaded AI engine (no disk re-read).
 router.get("/alerts", hasPermission("view:analytics"), async (req, res) => {
-    if (!realTimeAI || !alertEmitter) {
-        return res.status(503).json({ error: "AI initializing" });
+    try {
+        const Alert = require('../models/Alert');
+
+        // Flatten a MongoDB Alert document into the shape the frontend expects.
+        const flattenDbAlert = (alert) => {
+            const obj = typeof alert.toObject === 'function' ? alert.toObject() : { ...alert };
+
+            // Get EDLIZ protocol lines from the live AI engine (already loaded at startup)
+            let protocolData = { ...(obj.protocol || {}) };
+            if (realTimeAI) {
+                try {
+                    const key = toAIKey(normaliseDisease(obj.disease));
+                    const pat = realTimeAI.diseasePatterns.get(key);
+                    if (pat?.clinicalProtocols) {
+                        protocolData.treatmentLines  = pat.clinicalProtocols.treatmentLines  || [];
+                        protocolData.preventionLines = pat.clinicalProtocols.preventionLines || [];
+                        protocolData.outbreakStatus  = pat.outbreakStatus || null;
+                    }
+                } catch (_) { /* non-critical */ }
+            }
+
+            return {
+                // Identity
+                id:       obj._id,
+                disease:  obj.disease,
+                severity: obj.severity,
+                status:   obj.status,
+
+                // Location — flat so Alerts.jsx doesn't need to dig into obj.location
+                province: obj.location?.province,
+                district: obj.location?.district,
+                ward:     obj.location?.ward,
+
+                // Human-readable message (mirrors what outbreakDetector emits over WS)
+                message: `🚨 ${obj.status} ${obj.severity}: ${obj.disease} in ${obj.location?.district || obj.location?.province}.`,
+
+                // Timestamp
+                timestamp: obj.lastSeen || obj.updatedAt,
+
+                // Resolution
+                resolved: obj.status === 'RESOLVED',
+
+                // Clinical content shown in the modal
+                clinicalJustification: obj.clinicalJustification || null,
+                recommendations:       obj.recommendations?.length ? obj.recommendations : [],
+
+                // Metrics shown in the modal detail cards
+                recentCases:    obj.metrics?.rawCount     || 0,
+                previousCases:  null,
+                increasePercent: obj.metrics?.increase    || 0,
+                mortalityRate:  null,
+
+                // Acknowledgement
+                isAcknowledged: obj.isAcknowledged || false,
+                strikeCount:    obj.strikeCount    || 1,
+                firstDetected:  obj.firstDetected  || null,
+
+                // Nested data block (mirrors outbreakDetector emitAlertEvent shape)
+                data: {
+                    currentCases:     obj.metrics?.rawCount       || 0,
+                    weightedCases:    obj.metrics?.weightedCount  || 0,
+                    increase:         obj.metrics?.increase       || 0,
+                    score:            obj.metrics?.score          || 0,
+                    hasCitizenSignal: obj.context?.hasCitizenSignal || false,
+                    envFactors:       obj.context?.environmentalFactors || [],
+                    protocol:         protocolData
+                }
+            };
+        };
+
+        const [activeDbAlerts, historyDbAlerts] = await Promise.all([
+            Alert.find({ status: { $ne: 'RESOLVED' } }).sort({ lastSeen: -1 }).limit(100),
+            Alert.find({ status: 'RESOLVED'          }).sort({ updatedAt: -1 }).limit(50)
+        ]);
+
+        res.json({
+            timestamp:   new Date(),
+            activeAlerts: activeDbAlerts.map(flattenDbAlert),
+            history:      historyDbAlerts.map(flattenDbAlert),
+            totalActive:  activeDbAlerts.length
+        });
+    } catch (error) {
+        console.error('GET /ai/alerts error:', error.message);
+        // Graceful fallback to in-memory alerts
+        const memAlerts = alertEmitter ? alertEmitter.getActiveAlerts() : [];
+        res.json({
+            timestamp:   new Date(),
+            activeAlerts: memAlerts,
+            history:      alertEmitter ? alertEmitter.getAlertHistory(50) : [],
+            totalActive:  memAlerts.length
+        });
     }
-    
-    res.json({
-        timestamp: new Date(),
-        activeAlerts: alertEmitter.getActiveAlerts(),
-        history: alertEmitter.getAlertHistory(req.query.limit || 50),
-        totalActive: alertEmitter.getActiveAlerts().length
-    });
 });
 
 // ============ PATIENT RISK ASSESSMENT - ENHANCED ==========
@@ -927,6 +1012,27 @@ router.get("/disease-insights/:disease", hasPermission("view:analytics"), async 
                 }),
                 projections,
                 recommendations: buildDataDrivenRecommendations(recCtx),
+                // ── EDLIZ clinical protocols from trainer2 baseline ──────────
+                edlizProtocol: (() => {
+                    try {
+                        const { getProtocols, loadBaseline } = require('../ai/pretrainer');
+                        const { toAIKey } = require('../utils/normalise');
+                        const baseline = realTimeAI?.diseasePatterns;
+                        if (baseline) {
+                            const key = toAIKey(normaliseDisease(rawDisease));
+                            const pat = baseline.get(key);
+                            if (pat?.clinicalProtocols) return pat.clinicalProtocols;
+                        }
+                        return null;
+                    } catch (_) { return null; }
+                })(),
+                outbreakStatus: (() => {
+                    try {
+                        const { toAIKey } = require('../utils/normalise');
+                        const key = toAIKey(normaliseDisease(rawDisease));
+                        return realTimeAI?.diseasePatterns?.get(key)?.outbreakStatus || null;
+                    } catch (_) { return null; }
+                })(),
                 aiConfidence: total > 0 ? Math.min(75 + Math.floor(total / 50), 98) : null,
                 timestamp: new Date()
             });
@@ -1044,6 +1150,18 @@ router.get("/disease-insights/:disease", hasPermission("view:analytics"), async 
             }),
             projections,
             recommendations,
+            // ── EDLIZ clinical protocols from trainer2 baseline ──────────
+            edlizProtocol: (() => {
+                try {
+                    const pat = realTimeAI.diseasePatterns.get(key);
+                    return pat?.clinicalProtocols || null;
+                } catch (_) { return null; }
+            })(),
+            outbreakStatus: (() => {
+                try {
+                    return realTimeAI.diseasePatterns.get(key)?.outbreakStatus || null;
+                } catch (_) { return null; }
+            })(),
             aiConfidence: total > 0 ? Math.min(85 + Math.floor(total / 100), 98) : null,
             timestamp: new Date()
         });
@@ -1061,15 +1179,21 @@ router.get("/stats", hasPermission("view:analytics"), async (req, res) => {
         const totalPatients = await Patient.countDocuments();
         const totalRecords = await MedicalRecord.countDocuments();
         const diseases = await MedicalRecord.distinct('disease');
+
+        // Merge with live AI engine stats if available
+        const aiStats = realTimeAI ? realTimeAI.getStats() : null;
         
         res.json({
-            totalRecords: totalRecords,
-            diseasesTracked: diseases.length,
-            provincesTracked: 10,
-            totalPatients: totalPatients,
+            totalRecords,
+            diseasesTracked:    aiStats?.diseasesTracked   || diseases.length,
+            pretrainedDiseases: aiStats?.pretrainedDiseases || 0,
+            pureRealDiseases:   aiStats?.pureRealDiseases   || 0,
+            provincesTracked:   aiStats?.provincesTracked   || 10,
+            totalPatients,
+            symptomCorrelations: aiStats?.symptomCorrelations || 0,
             timestamp: new Date(),
-            aiModel: "EnhancedClinicalAI v3.0",
-            features: ["Vital Signs", "Chronic Conditions", "Family History", "Symptom Analysis", "Geographic Tracking"]
+            aiModel:   "EnhancedClinicalAI v5.0",
+            features:  ["EDLIZ Pre-trained Baseline", "Vital Signs", "Chronic Conditions", "Family History", "Symptom Analysis", "Geographic Tracking", "Confidence Calibration"]
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -1102,7 +1226,11 @@ router.post("/refresh", hasPermission("admin"), async (req, res) => {
         const AlertEmitter = require("../ai/alertEmitter");
 
         const emitter = new AlertEmitter(global.io);
-        const learner = new ContinuousLearner();
+        
+        // Load pre-trained EDLIZ baseline so refresh doesn't lose cold-start capability
+        const Pretrainer = require('../ai/pretrainer');
+        const pretrainedPatterns = Pretrainer.loadBaseline();
+        const learner = new ContinuousLearner(pretrainedPatterns);
 
         // Use cursor for memory efficiency with 100k+ records
         const cursor = MedicalRecord.find({})
@@ -1126,9 +1254,9 @@ router.post("/refresh", hasPermission("admin"), async (req, res) => {
         alertEmitter = emitter;
 
         res.json({
-            message: `AI refreshed with ${count} latest records`,
+            message: `AI refreshed with ${count} records (+ EDLIZ pre-trained baseline of ${pretrainedPatterns.size} diseases)`,
             stats: realTimeAI.getStats(),
-            enhancedFeatures: ["Vital Signs", "Chronic Conditions", "Family History"]
+            enhancedFeatures: ["EDLIZ Pre-trained Baseline", "Vital Signs", "Chronic Conditions", "Family History", "Confidence Calibration"]
         });
     } catch (error) {
         res.status(500).json({ error: error.message });

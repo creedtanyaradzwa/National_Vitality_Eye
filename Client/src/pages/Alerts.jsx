@@ -474,6 +474,48 @@ const Alerts = () => {
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Rich EDLIZ Treatment Protocol Lines from trainer2 */}
+                                {selectedAlert.data?.protocol?.treatmentLines?.length > 0 && (
+                                    <div className="rounded-xl bg-cyan-500/5 border border-cyan-500/20 p-5">
+                                        <h4 className="text-[10px] font-black text-cyan-400 uppercase tracking-[0.3em] mb-4 flex items-center">
+                                            <ShieldCheckIcon className="h-3.5 w-3.5 mr-2" />
+                                            EDLIZ_CLINICAL_TREATMENT_PROTOCOL
+                                        </h4>
+                                        <div className="space-y-1 max-h-52 overflow-y-auto pr-1">
+                                            {selectedAlert.data.protocol.treatmentLines.map((line, i) => (
+                                                <p key={i} className={`text-xs leading-relaxed ${
+                                                    line.startsWith('💊') ? 'text-cyan-300 font-semibold mt-2' :
+                                                    line.startsWith('  •') ? 'text-gray-300 ml-3' :
+                                                    'text-gray-400'
+                                                }`}>
+                                                    {line}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Rich EDLIZ Prevention Protocol Lines from trainer2 */}
+                                {selectedAlert.data?.protocol?.preventionLines?.length > 0 && (
+                                    <div className="rounded-xl bg-green-500/5 border border-green-500/20 p-5">
+                                        <h4 className="text-[10px] font-black text-green-400 uppercase tracking-[0.3em] mb-4 flex items-center">
+                                            <ShieldCheckIcon className="h-3.5 w-3.5 mr-2" />
+                                            EDLIZ_PREVENTION_PROTOCOL
+                                        </h4>
+                                        <div className="space-y-1 max-h-44 overflow-y-auto pr-1">
+                                            {selectedAlert.data.protocol.preventionLines.map((line, i) => (
+                                                <p key={i} className={`text-xs leading-relaxed ${
+                                                    line.startsWith('🛡️') ? 'text-green-300 font-semibold mt-2' :
+                                                    line.startsWith('  •') ? 'text-gray-300 ml-3' :
+                                                    'text-gray-400'
+                                                }`}>
+                                                    {line}
+                                                </p>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             
                             <div className="p-6 border-t border-white/10">

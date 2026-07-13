@@ -51,22 +51,28 @@ router.post("/report", async (req, res) => {
 // GET all reports (Protected for personnel)
 router.get("/reports", protect, async (req, res) => {
     try {
-        // Only allow staff/admin to view all reports
-        if (!['admin', 'doctor', 'nurse', 'staff'].includes(req.user.role)) {
+        // All approved staff roles can view community reports
+        const allowedRoles = ['admin', 'doctor', 'nurse', 'data_entry', 'viewer'];
+        if (!allowedRoles.includes(req.user.role)) {
             return res.status(403).json({ error: "Access denied" });
         }
 
-        const { province, district, status } = req.query;
+        const { province, district, status, limit = 50 } = req.query;
         const query = {};
         if (province) query["location.province"] = province;
         if (district) query["location.district"] = district;
         if (status) query.verificationStatus = status;
 
+        // Scope by user's province for non-admin roles
+        if (req.user.role !== 'admin' && req.user.province && !province) {
+            query["location.province"] = req.user.province;
+        }
+
         const reports = await CitizenReport.find(query)
             .sort({ createdAt: -1 })
-            .limit(100);
+            .limit(parseInt(limit) || 50);
 
-        res.json({ reports });
+        res.json({ reports, total: reports.length });
     } catch (error) {
         console.error("Fetch reports error:", error);
         res.status(500).json({ error: "Failed to fetch community reports" });
