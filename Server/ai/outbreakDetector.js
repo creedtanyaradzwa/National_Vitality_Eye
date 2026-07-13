@@ -6,7 +6,7 @@ const { normaliseDisease } = require('../utils/normalise');
 const fs = require('fs');
 const path = require('path');
 
-// Load EDLIZ Protocols (Gap A)
+// Load EDLIZ Protocols from edliz.json (legacy fallback)
 let EDLIZ_DATA = [];
 try {
     const edlizPath = path.join(__dirname, '../edliz.json');
@@ -19,7 +19,19 @@ try {
     console.warn("⚠️ Failed to load edliz.json:", e.message);
 }
 
-// Load Citizen Recommendations (Gap B - Configurable)
+// Load trainer2 baseline for rich protocol-backed recommendations
+// This is the primary source; edliz.json is a fallback for diseases
+// not covered in trainer2.json.
+const Pretrainer = require('./pretrainer');
+let TRAINER2_BASELINE = null;
+try {
+    TRAINER2_BASELINE = Pretrainer.loadBaseline();
+    console.log(`✅ OutbreakDetector: trainer2 baseline loaded (${TRAINER2_BASELINE.size} diseases).`);
+} catch (e) {
+    console.warn("⚠️ OutbreakDetector: could not load trainer2 baseline:", e.message);
+}
+
+// Load Citizen Recommendations (fallback for diseases not in trainer2)
 let RECOMMENDATIONS_CONFIG = { categories: [], default_recommendations: [] };
 try {
     const recsPath = path.join(__dirname, 'recommendations.json');
@@ -95,24 +107,50 @@ class OutbreakDetector {
         );
     }
 
+    /**
+     * Returns outbreak recommendations for a disease.
+     *
+     * Priority order:
+     *   1. trainer2 clinicalProtocols.outbreakRecs  (protocol-backed, always authoritative)
+     *   2. recommendations.json category match      (legacy configurable fallback)
+     *   3. Hard-coded default                       (absolute fallback)
+     *
+     * Recommendations from trainer2 are NEVER derived from medical records —
+     * they are fixed EDLIZ clinical facts that always apply.
+     */
     getRecommendations(diseaseName) {
+        // ── 1. trainer2 protocol-backed recommendations ─────────────────
+        if (TRAINER2_BASELINE) {
+            const protocols = Pretrainer.getProtocols(TRAINER2_BASELINE, diseaseName);
+            if (protocols && protocols.outbreakRecs && protocols.outbreakRecs.length > 0) {
+                return protocols.outbreakRecs;
+            }
+        }
+
+        // ── 2. Legacy recommendations.json fallback ──────────────────────
         const recs = [];
         const lower = diseaseName.toLowerCase();
-        
-        // Find matching category from the loaded config
         const category = RECOMMENDATIONS_CONFIG.categories.find(cat => 
             cat.match_keywords.some(kw => lower.includes(cat.id.replace('_', ' ')) || lower.includes(kw))
         );
-
         if (category) {
             recs.push(...category.recommendations);
         }
+        if (recs.length > 0) return recs;
 
-        if (recs.length === 0) {
-            recs.push(...(RECOMMENDATIONS_CONFIG.default_recommendations || ["📢 STAY INFORMED through official health channels and report unusual symptoms to your clinic."]));
-        }
+        // ── 3. Hard-coded default ────────────────────────────────────────
+        return RECOMMENDATIONS_CONFIG.default_recommendations?.length
+            ? RECOMMENDATIONS_CONFIG.default_recommendations
+            : ["📢 STAY INFORMED through official health channels and report unusual symptoms to your clinic."];
+    }
 
-        return recs;
+    /**
+     * Returns the full structured protocol block for a disease (for alert detail views).
+     * Includes both treatment and prevention protocols from trainer2.
+     */
+    getFullProtocols(diseaseName) {
+        if (!TRAINER2_BASELINE) return null;
+        return Pretrainer.getProtocols(TRAINER2_BASELINE, diseaseName);
     }
 
     generateClinicalJustification(disease, data, location) {

@@ -1,14 +1,4737 @@
 [
-  {"name": "Hepatitis B", "vital_signs": {"temp_range": "36.0-37.5°C", "hr_range": "60-100 bpm", "rr_range": "12-20 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "95%"}},
-  {"name": "Hepatitis C", "vital_signs": {"temp_range": "36.0-37.5°C", "hr_range": "60-100 bpm", "rr_range": "12-20 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "95%"}},
-  {"name": "Typhoid", "vital_signs": {"temp_range": ">38.0°C", "hr_range": "60-90 bpm (may have relative bradycardia)", "rr_range": "12-20 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "94%"}},
-  {"name": "Cholera", "vital_signs": {"temp_range": "36.0-37.0°C", "hr_range": "90-130 bpm", "rr_range": "18-28 bpm", "bp_target": "<90/60 mmHg", "spo2_min": "94%"}},
-  {"name": "COVID-19", "vital_signs": {"temp_range": "36.0-39.0°C", "hr_range": "60-110 bpm", "rr_range": "12-25 bpm", "bp_target": "90/60-130/85 mmHg", "spo2_min": "<94% (caution)"}},
-  {"name": "Tetanus", "vital_signs": {"temp_range": "36.0-38.5°C", "hr_range": "80-140 bpm", "rr_range": "16-30 bpm", "bp_target": "Labile (fluctuating)", "spo2_min": "92%"}},
-  {"name": "Diphtheria", "vital_signs": {"temp_range": "36.0-38.0°C", "hr_range": "70-110 bpm", "rr_range": "14-24 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "94%"}},
-  {"name": "Gonorrhoea", "vital_signs": {"temp_range": "36.0-37.5°C", "hr_range": "60-100 bpm", "rr_range": "12-20 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "95%"}},
-  {"name": "Mpox", "vital_signs": {"temp_range": ">37.5°C", "hr_range": "60-100 bpm", "rr_range": "12-20 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "95%"}},
-  {"name": "Ebola", "vital_signs": {"temp_range": ">38.0°C", "hr_range": "90-140 bpm", "rr_range": "18-30 bpm", "bp_target": "<90/60 mmHg", "spo2_min": "90%"}},
-  {"name": "Mumps", "vital_signs": {"temp_range": "36.5-38.5°C", "hr_range": "60-100 bpm", "rr_range": "12-20 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "95%"}},
-  {"name": "Measles", "vital_signs": {"temp_range": ">38.5°C", "hr_range": "80-120 bpm", "rr_range": "16-25 bpm", "bp_target": "90/60-120/80 mmHg", "spo2_min": "94%"}}
+  {
+    "name": "HIV",
+    "icd_11_code": "1C60",
+    "severity": "High",
+    "transmission": "Blood/Sexual/Vertical",
+    "symptoms": ["Fever", "Lymphadenopathy", "Weight loss"],
+    "edliz_treatment_path": "TLD (Tenofovir/Lamivudine/Dolutegravir)",
+    "outbreak_status": "Endemic (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": false,
+        "notes": "No vaccine available; prevention through safer sex practices, needle safety, PMTCT"
+      },
+      "behavioral_prevention": {
+        "condom_use": "Promote consistent and correct use of male/female condoms",
+        "safe_injections": "Use sterile needles and syringes for all injections",
+        "testing": "Offer HIV testing and counselling (HTS) to all patients",
+        "pmtct": "Screen all pregnant women; initiate ART (Option B+)"
+      },
+      "post_exposure_prophylaxis": {
+        "pep": "TDF/3TC/DTG starter pack within 72 hours of exposure",
+        "duration": "28 days",
+        "indications": "Occupational exposure, sexual assault, high-risk unprotected sex"
+      },
+      "pre_exposure_prophylaxis": {
+        "oral": "TDF/FTC or TDF/3TC once daily",
+        "injectable": "CAB-LA every 2 months, Lenacapavir every 6 months",
+        "indications": "High-risk individuals, discordant couples, sex workers, MSM"
+      }
+    },
+    "treatment_protocols": {
+      "first_line": {
+        "adult": "Tenofovir (TDF) 300mg + Lamivudine (3TC) 300mg + Dolutegravir (DTG) 50mg (TLD) once daily",
+        "pregnant": "Same as adult (DTG safe in pregnancy)",
+        "tb_coinfection": "DTG 50mg twice daily when on Rifampicin"
+      },
+      "alternative_first_line": {
+        "regimen": "TAF/FTC/DTG or ABC/3TC/DTG or TDF/3TC/EFV",
+        "notes": "TAF preferred in patients >50 years, renal impairment, osteoporosis"
+      },
+      "second_line": {
+        "regimen": "AZT/3TC + ATV/r (or LPV/r)",
+        "indications": "Treatment failure on first-line"
+      },
+      "monitoring": {
+        "viral_load": "At 6 months, 12 months, then annually",
+        "cd4": "At initiation and when clinically indicated",
+        "renal_function": "Annually on TDF",
+        "adherence": "Assess at every visit"
+      }
+    }
+  },
+  {
+    "name": "Tuberculosis (TB)",
+    "icd_11_code": "1B10",
+    "severity": "High",
+    "transmission": "Airborne",
+    "symptoms": ["Persistent cough", "Chest pain", "Night sweats"],
+    "edliz_treatment_path": "HRZE (Isoniazid, Rifampicin, Pyrazinamide, Ethambutol)",
+    "outbreak_status": "Endemic (Notifiable disease)",
+    "vital_signs": {
+      "temp_range": "36.0-38.5°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "14-24 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": true,
+        "vaccine_type": "BCG",
+        "schedule": "At birth or first contact",
+        "contraindications": "Symptomatic HIV infection"
+      },
+      "infection_control": {
+        "airborne_precautions": "N95 respirator, negative pressure isolation where available",
+        "cough_hygiene": "Cover mouth when coughing, surgical mask for patients",
+        "ventilation": "Ensure adequate ventilation in healthcare settings"
+      },
+      "tb_preventive_therapy": {
+        "adults": "3HP (Rifapentine + Isoniazid weekly for 3 months) or 6H",
+        "children": "6H or 3RH",
+        "mdr_contacts": "Levofloxacin 6 months",
+        "indications": "PLHIV, household contacts of bacteriologically confirmed TB"
+      },
+      "screening": {
+        "symptom_checklist": "Current cough, night sweats, weight loss, fever",
+        "cxr": "Chest X-ray for symptomatic patients",
+        "molecular_testing": "Xpert MTB/Rif Ultra or Truenat MTB-Rif"
+      }
+    },
+    "treatment_protocols": {
+      "drug_sensitive_tb": {
+        "intensive_phase": "HRZE daily for 2 months",
+        "continuation_phase": "HR daily for 4 months (or 10 months for CNS/bone TB)",
+        "fdc_dosing": "Weight-based (25-39kg: 2 tabs; 40-54kg: 3 tabs; 55-70kg: 4 tabs; >70kg: 5 tabs)"
+      },
+      "drug_resistant_tb": {
+        "rr_tb": "6BPaLM (Bedaquiline, Pretomanid, Linezolid, Moxifloxacin)",
+        "mdr_tb": "Refer to specialist for individualized regimen",
+        "monitoring": "Monthly sputum culture until conversion"
+      },
+      "tb_hiv_coinfection": {
+        "art_timing": "Start ART within 2 weeks of TB treatment initiation",
+        "dtg_dose": "DTG 50mg twice daily when on Rifampicin"
+      },
+      "adverse_effects": {
+        "hepatitis": "Stop all TB drugs, reintroduce one by one",
+        "management": "Start with INH, then R, then E, then Z"
+      },
+      "directly_observed_therapy": "DOT by healthcare worker, community member, or family member"
+    }
+  },
+  {
+    "name": "Malaria",
+    "icd_11_code": "1F00",
+    "severity": "High",
+    "transmission": "Vector-borne",
+    "symptoms": ["High fever", "Chills", "Sweating"],
+    "edliz_treatment_path": "Artemether-Lumefantrine (AL)",
+    "outbreak_status": "Active Outbreak (Major surge 2025)",
+    "vital_signs": {
+      "temp_range": ">38.0°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "vector_control": {
+        "insecticide_treated_nets": "Sleep under ITN every night",
+        "indoor_residual_spraying": "IRS twice yearly in endemic areas",
+        "mosquito_repellents": "Use repellents, mosquito coils",
+        "environmental_management": "Remove stagnant water, clear vegetation"
+      },
+      "chemoprophylaxis": {
+        "intermittent_preventive_treatment_pregnancy": "SP 3 tablets at 13 weeks, then 4-weekly until delivery",
+        "seasonal_malaria_chemoprevention": "SMC for children in high-risk areas"
+      },
+      "personal_protection": {
+        "protective_clothing": "Long sleeves at dusk and dawn",
+        "screening": "Install window/door screens"
+      },
+      "surveillance": {
+        "case_reporting": "Report all confirmed cases immediately",
+        "community_awareness": "Educate on early signs and prevention"
+      }
+    },
+    "treatment_protocols": {
+      "uncomplicated_malaria": {
+        "first_line": {
+          "adult": "Artemether-Lumefantrine 6-dose course over 3 days",
+          "child": "Weight-based dosing (EDLIZ table)",
+          "infant_under_5kg": "Dispersible tablets in water"
+        },
+        "second_line": {
+          "adult": "Artesunate-Amodiaquine 3-day course",
+          "alternative": "Quinine + Doxycycline 7 days"
+        },
+        "special_groups": {
+          "pregnancy_1st_trimester": "Quinine + Clindamycin 7 days",
+          "pregnancy_2nd_3rd": "Artemether-Lumefantrine first line",
+          "children_under_5kg": "Treat as severe malaria"
+        }
+      },
+      "severe_malaria": {
+        "parenteral_therapy": {
+          "first_line": "Artesunate IV/IM 2.4mg/kg stat, 12hrs, 24hrs, then daily",
+          "second_line": "Quinine IV loading dose 20mg/kg over 4 hours"
+        },
+        "supportive_care": {
+          "hypoglycemia": "Dextrose 50% 1ml/kg IV in children, 20-50ml in adults",
+          "convulsions": "Diazepam IV/PR 0.1-0.2mg/kg",
+          "hyperpyrexia": "Tepid sponging, paracetamol",
+          "severe_anaemia": "Blood transfusion if Hb < 6g/dl",
+          "respiratory_distress": "Oxygen therapy"
+        },
+        "monitoring": {
+          "vital_signs": "Every 15-30 minutes initially",
+          "blood_glucose": "2-4 hourly",
+          "urine_output": "Maintain >1ml/kg/hr"
+        }
+      },
+      "elimination_areas": {
+        "primaquine": "0.25mg/kg single dose for gametocyte clearance",
+        "contraindications": "G6PD deficiency, pregnancy, severe anaemia"
+      }
+    }
+  },
+  {
+    "name": "Hepatitis B",
+    "icd_11_code": "1D60",
+    "severity": "High",
+    "transmission": "Blood/Sexual",
+    "symptoms": ["Jaundice", "Dark urine", "Fatigue"],
+    "edliz_treatment_path": "Tenofovir",
+    "outbreak_status": "Endemic (Notifiable disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": true,
+        "vaccine_type": "Hepatitis B vaccine",
+        "schedule": "Birth dose within 24 hours + 6, 10, 14 weeks (DPT-HepB-Hib)",
+        "target": "All infants, healthcare workers, high-risk groups"
+      },
+      "screening": {
+        "pregnancy": "HBsAg screening at booking",
+        "high_risk": "Screen HIV positive, contacts, healthcare workers"
+      },
+      "emtct": {
+        "tdf_prophylaxis": "TDF 300mg once daily from 28 weeks to 14 weeks postpartum",
+        "birth_dose": "Hepatitis B vaccine within 24 hours of birth"
+      },
+      "prevention": {
+        "safe_injections": "Use sterile needles",
+        "safe_sex": "Use condoms",
+        "blood_safety": "Screen all blood donations"
+      }
+    },
+    "treatment_protocols": {
+      "chronic_hepatitis_b": {
+        "first_line": "TDF 300mg or TAF 25mg once daily (lifelong)",
+        "taf_indications": "Osteoporosis, impaired kidney function",
+        "coinfection": "TDF/TAF + 3TC/FTC + DTG for HIV coinfection"
+      },
+      "treatment_eligibility": {
+        "cirrhosis": "Treat regardless of HBV DNA",
+        "fibrosis": "APRI > 0.5 or transient elastography > 7kPa",
+        "hbv_dna": ">2000 IU/mL + ALT > ULN"
+      },
+      "monitoring": {
+        "alt": "Every 6 months",
+        "hbv_dna": "Annual",
+        "liver_ultrasound": "Every 6 months for cirrhosis/family history",
+        "renal_function": "Annual for TDF"
+      },
+      "pregnancy": {
+        "treatment": "TDF from 28 weeks if HBV DNA >200,000 IU/mL or HBeAg positive",
+        "universal_prophylaxis": "TDF for all HBsAg positive if viral load unavailable"
+      }
+    }
+  },
+  {
+    "name": "Hepatitis C",
+    "icd_11_code": "1D61",
+    "severity": "High",
+    "transmission": "Blood",
+    "symptoms": ["Fatigue", "Loss of appetite", "Jaundice"],
+    "edliz_treatment_path": "Direct-acting antivirals (Referral)",
+    "outbreak_status": "Endemic (Notifiable disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "screening": {
+        "antibody_test": "Laboratory-based or point-of-care HCV antibody assay",
+        "confirmatory": "HCV RNA or HCV core antigen for viraemic infection"
+      },
+      "prevention": {
+        "blood_safety": "Screen all blood donations",
+        "safe_injections": "Use sterile needles and syringes",
+        "safe_tattoos": "Regulate tattoo and body piercing practices"
+      },
+      "high_risk_groups": {
+        "populations": "People who inject drugs, incarcerated persons, HIV coinfection, historical healthcare exposure"
+      }
+    },
+    "treatment_protocols": {
+      "antiviral_therapy": {
+        "first_line": {
+          "sofosbuvir_velpatasvir": "400/100mg once daily for 12 weeks (>26kg)",
+          "sofosbuvir_daclatasvir": "400mg + 100mg once daily for 12 weeks (>30kg)",
+          "glecaprevir_pibrentasvir": "300/120mg once daily for 8 weeks (>45kg)"
+        },
+        "child_dosing": {
+          "14-25kg": "Sofosbuvir/Velpatasvir 200/60mg",
+          "17-29kg": "Sofosbuvir/Daclatasvir 200/50mg"
+        }
+      },
+      "special_populations": {
+        "decompensated_cirrhosis": "Refer for specialist care",
+        "treatment_experienced": "Refer for specialist care"
+      },
+      "monitoring": {
+        "test_of_cure": "Undetectable HCV RNA at 12 weeks post-treatment (SVR12)"
+      }
+    }
+  },
+  {
+    "name": "Typhoid",
+    "icd_11_code": "1A03",
+    "severity": "High",
+    "transmission": "Fecal-oral",
+    "symptoms": ["High fever", "Stomach pain"],
+    "edliz_treatment_path": "Ciprofloxacin",
+    "outbreak_status": "Notifiable (Moderate Risk)",
+    "vital_signs": {
+      "temp_range": "38.0-40.0°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": true,
+        "vaccine_type": "Typhoid Conjugate Vaccine (TCV)",
+        "schedule": "Single dose at 9 months (routine)",
+        "campaign": "Mass vaccination during outbreaks"
+      },
+      "water_sanitation": {
+        "boil_water": "Boil drinking water or use safe sources",
+        "safe_food": "Cook food thoroughly, avoid raw vegetables",
+        "hand_washing": "Wash hands with soap before eating and after toilet"
+      },
+      "carrier_detection": {
+        "surveillance": "Screen food handlers in outbreak areas",
+        "treatment": "Ciprofloxacin 750mg twice daily for 4 weeks"
+      },
+      "notification": {
+        "reporting": "Immediate notification using T1 form"
+      }
+    },
+    "treatment_protocols": {
+      "uncomplicated_typhoid": {
+        "fully_sensitive": "Ciprofloxacin 500mg twice daily for 5-7 days",
+        "multidrug_resistant": "Azithromycin 250-500mg once daily for 7 days",
+        "alternative": "Norfloxacin 400mg once daily or Cefixime 500-750mg once daily"
+      },
+      "complicated_typhoid": {
+        "fully_sensitive": "Ciprofloxacin 500mg twice daily for 10-14 days",
+        "multidrug_resistant": "Ceftriaxone 1g once daily for 10-14 days",
+        "severe": "Ceftriaxone 1g twice daily IV"
+      },
+      "carrier_management": {
+        "antibiotics": "Ciprofloxacin 750mg twice daily for 4 weeks",
+        "surgery": "Consider cholecystectomy if gallstones present"
+      },
+      "supportive_care": {
+        "hydration": "IV fluids for dehydration, electrolyte correction",
+        "monitoring": "Monitor for intestinal perforation and bleeding"
+      }
+    }
+  },
+  {
+    "name": "Cholera",
+    "icd_11_code": "1A00",
+    "severity": "Emergency",
+    "transmission": "Waterborne",
+    "symptoms": ["Watery diarrhoea", "Vomiting"],
+    "edliz_treatment_path": "ORS, Zinc, Doxycycline",
+    "outbreak_status": "Active (Resolved July 2025)",
+    "vital_signs": {
+      "temp_range": "36.0-37.0°C",
+      "hr_range": "90-130 bpm",
+      "rr_range": "18-28 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": true,
+        "vaccine_type": "Oral Cholera Vaccine (OCV) - Shanchol/Euvichol",
+        "schedule": "2 doses, 14 days apart",
+        "target_population": "High-risk areas, displaced populations"
+      },
+      "water_sanitation": {
+        "boil_water": "Boil drinking water for at least 1 minute",
+        "chlorination": "Add 1 tablet of chlorine per 20L of water",
+        "hand_washing": "Wash hands with soap before eating and after toilet",
+        "food_safety": "Cook food thoroughly, avoid raw food"
+      },
+      "hygiene_measures": {
+        "safe_storage": "Store water in clean, covered containers",
+        "latrine_use": "Use designated latrines",
+        "waste_disposal": "Safe disposal of feces",
+        "community_education": "Health education on transmission and prevention"
+      },
+      "case_management": {
+        "isolation": "Isolate patients in Cholera Treatment Centers (CTC)",
+        "contact_tracing": "Trace and provide chemoprophylaxis to household contacts",
+        "surveillance": "Active case finding and reporting"
+      },
+      "chemoprophylaxis": {
+        "indications": "Household contacts of confirmed cases",
+        "adult": "Doxycycline 300mg single dose (non-pregnant)",
+        "alternative": "Azithromycin 1g single dose (pregnant, children)"
+      }
+    },
+    "treatment_protocols": {
+      "rehydration": {
+        "plan_a": "ORS at home for no dehydration - 50ml/kg over 4 hours",
+        "plan_b": "ORS at facility for some dehydration - 75ml/kg over 4 hours",
+        "plan_c": "IV Ringer's Lactate for severe dehydration - 100ml/kg over 3 hours",
+        "monitoring": "Monitor urine output, hydration status every 1-2 hours"
+      },
+      "antibiotics": {
+        "first_line": {
+          "adult": "Azithromycin 1g single dose after rehydration",
+          "child": "Azithromycin 20mg/kg single dose",
+          "pregnant": "Azithromycin 1g single dose (safe)"
+        },
+        "second_line": {
+          "adult": "Ciprofloxacin 1g single dose",
+          "child": "Ciprofloxacin 20mg/kg single dose"
+        },
+        "alternative": {
+          "adult": "Doxycycline 300mg single dose (avoid in pregnancy)",
+          "child": "Erythromycin 12.5mg/kg 6-hourly for 3 days"
+        }
+      },
+      "zinc_supplementation": {
+        "infants": "10mg daily for 10-14 days",
+        "children": "20mg daily for 10-14 days"
+      },
+      "referral_criteria": [
+        "Persistent vomiting despite IV fluids",
+        "Signs of shock (weak pulse, low BP)",
+        "Unconsciousness or seizures",
+        "No improvement after 6 hours of treatment"
+      ]
+    }
+  },
+  {
+    "name": "COVID-19",
+    "icd_11_code": "RA01",
+    "severity": "Moderate",
+    "transmission": "Respiratory",
+    "symptoms": ["Fever", "Cough", "Fatigue"],
+    "edliz_treatment_path": "Supportive care/Oxygen",
+    "outbreak_status": "Notifiable (Endemic)",
+    "vital_signs": {
+      "temp_range": "36.5-38.5°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": true,
+        "vaccine_types": "Various (WHO-approved COVID-19 vaccines)",
+        "schedule": "Primary series + boosters as per national guidelines",
+        "target": "All eligible populations"
+      },
+      "infection_control": {
+        "droplet_precautions": "Surgical mask for patients and healthcare workers",
+        "hand_hygiene": "Alcohol-based hand rub or soap and water",
+        "ventilation": "Ensure adequate room ventilation"
+      },
+      "community_measures": {
+        "symptom_screening": "Screen at healthcare entry points",
+        "isolation": "Isolate confirmed cases at home or facility",
+        "masking": "Use masks in healthcare settings"
+      }
+    },
+    "treatment_protocols": {
+      "mild_moderate": {
+        "supportive_care": "Rest, hydration, paracetamol for fever",
+        "monitoring": "Monitor oxygen saturation daily"
+      },
+      "severe_critical": {
+        "oxygen": "Supplemental oxygen to maintain SpO2 > 92%",
+        "antivirals": "Referral-based (where available)",
+        "corticosteroids": "Dexamethasone 6mg daily (severe cases)"
+      },
+      "monitoring": {
+        "oxygen_saturation": "Monitor with pulse oximeter",
+        "respiratory_status": "Monitor for signs of deterioration"
+      }
+    }
+  },
+  {
+    "name": "Tetanus",
+    "icd_11_code": "1C10",
+    "severity": "Emergency",
+    "transmission": "Contaminated wound",
+    "symptoms": ["Jaw cramping", "Muscle spasms"],
+    "edliz_treatment_path": "Tetanus Toxoid, Metronidazole",
+    "outbreak_status": "Notifiable (Vaccine-preventable)",
+    "vital_signs": {
+      "temp_range": "36.0-38.0°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "16-26 bpm",
+      "bp_target": "100/60-140/90 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "routine": "DPT-HepB-Hib at 6, 10, 14 weeks; DPT booster at 18 months",
+        "boosters": "Td at 5 and 10 years",
+        "pregnancy": "Tetanus toxoid in ANC",
+        "wound_prophylaxis": "Tetanus toxoid for wounds based on immunization status"
+      },
+      "wound_care": {
+        "cleaning": "Clean all wounds thoroughly",
+        "debridement": "Remove necrotic tissue"
+      }
+    },
+    "treatment_protocols": {
+      "wound_management": {
+        "cleaning": "Thorough wound cleaning and debridement",
+        "antibiotics": "Benzylpenicillin 0.05MU/kg 12-hourly OR Metronidazole"
+      },
+      "immunoglobulin": {
+        "anti_tetanus": "500-1000 units IM"
+      },
+      "muscle_spasm_control": {
+        "diazepam": "0.25-1mg/kg IV/PR, titrated to response",
+        "phenobarbitone": "2.5-5mg/kg 12-hourly"
+      },
+      "supportive_care": {
+        "airway": "Protect airway, prepare for ventilation",
+        "minimal_handling": "Minimize stimulation",
+        "nutrition": "NG feeding if unable to swallow"
+      },
+      "referral": "All cases to designated infectious disease hospital"
+    }
+  },
+  {
+    "name": "Diphtheria",
+    "icd_11_code": "1C00",
+    "severity": "High",
+    "transmission": "Respiratory",
+    "symptoms": ["Sore throat", "Swollen neck"],
+    "edliz_treatment_path": "Diphtheria Antitoxin",
+    "outbreak_status": "Notifiable (Vaccine-preventable)",
+    "vital_signs": {
+      "temp_range": "37.0-38.5°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "18-28 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "routine": "DPT-HepB-Hib at 6, 10, 14 weeks",
+        "boosters": "DPT booster at 18 months, Td at 5 and 10 years"
+      },
+      "isolation": {
+        "duration": "Until two negative cultures 24 hours apart",
+        "setting": "Strict respiratory isolation"
+      },
+      "contact_management": {
+        "chemoprophylaxis": "Azithromycin 500mg single dose OR Erythromycin 500mg 4 times daily for 7 days",
+        "surveillance": "Monitor contacts for 7 days"
+      }
+    },
+    "treatment_protocols": {
+      "antitoxin": {
+        "administration": "Diphtheria Antitoxin (DAT) as soon as possible",
+        "dose": "20,000-100,000 units depending on severity"
+      },
+      "antibiotics": {
+        "first_line": "Benzylpenicillin 0.1MU/kg 6-hourly",
+        "alternative": "Erythromycin 12.5mg/kg 6-hourly for 7-14 days"
+      },
+      "airway_management": {
+        "monitoring": "Monitor for respiratory distress, stridor",
+        "intubation": "Prepare for tracheostomy if airway compromise"
+      },
+      "supportive_care": {
+        "oxygen": "Oxygen for respiratory support",
+        "fluid": "IV fluids if unable to swallow"
+      }
+    }
+  },
+  {
+    "name": "Gonorrhoea",
+    "icd_11_code": "GA50",
+    "severity": "Moderate",
+    "transmission": "Sexual",
+    "symptoms": ["Painful urination", "Pus-like discharge"],
+    "edliz_treatment_path": "Ceftriaxone",
+    "outbreak_status": "Endemic (STI)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "behavioral_prevention": {
+        "condom_use": "Promote consistent and correct use of condoms",
+        "partner_treatment": "Treat all sexual partners",
+        "education": "Health education on STI prevention"
+      },
+      "screening": {
+        "syndromic_management": "Treat based on urethral discharge/vaginal discharge syndromes",
+        "contact_tracing": "Contact tracing and treatment of partners"
+      }
+    },
+    "treatment_protocols": {
+      "first_line": {
+        "adult": "Ceftriaxone 1g IM single dose + Doxycycline 100mg twice daily for 7 days",
+        "alternative": "Ceftriaxone 1g IM + Azithromycin 1g single dose"
+      },
+      "second_line": {
+        "adult": "Cefixime 800mg single dose + Azithromycin 2g single dose",
+        "alternative": "Ceftriaxone 1g IM + Azithromycin 2g"
+      },
+      "pregnancy": {
+        "treatment": "Ceftriaxone 1g IM + Azithromycin 1g (avoid doxycycline)"
+      },
+      "recurrent_persistent": {
+        "management": "Suspect re-infection, non-compliance, or resistance",
+        "referral": "Refer for laboratory-guided treatment"
+      }
+    }
+  },
+  {
+    "name": "Mpox",
+    "icd_11_code": "1E40",
+    "severity": "Moderate",
+    "transmission": "Direct contact",
+    "symptoms": ["Fever", "Rash/blisters"],
+    "edliz_treatment_path": "Supportive care",
+    "outbreak_status": "Notifiable (Moderate Risk)",
+    "vital_signs": {
+      "temp_range": "36.5-38.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": true,
+        "vaccine_type": "JYNNEOS / MVA-BN (Smallpox vaccine)",
+        "availability": "Limited (referral basis)",
+        "target": "High-risk contacts and healthcare workers"
+      },
+      "infection_control": {
+        "isolation": "Isolate confirmed and suspected cases",
+        "ppe": "Gloves, gown, mask, eye protection",
+        "hand_hygiene": "Alcohol-based hand rub"
+      },
+      "surveillance": {
+        "case_definition": "Acute fever + characteristic rash/lesions",
+        "reporting": "IMMEDIATE NOTIFICATION using T1 form"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "lesion_care": "Keep lesions clean and dry",
+        "pain_management": "Paracetamol, NSAIDs for mild pain",
+        "nutrition": "Hydration, balanced nutrition",
+        "itching": "Antihistamines (chlorpheniramine) if severe"
+      },
+      "antiviral_therapy": {
+        "indications": "Severe disease, immunocompromised",
+        "drug": "Tecovirimat (referral only)"
+      },
+      "complication_management": {
+        "secondary_infection": "Antibiotics for infected lesions",
+        "dehydration": "IV fluids if needed"
+      },
+      "monitoring": {
+        "lesion_progression": "Monitor rash progression",
+        "symptoms": "Monitor for systemic symptoms"
+      }
+    }
+  },
+  {
+    "name": "Ebola",
+    "icd_11_code": "1D80",
+    "severity": "Emergency",
+    "transmission": "Bodily fluids",
+    "symptoms": ["Haemorrhaging", "Vomiting"],
+    "edliz_treatment_path": "Isolation/Supportive care",
+    "outbreak_status": "Notifiable (Preparedness - No confirmed cases)",
+    "vital_signs": {
+      "temp_range": ">38.5°C",
+      "hr_range": "90-140 bpm",
+      "rr_range": "20-30 bpm",
+      "bp_target": "<90/60 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "infection_prevention_control": {
+        "hand_hygiene": "Alcohol-based hand rub or soap and water",
+        "ppe": "Full PPE for all patient contacts (gown, gloves, mask, goggles, face shield)",
+        "isolation": "Strict isolation in designated treatment centers",
+        "safe_burial": "Dignified but safe burial protocols"
+      },
+      "surveillance": {
+        "case_definition": "Acute fever + haemorrhagic symptoms + epidemiological link",
+        "reporting": "IMMEDIATE NOTIFICATION using T1 form",
+        "contact_tracing": "Trace all contacts for 21 days"
+      },
+      "community_measures": {
+        "education": "Educate on transmission (bodily fluids, not airborne)",
+        "avoid_contact": "Avoid handling bodies, sick individuals in outbreak areas"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "fluid_resuscitation": "IV fluids (Ringer's Lactate, Normal Saline) for dehydration",
+        "electrolyte_management": "Monitor and correct electrolytes daily",
+        "nutrition": "High energy supplements",
+        "oxygen": "Supplemental oxygen for hypoxia"
+      },
+      "symptom_management": {
+        "fever": "Paracetamol (avoid NSAIDs - bleeding risk)",
+        "pain": "Morphine for severe pain",
+        "diarrhoea": "ORS, loperamide if severe",
+        "vomiting": "Metoclopramide 10mg 8-hourly"
+      },
+      "experimental_therapy": {
+        "antivirals": "Remdesivir (where available)",
+        "monoclonal_antibodies": "mAb114, REGN-EB3 (under specialist care)"
+      },
+      "monitoring": {
+        "vital_signs": "Every 2-4 hours",
+        "fluid_balance": "Strict input/output charting",
+        "laboratory": "Daily FBC, U+Es, LFTs, Coagulation profile"
+      },
+      "referral": "All suspected cases to designated Ebola Treatment Unit"
+    }
+  },
+  {
+    "name": "Mumps",
+    "icd_11_code": "1E90",
+    "severity": "Low",
+    "transmission": "Respiratory",
+    "symptoms": ["Swollen parotid glands", "Fever"],
+    "edliz_treatment_path": "Supportive care",
+    "outbreak_status": "Notifiable (Vaccine-preventable)",
+    "vital_signs": {
+      "temp_range": "36.0-38.0°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": true,
+        "vaccine_type": "Measles-Rubella (MR) vaccine (contains mumps in some formulations)",
+        "schedule": "MR1 at 9 months, MR2 at 18 months"
+      },
+      "isolation": {
+        "duration": "Isolate until swelling subsides (about 5 days after onset)"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "pain_management": "Paracetamol or ibuprofen for fever and pain",
+        "hydration": "Encourage fluid intake",
+        "rest": "Adequate rest"
+      },
+      "complications": {
+        "orchitis": "Analgesia, supportive care",
+        "meningitis": "Refer for further evaluation"
+      }
+    }
+  },
+  {
+    "name": "Measles",
+    "icd_11_code": "1C70",
+    "severity": "Moderate",
+    "transmission": "Airborne",
+    "symptoms": ["Rash", "Cough", "Fever"],
+    "edliz_treatment_path": "Vitamin A, Supportive care",
+    "outbreak_status": "Notifiable (Moderate Risk - 93 cases 2025)",
+    "vital_signs": {
+      "temp_range": "37.5-39.5°C",
+      "hr_range": "80-115 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "routine": "MR1 at 9 months, MR2 at 18 months",
+        "campaign": "Mass vaccination campaigns in outbreak areas",
+        "catch_up": "All children < 15 years not vaccinated",
+        "hospital_admission": "Vaccinate on admission (6 months - 15 years)"
+      },
+      "case_isolation": {
+        "duration": "Isolate from 4 days before rash to 4 days after rash appears",
+        "setting": "Respiratory isolation in healthcare facilities"
+      },
+      "outbreak_response": {
+        "surveillance": "Active case finding, immediate notification",
+        "contact_management": "Provide Vitamin A to all contacts",
+        "mass_vaccination": "Target areas with <95% coverage"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "vitamin_a": {
+          "infants_6mo": "50,000 IU once daily for 2 days",
+          "children_6-12mo": "100,000 IU once daily for 2 days",
+          "children_1-5yrs": "200,000 IU once daily for 2 days"
+        },
+        "nutrition": "High calorie diet, encourage breastfeeding",
+        "hydration": "Oral fluids to prevent dehydration",
+        "fever": "Paracetamol 10-15mg/kg 6-hourly"
+      },
+      "secondary_infections": {
+        "pneumonia": "Amoxicillin 15mg/kg 3 times daily",
+        "otitis_media": "Amoxicillin 15mg/kg 3 times daily",
+        "severe_disease": "IV antibiotics, oxygen"
+      },
+      "complication_management": {
+        "encephalitis": "Refer to tertiary care",
+        "croup": "Dexamethasone 0.1-0.6mg/kg",
+        "severe_pneumonia": "Benzylpenicillin + Gentamicin IV"
+      }
+    }
+  },
+  {
+    "name": "Rubella",
+    "icd_11_code": "1C71",
+    "severity": "Low",
+    "transmission": "Airborne",
+    "symptoms": ["Rash", "Low fever"],
+    "edliz_treatment_path": "Supportive care",
+    "outbreak_status": "Notifiable (Vaccine-preventable)",
+    "vital_signs": {
+      "temp_range": "36.5-38.0°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": true,
+        "vaccine_type": "Measles-Rubella (MR) vaccine",
+        "schedule": "MR1 at 9 months, MR2 at 18 months",
+        "pregnancy": "Avoid vaccination in pregnancy; screen for rubella immunity"
+      },
+      "isolation": {
+        "duration": "Isolate for 7 days after rash onset"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "pain_management": "Paracetamol for fever and pain",
+        "hydration": "Encourage fluid intake",
+        "rest": "Adequate rest"
+      },
+      "pregnancy": {
+        "management": "Refer to obstetric specialist if rubella in pregnancy"
+      }
+    }
+  },
+  {
+    "name": "Influenza",
+    "icd_11_code": "1C72",
+    "severity": "Low",
+    "transmission": "Airborne",
+    "symptoms": ["Sudden fever", "Body aches"],
+    "edliz_treatment_path": "Supportive care",
+    "outbreak_status": "Notifiable (New subtypes)",
+    "vital_signs": {
+      "temp_range": "37.5-39.0°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": true,
+        "vaccine_type": "Seasonal influenza vaccine",
+        "target": "High-risk groups (elderly, chronic disease, healthcare workers)",
+        "schedule": "Annual vaccination"
+      },
+      "infection_control": {
+        "droplet_precautions": "Surgical mask for patients",
+        "cough_hygiene": "Cover mouth when coughing",
+        "hand_hygiene": "Regular hand washing"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "rest": "Adequate rest",
+        "hydration": "Encourage fluid intake",
+        "fever": "Paracetamol or ibuprofen for fever and pain"
+      },
+      "antivirals": {
+        "indications": "Severe disease, high-risk patients",
+        "drugs": "Oseltamivir (referral-based)"
+      },
+      "complication_management": {
+        "pneumonia": "Treat as per pneumonia protocol",
+        "severe_disease": "Oxygen and referral"
+      }
+    }
+  },
+  {
+    "name": "Meningococcal Meningitis",
+    "icd_11_code": "1C10",
+    "severity": "Emergency",
+    "transmission": "Airborne",
+    "symptoms": ["Stiff neck", "Fever"],
+    "edliz_treatment_path": "Ceftriaxone",
+    "outbreak_status": "Notifiable (Emergency)",
+    "vital_signs": {
+      "temp_range": ">38.5°C",
+      "hr_range": "90-130 bpm",
+      "rr_range": "18-28 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": true,
+        "vaccine_type": "Meningococcal vaccine (MenA, MenACWY)",
+        "campaign": "Mass vaccination during outbreaks",
+        "target": "High-risk areas, congregate settings"
+      },
+      "chemoprophylaxis": {
+        "contacts": "All close contacts of confirmed cases",
+        "regimen": "Ceftriaxone 500mg IM single dose",
+        "alternative": "Rifampicin 600mg twice daily for 2 days"
+      },
+      "isolation": {
+        "duration": "Respiratory isolation for 24-48 hours after antibiotics",
+        "setting": "Strict droplet precautions"
+      },
+      "notification": {
+        "reporting": "IMMEDIATE notification using T1 form"
+      }
+    },
+    "treatment_protocols": {
+      "empiric_therapy": {
+        "adult": "Benzylpenicillin 3g (5MU) IV 6-hourly OR Ceftriaxone 2g IV 12-hourly",
+        "child": "Benzylpenicillin 0.1MU/kg IV 6-hourly OR Ceftriaxone 50mg/kg IV 12-hourly"
+      },
+      "supportive_care": {
+        "oxygen": "Oxygen for respiratory distress",
+        "fluid_management": "IV fluids cautiously (avoid cerebral oedema)",
+        "seizures": "Diazepam 0.1-0.2mg/kg IV"
+      },
+      "monitoring": {
+        "neuro": "Monitor level of consciousness, pupils 1-2 hourly",
+        "vital_signs": "BP, HR, temperature 4-hourly",
+        "laboratory": "CSF analysis after LP (if no contraindications)"
+      },
+      "duration": "14 days for bacterial meningitis"
+    }
+  },
+  {
+    "name": "Herpes Simplex",
+    "icd_11_code": "1E91",
+    "severity": "Low",
+    "transmission": "Direct contact",
+    "symptoms": ["Blisters", "Itching"],
+    "edliz_treatment_path": "Acyclovir",
+    "outbreak_status": "Endemic (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "prevention": {
+        "avoid_contact": "Avoid contact with active lesions",
+        "hygiene": "Hand hygiene after touching lesions",
+        "condom_use": "For genital herpes prevention"
+      }
+    },
+    "treatment_protocols": {
+      "episodic": {
+        "adult": "Acyclovir 400mg 3 times daily for 5 days",
+        "alternative": "Valaciclovir 500mg twice daily for 5 days"
+      },
+      "suppressive": {
+        "adult": "Acyclovir 400mg twice daily for 12 months",
+        "indications": "Frequent recurrences (>4-6 episodes per year)",
+        "alternative": "Valaciclovir 500mg twice daily"
+      },
+      "severe_immunocompromised": {
+        "acyclovir": "400mg 3 times daily for 5-10 days"
+      }
+    }
+  },
+  {
+    "name": "Chickenpox",
+    "icd_11_code": "1E92",
+    "severity": "Low",
+    "transmission": "Airborne",
+    "symptoms": ["Itchy rash", "Fever"],
+    "edliz_treatment_path": "Supportive care",
+    "outbreak_status": "Endemic (Vaccine-preventable)",
+    "vital_signs": {
+      "temp_range": "36.5-38.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": true,
+        "vaccine_type": "Varicella vaccine",
+        "schedule": "Not in routine Zimbabwe EPI (available privately)"
+      },
+      "isolation": {
+        "duration": "Isolate until all lesions are crusted (usually 5-7 days after rash)"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "itching": "Calamine lotion, antihistamines (chlorpheniramine)",
+        "fever": "Paracetamol for fever (avoid aspirin)",
+        "hydration": "Encourage fluid intake"
+      },
+      "severe_cases": {
+        "immunocompromised": "Acyclovir (referral-based)"
+      },
+      "complications": {
+        "secondary_infection": "Antibiotics for infected lesions"
+      }
+    }
+  },
+  {
+    "name": "Syphilis",
+    "icd_11_code": "1A60",
+    "severity": "Moderate",
+    "transmission": "Sexual",
+    "symptoms": ["Sores", "Rash"],
+    "edliz_treatment_path": "Benzathine Penicillin",
+    "outbreak_status": "Endemic (STI)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "screening": {
+        "pregnancy": "Rapid point-of-care screening at first antenatal contact",
+        "high_risk": "Screen all STI patients",
+        "partner_treatment": "Treat all sexual partners"
+      },
+      "prevention": {
+        "condom_use": "Promote consistent condom use",
+        "education": "Health education on STI prevention"
+      }
+    },
+    "treatment_protocols": {
+      "early_syphilis": {
+        "primary_secondary_early_latent": "Benzathine Penicillin 2.4MU (1.44g) IM single dose",
+        "penicillin_allergy": "Doxycycline 100mg twice daily for 14 days (non-pregnant)"
+      },
+      "late_syphilis": {
+        "latent_neurosyphilis_cardiovascular": "Benzathine Penicillin 2.4MU IM weekly for 3 weeks",
+        "penicillin_allergy": "Doxycycline 100mg twice daily for 28 days"
+      },
+      "pregnancy": {
+        "early": "Benzathine Penicillin 2.4MU IM weekly for 3 doses",
+        "late": "Benzathine Penicillin 2.4MU IM weekly for 3 doses"
+      },
+      "congenital_syphilis": {
+        "clinically_infected": "Benzathine Penicillin 50,000u/kg IM weekly",
+        "prophylaxis": "Benzathine Penicillin 30mg/kg IM single dose"
+      }
+    }
+  },
+  {
+    "name": "Schistosomiasis",
+    "icd_11_code": "1F60",
+    "severity": "Moderate",
+    "transmission": "Water-contact",
+    "symptoms": ["Blood in urine", "Abdominal pain"],
+    "edliz_treatment_path": "Praziquantel",
+    "outbreak_status": "Endemic (MDA areas)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "mass_drug_administration": {
+        "target": "School-aged children in endemic districts",
+        "drug": "Praziquantel 40mg/kg single dose annually",
+        "frequency": "WHO guidelines for preventive chemotherapy"
+      },
+      "water_management": {
+        "avoid_contact": "Avoid swimming/bathing in infested water",
+        "safe_water": "Provide safe water sources",
+        "snail_control": "Snail control in endemic areas"
+      },
+      "education": {
+        "awareness": "Educate on transmission through water contact",
+        "hygiene": "Hand washing and sanitation"
+      }
+    },
+    "treatment_protocols": {
+      "schistosoma_haematobium": {
+        "dose": "Praziquantel 40mg/kg single dose",
+        "special": "Visible haematuria or positive urine strip indicates treatment"
+      },
+      "schistosoma_mansoni": {
+        "dose": "Praziquantel 40mg/kg single dose",
+        "repeat": "Repeat at 4 weeks if needed"
+      },
+      "katayama_syndrome": {
+        "treatment": "Praziquantel 40mg/kg single dose + Prednisolone",
+        "steroid": "Prednisolone 50mg daily reducing over 2 weeks"
+      },
+      "pregnancy": {
+        "caution": "Do NOT give praziquantel in pregnancy (treat after delivery)"
+      }
+    }
+  },
+  {
+    "name": "Leishmaniasis",
+    "icd_11_code": "1F40",
+    "severity": "High",
+    "transmission": "Vector (Sandfly)",
+    "symptoms": ["Skin sores", "Fever"],
+    "edliz_treatment_path": "Amphotericin B",
+    "outbreak_status": "Notifiable (Endemic)",
+    "vital_signs": {
+      "temp_range": "37.0-38.5°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "vector_control": {
+        "protective_clothing": "Wear long sleeves, use insect repellent",
+        "environmental_management": "Control sandfly breeding sites",
+        "bed_nets": "Use fine-mesh bed nets"
+      }
+    },
+    "treatment_protocols": {
+      "visceral_leishmaniasis": {
+        "first_line": "Liposomal Amphotericin B (referral-based)",
+        "alternative": "Amphotericin B deoxycholate"
+      },
+      "cutaneous_leishmaniasis": {
+        "treatment": "Referral for specialist management"
+      }
+    }
+  },
+  {
+    "name": "Trypanosomiasis",
+    "icd_11_code": "1F70",
+    "severity": "High",
+    "transmission": "Vector (Tsetse)",
+    "symptoms": ["Fever", "Confusion", "Sleep issues"],
+    "edliz_treatment_path": "Fexinidazole",
+    "outbreak_status": "Notifiable (Endemic)",
+    "vital_signs": {
+      "temp_range": "37.0-38.5°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "vector_control": {
+        "tsetse_traps": "Use tsetse traps in endemic areas",
+        "protective_clothing": "Wear long, light-coloured clothing",
+        "avoidance": "Avoid known tsetse fly habitats"
+      },
+      "surveillance": {
+        "case_finding": "Active case finding in endemic areas (Mashonaland Central, West, Matebeleland North)",
+        "referral": "All suspected cases to designated hospitals"
+      }
+    },
+    "treatment_protocols": {
+      "first_line": {
+        "adult_20_34kg": "Fexinidazole loading 1200mg once daily for 4 days, then maintenance 600mg for 6 days",
+        "adult_35kg": "Fexinidazole loading 1800mg once daily for 4 days, then maintenance 1200mg for 6 days"
+      },
+      "children": {
+        "weight_20kg": "Use adult dosing based on weight"
+      },
+      "alternative_stage_1": {
+        "drug": "Suramin 4-5mg/kg test dose, then 20mg/kg on Day 1,3,7,14,21"
+      },
+      "alternative_stage_2": {
+        "drug": "Melarsoprol 2.16mg/kg/day for 10 days"
+      },
+      "monitoring": {
+        "csf": "Monitor cerebrospinal fluid for clearance",
+        "neurological": "Monitor for neurological changes"
+      },
+      "referral": "All cases to Sally Mugabe Central Hospital (Tropical Diseases Unit)"
+    }
+  },
+  {
+    "name": "Brucellosis",
+    "icd_11_code": "1C80",
+    "severity": "Moderate",
+    "transmission": "Zoonotic (Dairy)",
+    "symptoms": ["Fever", "Sweats", "Joint pain"],
+    "edliz_treatment_path": "Doxycycline + Streptomycin",
+    "outbreak_status": "Notifiable (Zoonotic)",
+    "vital_signs": {
+      "temp_range": "37.5-39.0°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "animal_control": {
+        "vaccination": "Vaccinate livestock",
+        "pasteurization": "Pasteurize all dairy products",
+        "protective_clothing": "Wear gloves when handling animals"
+      },
+      "surveillance": {
+        "reporting": "Notify using T1 form"
+      }
+    },
+    "treatment_protocols": {
+      "first_line": {
+        "adult": "Doxycycline 100mg twice daily + Streptomycin 1g daily for 14-21 days"
+      },
+      "alternative": {
+        "adult": "Doxycycline 100mg twice daily + Rifampicin 600mg daily for 6 weeks"
+      }
+    }
+  },
+  {
+    "name": "Hypertension",
+    "icd_11_code": "BA00",
+    "severity": "Moderate",
+    "transmission": "Non-communicable",
+    "symptoms": ["Headaches", "Shortness of breath", "Dizziness"],
+    "edliz_treatment_path": "Enalapril, Amlodipine, Hydrochlorothiazide",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "lifestyle": {
+        "diet": "Low salt diet, healthy eating",
+        "exercise": "Regular physical activity",
+        "weight_management": "Maintain healthy weight",
+        "alcohol": "Limit alcohol intake",
+        "smoking": "Avoid smoking"
+      },
+      "screening": {
+        "blood_pressure": "Screen adults at least every 5 years"
+      }
+    },
+    "treatment_protocols": {
+      "first_line": {
+        "combination_1": "Hydrochlorothiazide 12.5-25mg + Amlodipine 5-10mg once daily",
+        "combination_2": "Amlodipine 5-10mg + Enalapril 5-20mg twice daily",
+        "combination_3": "Hydrochlorothiazide 12.5-25mg + Enalapril 5-20mg"
+      },
+      "second_line": {
+        "triple_therapy": "HCTZ + Amlodipine + Enalapril/Losartan"
+      },
+      "resistant_hypertension": {
+        "fourth_line": "Spironolactone 25-100mg once daily",
+        "alternative": "Beta-blocker (atenolol) or alpha-blocker (doxazosin)"
+      },
+      "monitoring": {
+        "blood_pressure": "At every visit",
+        "renal_function": "Annually",
+        "electrolytes": "With diuretics"
+      }
+    }
+  },
+  {
+    "name": "Diabetes Mellitus (Type 2)",
+    "icd_11_code": "5A11",
+    "severity": "Moderate",
+    "transmission": "Non-communicable",
+    "symptoms": ["Increased thirst", "Frequent urination", "Blurred vision"],
+    "edliz_treatment_path": "Metformin, Gliclazide, Insulin",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "lifestyle": {
+        "diet": "Balanced diet, low sugar",
+        "exercise": "Regular physical activity",
+        "weight_management": "Maintain healthy weight"
+      },
+      "screening": {
+        "blood_glucose": "Screen high-risk individuals"
+      }
+    },
+    "treatment_protocols": {
+      "first_line": {
+        "metformin": "500-1000mg twice daily (max 2g/day)"
+      },
+      "second_line": {
+        "gliclazide": "80-160mg once or twice daily",
+        "glimepiride": "1-6mg once daily",
+        "vildagliptin": "50mg once or twice daily (Specialist)"
+      },
+      "insulin_therapy": {
+        "basal": "NPH or long-acting analogue 10 units at bedtime",
+        "premixed": "Actraphane or Novomix30 6-12 units twice daily"
+      },
+      "sglt2_inhibitors": {
+        "dapagliflozin": "10mg once daily (Specialist - heart failure, CKD)"
+      },
+      "monitoring": {
+        "hba1c": "Every 3-6 months (target <7%)",
+        "blood_pressure": "At every visit",
+        "renal_function": "Annually",
+        "eye_exam": "Annual"
+      }
+    }
+  },
+  {
+    "name": "Diabetes Mellitus (Type 1)",
+    "icd_11_code": "5A10",
+    "severity": "High",
+    "transmission": "Non-communicable",
+    "symptoms": ["Weight loss", "Extreme thirst", "Fatigue"],
+    "edliz_treatment_path": "Basal-Bolus Insulin regimen",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "65-105 bpm",
+      "rr_range": "12-22 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "education": {
+        "self_management": "Educate on insulin administration, blood glucose monitoring, hypoglycemia management"
+      }
+    },
+    "treatment_protocols": {
+      "insulin_regimen": {
+        "basal": "50% of TDDI (NPH twice daily or long-acting analogue once daily)",
+        "bolus": "50% of TDDI divided into 3 pre-meal doses (rapid or short-acting)",
+        "total_daily_dose": "0.25-0.4 units/kg/day"
+      },
+      "hypoglycemia_management": {
+        "conscious": "Fast-acting sugar (juice, glucose tablets)",
+        "unconscious": "Glucagon 1mg IM or IV Dextrose 50% 20-50ml"
+      },
+      "dka_management": {
+        "fluid_resuscitation": "Normal saline 0.9% IV",
+        "insulin": "0.1 units/kg/hr IV infusion",
+        "potassium": "Replace as per levels",
+        "monitoring": "Blood glucose hourly, electrolytes 2-4 hourly"
+      },
+      "monitoring": {
+        "blood_glucose": "Self-monitoring 8-point profile",
+        "hba1c": "Every 3 months (target <7%)"
+      }
+    }
+  },
+  {
+    "name": "Chronic Heart Failure",
+    "icd_11_code": "BD11",
+    "severity": "High",
+    "transmission": "Non-communicable",
+    "symptoms": ["Ankle swelling", "Fatigue", "Shortness of breath"],
+    "edliz_treatment_path": "Enalapril, Frusemide, Digoxin, Beta-blockers",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-110 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "lifestyle": {
+        "salt_restriction": "Low salt diet",
+        "fluid_restriction": "Monitor fluid intake",
+        "weight_monitoring": "Daily weights",
+        "exercise": "Moderate exercise as tolerated"
+      }
+    },
+    "treatment_protocols": {
+      "pharmacological": {
+        "diuretic": "Frusemide 40-80mg 1-2 times daily",
+        "ace_inhibitor": "Enalapril 5-20mg twice daily (or ARB)",
+        "beta_blocker": "Carvedilol 3.125-25mg twice daily (or Bisoprolol)",
+        "mra": "Spironolactone 25-50mg once daily",
+        "sglt2": "Dapagliflozin 10mg once daily (Specialist)"
+      },
+      "acute_pulmonary_oedema": {
+        "oxygen": "40% oxygen by mask",
+        "morphine": "5-10mg IV slowly",
+        "frusemide": "40-80mg IV"
+      },
+      "monitoring": {
+        "weight": "Daily",
+        "electrolytes": "Regularly with diuretics",
+        "renal_function": "Regularly"
+      }
+    }
+  },
+  {
+    "name": "Chronic Kidney Disease",
+    "icd_11_code": "5D40",
+    "severity": "High",
+    "transmission": "Non-communicable",
+    "symptoms": ["Swollen ankles", "Fatigue", "Nausea"],
+    "edliz_treatment_path": "BP control (ACE-inhibitors), Dietary management",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "screening": {
+        "at_risk": "Screen patients with hypertension, diabetes, HIV",
+        "urine_dipstick": "Check for proteinuria"
+      }
+    },
+    "treatment_protocols": {
+      "blood_pressure_control": {
+        "target_bp": "<130/80 mmHg",
+        "preferred": "ACE-inhibitor or ARB"
+      },
+      "dietary_management": {
+        "low_sodium": "Restrict salt intake",
+        "low_potassium": "Avoid high potassium foods",
+        "fluid_restriction": "Restrict fluids in advanced disease"
+      },
+      "prescribing_cautions": {
+        "avoid": "NSAIDs, gentamicin, metformin (in advanced)",
+        "dose_adjustment": "Adjust renally excreted drugs"
+      },
+      "dialysis": {
+        "indications": "Stage 5 CKD (eGFR <15 ml/min)",
+        "type": "Peritoneal dialysis or haemodialysis (specialist)"
+      }
+    }
+  },
+  {
+    "name": "Hyperthyroidism",
+    "icd_11_code": "5A00",
+    "severity": "Moderate",
+    "transmission": "Non-communicable",
+    "symptoms": ["Weight loss", "Rapid heartbeat", "Sweating"],
+    "edliz_treatment_path": "Carbimazole, Propranolol",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.5-38.0°C",
+      "hr_range": "90-120 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "screening": {
+        "goitre": "Refer for thyroid workup (TSH, FT4, FT3)"
+      }
+    },
+    "treatment_protocols": {
+      "medical_management": {
+        "anti_thyroid": "Carbimazole 20-60mg daily (0.5mg/kg)",
+        "beta_blocker": "Propranolol 40-160mg 3 times daily for symptom control",
+        "monitoring": "Check thyroid function at 5-6 weeks"
+      },
+      "surgical_management": {
+        "indications": "Failed medical therapy, contraindication to radioiodine, large goitre",
+        "preparation": "Render euthyroid before surgery"
+      },
+      "side_effects": {
+        "carbimazole": "Monitor for bone marrow suppression (neutropenia)"
+      }
+    }
+  },
+  {
+    "name": "Hypothyroidism",
+    "icd_11_code": "5A01",
+    "severity": "Moderate",
+    "transmission": "Non-communicable",
+    "symptoms": ["Fatigue", "Weight gain", "Cold intolerance"],
+    "edliz_treatment_path": "Levothyroxine",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "35.5-37.0°C",
+      "hr_range": "50-80 bpm",
+      "rr_range": "12-18 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "screening": {
+        "iodine_deficiency": "Address in endemic areas"
+      }
+    },
+    "treatment_protocols": {
+      "thyroid_hormone_replacement": {
+        "adult": "Thyroxine 50-100mcg initially, increase by 25-50mcg every 4 weeks",
+        "maintenance": "1.6mcg/kg/day (average 100mcg daily)",
+        "elderly_heart_disease": "Start at 25mcg/day",
+        "child": "4-10mcg/kg/day"
+      },
+      "monitoring": {
+        "tsh": "4-6 weeks after dose change, then annually",
+        "clinical_response": "Monitor weight, symptoms"
+      }
+    }
+  },
+  {
+    "name": "Dyslipidaemia",
+    "icd_11_code": "5C00",
+    "severity": "Low",
+    "transmission": "Non-communicable",
+    "symptoms": ["Often asymptomatic"],
+    "edliz_treatment_path": "Simvastatin, Atorvastatin",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "lifestyle": {
+        "diet": "Low cholesterol, healthy diet",
+        "exercise": "Regular physical activity"
+      }
+    },
+    "treatment_protocols": {
+      "statins": {
+        "primary_prevention": "Atorvastatin 20mg once daily",
+        "secondary_prevention": "Atorvastatin 20-80mg once daily",
+        "type_2_diabetes": "Start statin for all patients"
+      },
+      "monitoring": {
+        "lipid_profile": "At baseline and after 3 months"
+      }
+    }
+  },
+  {
+    "name": "Obesity",
+    "icd_11_code": "5B81",
+    "severity": "Low",
+    "transmission": "Non-communicable",
+    "symptoms": ["High BMI", "Joint pain", "Fatigue"],
+    "edliz_treatment_path": "Lifestyle modification, Diet",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-22 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "lifestyle": {
+        "diet": "Balanced diet, calorie control",
+        "exercise": "Regular physical activity"
+      }
+    },
+    "treatment_protocols": {
+      "management": {
+        "dietary_counselling": "Refer to dietitian",
+        "exercise_program": "Encourage regular exercise",
+        "pharmacology": "Limited role; avoid unless specialist"
+      }
+    }
+  },
+  {
+    "name": "Gout",
+    "icd_11_code": "5A00",
+    "severity": "Moderate",
+    "transmission": "Non-communicable",
+    "symptoms": ["Joint pain (big toe)", "Redness"],
+    "edliz_treatment_path": "Allopurinol, NSAIDs (Ibuprofen)",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-38.0°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "dietary": {
+        "avoid": "Offals, red meat, alcohol",
+        "permissible": "Eggs, milk, chicken, fish, vegetables"
+      }
+    },
+    "treatment_protocols": {
+      "acute_gout": {
+        "nsaids": "Diclofenac 50mg 3 times daily or Ibuprofen 400mg 3 times daily",
+        "prednisolone": "30-40mg once daily for 3 days",
+        "colchicine": "0.5-1mg up to 6 times daily for 2 days (Specialist)"
+      },
+      "chronic_gout": {
+        "allopurinol": "Start 100mg once daily, increase every 2 weeks to 300mg",
+        "elderly_renal": "Start at 50mg daily",
+        "prophylaxis": "Concurrent NSAID for first 3 months"
+      }
+    }
+  },
+  {
+    "name": "Rheumatoid Arthritis",
+    "icd_11_code": "FA20",
+    "severity": "Moderate",
+    "transmission": "Autoimmune",
+    "symptoms": ["Joint stiffness", "Swollen joints", "Fatigue"],
+    "edliz_treatment_path": "Methotrexate, Prednisolone",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.8°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "early_referral": "Refer for specialist diagnosis"
+    },
+    "treatment_protocols": {
+      "nsaids": {
+        "ibuprofen": "200-400mg 3 times daily",
+        "diclofenac": "25-50mg 3 times daily"
+      },
+      "dmards": {
+        "methotrexate": "5-25mg once weekly",
+        "folate_supplement": "5-10mg 2-3 times weekly (not same day as methotrexate)",
+        "hydroxychloroquine": "200-400mg once daily",
+        "sulphasalazine": "500mg (Specialist)"
+      },
+      "steroids": {
+        "prednisolone": "5-10mg once daily (limited period)"
+      },
+      "monitoring": {
+        "fbcs_lfts": "3 monthly for methotrexate",
+        "eye_check": "6 monthly for chloroquine/hydroxychloroquine"
+      }
+    }
+  },
+  {
+    "name": "Systemic Lupus Erythematosus",
+    "icd_11_code": "4A50",
+    "severity": "High",
+    "transmission": "Autoimmune",
+    "symptoms": ["Campylognathia", "Rash", "Joint pain", "Fatigue"],
+    "edliz_treatment_path": "Prednisolone, Hydroxychloroquine",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-38.2°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "sun_protection": {
+        "avoid_sun": "Avoid sun exposure, use broad-brimmed hats and umbrellas"
+      }
+    },
+    "treatment_protocols": {
+      "mild_to_moderate": {
+        "antimalarial": "Hydroxychloroquine 400mg once daily (Monday-Friday, omit weekends)",
+        "alternative": "Chloroquine 150mg base daily (Specialist)"
+      },
+      "severe_disease": {
+        "steroids": "Prednisolone 1mg/kg once daily, then taper",
+        "immunosuppressants": "Azathioprine or Mycophenolate Mofetil (Specialist)"
+      }
+    }
+  },
+  {
+    "name": "Epilepsy",
+    "icd_11_code": "8A60",
+    "severity": "High",
+    "transmission": "Non-communicable",
+    "symptoms": ["Seizures", "Loss of consciousness"],
+    "edliz_treatment_path": "Carbamazepine, Phenobarbitone",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-110 bpm",
+      "rr_range": "12-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "safety": {
+        "seizure_precautions": "Avoid triggers, medication adherence"
+      }
+    },
+    "treatment_protocols": {
+      "first_line": {
+        "generalized": "Sodium Valproate 10-20mg/kg twice daily",
+        "focal": "Carbamazepine 400mg twice daily"
+      },
+      "second_line": {
+        "alternative": "Phenobarbitone 120mg at night",
+        "add_on": "Phenytoin 300mg at bedtime"
+      },
+      "status_epilepticus": {
+        "benzodiazepine": "Diazepam 10mg IV/PR (0.1-0.2mg/kg)",
+        "second_line": "Phenobarbitone 10-15mg/kg IV",
+        "third_line": "Phenytoin 15-20mg/kg IV"
+      },
+      "pregnancy": {
+        "avoid": "Sodium Valproate (risk of neural tube defects)",
+        "preferred": "Lamotrigine"
+      }
+    }
+  },
+  {
+    "name": "Migraine",
+    "icd_11_code": "8A80",
+    "severity": "Low",
+    "transmission": "Non-communicable",
+    "symptoms": ["Severe headache", "Nausea", "Light sensitivity"],
+    "edliz_treatment_path": "Paracetamol, NSAIDs, Amitriptyline",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "trigger_avoidance": {
+        "avoid": "Alcohol, chocolate, cheese, insufficient sleep"
+      }
+    },
+    "treatment_protocols": {
+      "acute_attack": {
+        "first_line": "Ibuprofen 400mg + Metoclopramide 10mg at onset",
+        "second_line": "Paracetamol 1g + Metoclopramide",
+        "alternative": "Ergotamine 1mg at onset (Specialist)"
+      },
+      "prophylaxis": {
+        "frequent_attacks": "Propranolol 20mg 3 times daily (minimum 3 months)",
+        "alternative": "Amitriptyline 25mg at night"
+      }
+    }
+  },
+  {
+    "name": "Peptic Ulcer Disease",
+    "icd_11_code": "DA20",
+    "severity": "Moderate",
+    "transmission": "Infectious (H. pylori)",
+    "symptoms": ["Stomach pain", "Heartburn"],
+    "edliz_treatment_path": "Omeprazole, Amoxicillin, Clarithromycin",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "avoid": {
+        "nsaids": "Avoid NSAIDs in susceptible patients",
+        "smoking": "Stop smoking",
+        "alcohol": "Avoid alcohol"
+      }
+    },
+    "treatment_protocols": {
+      "h_pylori_eradication": {
+        "first_line": "Amoxicillin 1g twice daily + Clarithromycin 500mg twice daily + Omeprazole 20mg twice daily for 2 weeks",
+        "alternative": "Amoxicillin 1g twice daily + Metronidazole 400mg 3 times daily + Omeprazole 20mg twice daily for 2 weeks"
+      },
+      "acid_suppression": {
+        "omeprazole": "20mg once daily for 4-8 weeks"
+      },
+      "nsaids_associated": {
+        "treatment": "Omeprazole 20mg twice daily for 4 weeks",
+        "stop_nsaids": "Withdraw NSAID if possible"
+      }
+    }
+  },
+  {
+    "name": "Gastro-oesophageal Reflux",
+    "icd_11_code": "DA21",
+    "severity": "Low",
+    "transmission": "Non-communicable",
+    "symptoms": ["Heartburn", "Acid regurgitation"],
+    "edliz_treatment_path": "Omeprazole, Magnesium Trisilicate",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "lifestyle": {
+        "weight_reduction": "Lose weight if overweight",
+        "head_elevation": "Elevate head of bed",
+        "avoid_triggers": "Avoid chocolate, colas, coffee, fatty foods, tight clothing"
+      }
+    },
+    "treatment_protocols": {
+      "mild": {
+        "antacids": "Magnesium trisilicate 20ml or 2 tablets 4 times daily"
+      },
+      "moderate": {
+        "ppi": "Omeprazole 20mg once daily for 2 months"
+      },
+      "severe": {
+        "ppi_high_dose": "Omeprazole 20mg twice daily for 6-8 weeks"
+      }
+    }
+  },
+  {
+    "name": "Anaemia (Iron Deficiency)",
+    "icd_11_code": "3A10",
+    "severity": "Moderate",
+    "transmission": "Nutritional",
+    "symptoms": ["Paleness", "Fatigue", "Shortness of breath"],
+    "edliz_treatment_path": "Ferrous Sulphate",
+    "outbreak_status": "Nutritional (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "nutrition": {
+        "iron_rich_foods": "Encourage meat, fish, dark green vegetables, beans"
+      }
+    },
+    "treatment_protocols": {
+      "oral_iron": {
+        "adult": "Ferrous Sulphate 200mg (60mg iron) 3 times daily",
+        "child": "12mg iron daily (<1yr: 6mg)",
+        "duration": "3 months after haemoglobin normalizes",
+        "monitoring": "Hb response 1g/dl per week expected"
+      },
+      "parenteral_iron": {
+        "indications": "Oral intolerance, non-compliance, approaching term in pregnancy",
+        "haemoglobin_threshold": "Hb < 7g/dl"
+      }
+    }
+  },
+  {
+    "name": "Sickle Cell Anaemia",
+    "icd_11_code": "3A11",
+    "severity": "High",
+    "transmission": "Genetic",
+    "symptoms": ["Pain crises", "Fatigue", "Jaundice"],
+    "edliz_treatment_path": "Folic Acid, Hydroxyurea, Analgesics",
+    "outbreak_status": "Genetic (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-38.0°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "12-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "prophylaxis": {
+        "folic_acid": "5mg once daily (lifelong)",
+        "penicillin_v": "250mg once daily (lifelong)",
+        "malaria_prophylaxis": "Pyrimethamine/Dapsone weekly in endemic areas"
+      }
+    },
+    "treatment_protocols": {
+      "painful_crisis": {
+        "hydration": "IV rehydration",
+        "analgesia": "Morphine for severe pain, Codeine or NSAIDs for mild",
+        "oxygen": "Oxygen by mask if available",
+        "antibiotics": "Amoxicillin 500mg 3 times daily for 5 days if infection suspected"
+      },
+      "hydroxyurea": {
+        "indications": "Frequent crises",
+        "dose": "500mg once daily",
+        "monitoring": "Titrate against HbF, monitor WBC and platelets"
+      },
+      "blood_transfusion": {
+        "indications": "Aplastic/haemolytic crisis, anaemic heart failure"
+      }
+    }
+  },
+  {
+    "name": "Osteoarthritis",
+    "icd_11_code": "FB00",
+    "severity": "Low",
+    "transmission": "Non-communicable",
+    "symptoms": ["Joint pain", "Stiffness"],
+    "edliz_treatment_path": "Paracetamol, Physiotherapy",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "lifestyle": {
+        "weight_management": "Maintain healthy weight",
+        "exercise": "Regular low-impact exercise"
+      }
+    },
+    "treatment_protocols": {
+      "pain_management": {
+        "first_line": "Paracetamol 500mg-1g 4-6 hourly",
+        "second_line": "Ibuprofen 200-400mg 3 times daily",
+        "alternative": "Diclofenac 25-50mg 3 times daily"
+      },
+      "physiotherapy": {
+        "exercise": "Strengthening and range of motion exercises"
+      }
+    }
+  },
+  {
+    "name": "Anxiety Disorders",
+    "icd_11_code": "6B00",
+    "severity": "Moderate",
+    "transmission": "Mental Health",
+    "symptoms": ["Excessive worry", "Restlessness", "Insomnia"],
+    "edliz_treatment_path": "Fluoxetine, Counselling",
+    "outbreak_status": "Mental Health (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-110 bpm",
+      "rr_range": "12-24 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "psychosocial": {
+        "counselling": "Psychosocial interventions, relaxation exercises",
+        "breathing_exercises": "Teach breathing techniques"
+      }
+    },
+    "treatment_protocols": {
+      "acute_anxiety": {
+        "benzodiazepine_short_term": "Diazepam 5-10mg or Lorazepam 0.5-1mg (max 2 weeks)",
+        "promethazine": "25-50mg PRN"
+      },
+      "chronic_anxiety": {
+        "ssri": "Fluoxetine 20-40mg once daily (6-12 months)",
+        "tca": "Amitriptyline 25-50mg at night (3-6 months)",
+        "alternative": "Sulpiride 50-200mg at night"
+      }
+    }
+  },
+  {
+    "name": "Depression",
+    "icd_11_code": "6A70",
+    "severity": "Moderate",
+    "transmission": "Mental Health",
+    "symptoms": ["Low mood", "Loss of interest", "Fatigue"],
+    "edliz_treatment_path": "Fluoxetine, Amitriptyline",
+    "outbreak_status": "Mental Health (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "psychosocial": {
+        "counselling": "Counselling, follow-up, stressor management"
+      }
+    },
+    "treatment_protocols": {
+      "mild_depression": {
+        "counselling": "Counsel, follow up, help deal with stressors",
+        "antidepressant": "Consider SSRI (Fluoxetine 20-60mg once daily)"
+      },
+      "moderate_severe": {
+        "first_line": "Fluoxetine 20-60mg once daily or Citalopram 10-40mg once daily",
+        "alternative": "Amitriptyline 50-150mg at night or Imipramine 50-150mg at night"
+      },
+      "psychomotor_retardation": {
+        "preferred": "Fluoxetine 20-60mg once daily"
+      },
+      "psychomotor_agitation": {
+        "preferred": "Amitriptyline 50-75mg at night"
+      },
+      "duration": "At least 6 months after symptom resolution"
+    }
+  },
+  {
+    "name": "Psychosis",
+    "icd_11_code": "6A20",
+    "severity": "High",
+    "transmission": "Mental Health",
+    "symptoms": ["Hallucinations", "Delusions"],
+    "edliz_treatment_path": "Chlorpromazine, Haloperidol",
+    "outbreak_status": "Mental Health (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-110 bpm",
+      "rr_range": "12-22 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "safety": {
+        "violent_patient": "De-escalation, physical restraint if needed, sedation"
+      }
+    },
+    "treatment_protocols": {
+      "first_line": {
+        "chlorpromazine": "50-200mg 2-3 times daily",
+        "haloperidol": "1.25-5mg 2-3 times daily",
+        "trifluoperazine": "5-10mg 2 times daily",
+        "sulpiride": "50-200mg 2-3 times daily"
+      },
+      "second_line": {
+        "risperidone": "1-3mg 2 times daily",
+        "olanzapine": "5-10mg 2 times daily",
+        "quetiapine": "50-100mg 2 times daily"
+      },
+      "rapid_tranquilization": {
+        "chlorpromazine_im": "50-100mg IM, repeat after 6 hours",
+        "haloperidol_im": "2-6mg IM, repeat after 6 hours"
+      },
+      "depot_preparations": {
+        "zuclopenthixol_decanoate": "200mg every 2-4 weeks",
+        "fluphenazine_decanoate": "25-50mg every 4 weeks"
+      },
+      "duration": {
+        "first_episode": "12 months after symptom resolution, then taper",
+        "recurrent": "Long-term maintenance"
+      }
+    }
+  },
+  {
+    "name": "Dermatitis",
+    "icd_11_code": "EK00",
+    "severity": "Low",
+    "transmission": "Non-communicable",
+    "symptoms": ["Itching", "Redness", "Scaling"],
+    "edliz_treatment_path": "Hydrocortisone, Calamine lotion",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "skin_care": {
+        "moisturize": "Use aqueous cream or emulsifying ointment",
+        "avoid_irritants": "Avoid harsh soaps, irritants, allergens"
+      }
+    },
+    "treatment_protocols": {
+      "mild": {
+        "topical_steroid": "Hydrocortisone 1% cream/ointment 2 times daily",
+        "emollient": "Aqueous cream as soap substitute"
+      },
+      "itching": {
+        "antihistamine": "Chlorpheniramine 4mg 3 times daily",
+        "alternative": "Promethazine 25-50mg at night (not <2yrs)"
+      },
+      "infected_eczema": {
+        "antibiotic": "Erythromycin 250-500mg 4 times daily for 7-10 days",
+        "alternative": "Cloxacillin 250-500mg 4 times daily for 7-10 days"
+      }
+    }
+  },
+  {
+    "name": "Neonatal Sepsis",
+    "icd_11_code": "KB85",
+    "severity": "Emergency",
+    "transmission": "Vertical/Nosocomial",
+    "symptoms": ["Breathing difficulties", "Fever/Hypothermia", "Poor feeding", "Lethargy"],
+    "edliz_treatment_path": "Ampicillin + Gentamicin (Empiric)",
+    "outbreak_status": "Neonatal (Healthcare-associated)",
+    "vital_signs": {
+      "temp_range": "36.5-37.5°C",
+      "hr_range": "120-180 bpm",
+      "rr_range": "40-70 bpm",
+      "bp_target": "60/40-80/50 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "infection_control": {
+        "hand_hygiene": "Strict hand hygiene in neonatal unit",
+        "aseptic_technique": "Sterile techniques for procedures",
+        "kangaroo_care": "Promote kangaroo mother care"
+      },
+      "screening": {
+        "maternal_risk": "Screen for maternal sepsis, chorioamnionitis, PROM >18 hours",
+        "neonatal_risk": "Monitor for danger signs"
+      }
+    },
+    "treatment_protocols": {
+      "suspected_sepsis_under_48hrs": {
+        "antibiotics": "Benzylpenicillin 0.1MU/kg + Gentamicin 2.5mg/kg"
+      },
+      "suspected_sepsis_after_48hrs": {
+        "antibiotics": "Cloxacillin 30mg/kg + Gentamicin 2.5mg/kg"
+      },
+      "confirmed_meningitis": {
+        "antibiotics": "Benzylpenicillin + Gentamicin + Chloramphenicol 12.5mg/kg"
+      },
+      "gentamicin_dosing": {
+        "<1000g_<28wks": "5mg/kg every 48hrs (first 2 weeks), then every 36hrs",
+        "1000-2000g": "5mg/kg every 48hrs (<1wk), then every 36hrs (>1wk)",
+        ">2000g_<1wk": "4mg/kg every 24-48hrs",
+        ">2000g_>1wk": "4mg/kg every 24hrs"
+      }
+    }
+  },
+  {
+    "name": "Birth Asphyxia",
+    "icd_11_code": "KA80",
+    "severity": "Emergency",
+    "transmission": "Intrapartum",
+    "symptoms": ["Gasping/No breathing", "Low heart rate", "Weak muscle tone"],
+    "edliz_treatment_path": "Resuscitation (ABC), Thermal support",
+    "outbreak_status": "Neonatal (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.5-37.5°C",
+      "hr_range": "110-160 bpm",
+      "rr_range": "30-60 bpm",
+      "bp_target": "60/40-80/50 mmHg",
+      "spo2_min": "90%"
+    },
+    "preventive_protocols": {
+      "intrapartum_care": {
+        "monitoring": "Monitor fetal heart rate during labour",
+        "skilled_birth_attendant": "Ensure skilled birth attendance"
+      }
+    },
+    "treatment_protocols": {
+      "resuscitation": {
+        "abc": "Airway, Breathing, Circulation",
+        "thermal_support": "Dry and wrap baby, warm environment",
+        "ventilation": "Positive pressure ventilation if needed",
+        "oxygen": "Supplemental oxygen if available"
+      },
+      "medications": {
+        "naloxone": "If maternal pethidine given (0.01-0.02mg/kg)",
+        "adrenaline": "Dilute 1:10,000, 10mcg/kg"
+      }
+    }
+  },
+  {
+    "name": "Preterm Birth",
+    "icd_11_code": "KA60",
+    "severity": "High",
+    "transmission": "Developmental",
+    "symptoms": ["Low birth weight", "Respiratory distress", "Difficulty maintaining temperature"],
+    "edliz_treatment_path": "Kangaroo Mother Care (KMC), Supportive thermal care",
+    "outbreak_status": "Neonatal (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.5-37.5°C",
+      "hr_range": "120-170 bpm",
+      "rr_range": "40-60 bpm",
+      "bp_target": "50/30-70/40 mmHg",
+      "spo2_min": "90%"
+    },
+    "preventive_protocols": {
+      "antenatal": {
+        "steroids": "Dexamethasone 12mg IM 24 hours apart for 3 days if <34 weeks",
+        "antenatal_care": "Regular antenatal care to detect risk factors"
+      }
+    },
+    "treatment_protocols": {
+      "thermal_care": {
+        "kangaroo_care": "Skin-to-skin contact",
+        "incubator": "Use incubator if available",
+        "warm_environment": "Maintain room temperature 28-32°C"
+      },
+      "feeding": {
+        "breast_milk": "Express breast milk; give via NG tube if unable to suck",
+        "preterm_formula": "If EBM not available",
+        "fluids": "60-200ml/kg/day (see EDLIZ table)"
+      },
+      "respiratory_support": {
+        "surfactant": "100mg/kg within 8 hours of birth",
+        "caffeine": "20mg/kg loading, then 5mg/kg daily for apnoea (<32 weeks)"
+      }
+    }
+  },
+  {
+    "name": "Neonatal Jaundice",
+    "icd_11_code": "KB82",
+    "severity": "Moderate",
+    "transmission": "Physiological/Pathological",
+    "symptoms": ["Yellowing of skin/eyes", "Poor feeding"],
+    "edliz_treatment_path": "Phototherapy",
+    "outbreak_status": "Neonatal (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.5-37.5°C",
+      "hr_range": "110-150 bpm",
+      "rr_range": "30-50 bpm",
+      "bp_target": "60/40-80/50 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "early_feeding": {
+        "breastfeeding": "Initiate early and frequent breastfeeding"
+      }
+    },
+    "treatment_protocols": {
+      "phototherapy": {
+        "levels": "See EDLIZ Table 3.4 for age/weight-based thresholds",
+        "fluids": "Extra 20ml/kg/24hrs",
+        "monitoring": "Monitor serum bilirubin"
+      },
+      "exchange_transfusion": {
+        "indications": "See EDLIZ Table 3.4 for thresholds",
+        "blood": "Whole blood less than 5 days old"
+      },
+      "referral": {
+        "criteria": "Jaundice within 24 hours, ill-looking baby"
+      }
+    }
+  },
+  {
+    "name": "Neonatal Tetanus",
+    "icd_11_code": "1C12",
+    "severity": "Emergency",
+    "transmission": "Cord infection",
+    "symptoms": ["Stiff muscles", "Inability to suck", "Spasms"],
+    "edliz_treatment_path": "Diazepam, Tetanus Immunoglobulin, Antibiotics",
+    "outbreak_status": "Notifiable (Vaccine-preventable)",
+    "vital_signs": {
+      "temp_range": "36.5-38.0°C",
+      "hr_range": "120-180 bpm",
+      "rr_range": "40-70 bpm",
+      "bp_target": "60/40-80/50 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "maternal_vaccination": {
+        "tetanus_toxoid": "At least 2 doses during pregnancy (ANC)"
+      },
+      "clean_delivery": {
+        "sterile_instruments": "Use sterile equipment for cord cutting",
+        "cord_care": "Clean cord care with chlorhexidine"
+      },
+      "delivery_hygiene": {
+        "hand_washing": "Wash hands before delivery"
+      }
+    },
+    "treatment_protocols": {
+      "minimal_handling": {
+        "care": "Minimal handling to avoid triggering spasms"
+      },
+      "antibiotics": {
+        "first_line": "Benzylpenicillin 0.05MU/kg 12-hourly",
+        "alternative": "Procaine penicillin 50mg/kg"
+      },
+      "immunoglobulin": {
+        "anti_tetanus": "500-1000 units IM"
+      },
+      "muscle_spasm_control": {
+        "diazepam": "0.25-1mg/kg IV/PR, titrated to response",
+        "phenobarbitone": "2.5-5mg/kg 12-hourly",
+        "chlorpromazine": "2mg/kg/24hrs in divided doses"
+      },
+      "supportive_care": {
+        "airway": "Maintain airway",
+        "nutrition": "NG feeding if unable to suck"
+      }
+    }
+  },
+  {
+    "name": "Congenital Syphilis",
+    "icd_11_code": "1A61",
+    "severity": "High",
+    "transmission": "Vertical",
+    "symptoms": ["Enlarged liver/spleen", "Copper-colored rash", "Fever"],
+    "edliz_treatment_path": "Benzathine Penicillin",
+    "outbreak_status": "Notifiable (Preventable)",
+    "vital_signs": {
+      "temp_range": "36.5-38.0°C",
+      "hr_range": "120-160 bpm",
+      "rr_range": "30-50 bpm",
+      "bp_target": "60/40-80/50 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "antenatal_screening": {
+        "syphilis_testing": "Test all pregnant women at first ANC visit (RPR/TPHA)",
+        "partner_treatment": "Treat sexual partners"
+      }
+    },
+    "treatment_protocols": {
+      "asymptomatic_exposed": {
+        "prophylaxis": "Benzathine Penicillin 30mg/kg IM single dose"
+      },
+      "clinically_infected": {
+        "treatment": "Benzathine Penicillin 50,000u/kg IM once weekly",
+        "alternative": "Procaine Penicillin 50mg/kg once daily",
+        "penicillin_allergy": "Erythromycin 12.5mg/kg 4 times daily"
+      }
+    }
+  },
+  {
+    "name": "Neonatal Ophthalmia",
+    "icd_11_code": "9A71",
+    "severity": "Moderate",
+    "transmission": "Birth canal contact",
+    "symptoms": ["Red eyes", "Eyelid swelling", "Pus discharge"],
+    "edliz_treatment_path": "Tetracycline eye ointment, systemic antibiotics if indicated",
+    "outbreak_status": "Neonatal (Preventable)",
+    "vital_signs": {
+      "temp_range": "36.5-37.5°C",
+      "hr_range": "110-150 bpm",
+      "rr_range": "30-50 bpm",
+      "bp_target": "60/40-80/50 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "crede_prophylaxis": {
+        "prophylaxis": "Tetracycline 1% eye ointment instilled in both eyes at birth"
+      },
+      "antenatal_screening": {
+        "maternal_sti": "Screen and treat maternal gonococcal and chlamydial infection"
+      }
+    },
+    "treatment_protocols": {
+      "systemic_antibiotics": {
+        "ceftriaxone": "50mg/kg IM single dose (max 250mg)"
+      },
+      "topical_antibiotics": {
+        "ofloxacin": "Eye drops hourly until resolved",
+        "tetracycline": "Eye ointment at night"
+      }
+    }
+  },
+  {
+    "name": "Hypoglycaemia (Newborn)",
+    "icd_11_code": "5A70",
+    "severity": "High",
+    "transmission": "Metabolic",
+    "symptoms": ["Shakiness", "Lethargy", "Poor feeding"],
+    "edliz_treatment_path": "Breastfeeding, IV Dextrose",
+    "outbreak_status": "Neonatal (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.5-37.5°C",
+      "hr_range": "110-160 bpm",
+      "rr_range": "30-60 bpm",
+      "bp_target": "60/40-80/50 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "early_feeding": {
+        "breastfeeding": "Initiate breastfeeding within first hour of life"
+      },
+      "monitoring": {
+        "blood_glucose": "Monitor for 36-48 hours in high-risk infants"
+      }
+    },
+    "treatment_protocols": {
+      "mild": {
+        "breastfeeding": "Breastfeed immediately",
+        "oral_feeds": "Consider expressed breast milk or formula"
+      },
+      "severe": {
+        "iv_dextrose": "10% dextrose 2ml/kg bolus, then 6-8mg/kg/min infusion",
+        "recheck": "Check blood glucose in 30 minutes"
+      },
+      "empiric_treatment": {
+        "if_unable_to_measure": "Give glucose via NG tube: 10-20ml/kg breast milk"
+      }
+    }
+  },
+  {
+    "name": "Eclampsia",
+    "icd_11_code": "JA21",
+    "severity": "Emergency",
+    "transmission": "Obstetric",
+    "symptoms": ["Seizures", "High BP", "Severe headache"],
+    "edliz_treatment_path": "Magnesium Sulphate, Delivery",
+    "outbreak_status": "Obstetric Emergency",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-140/90 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "antenatal_care": {
+        "bp_monitoring": "Monitor blood pressure at every ANC visit",
+        "urine_protein": "Check urine for protein at every visit",
+        "risk_assessment": "Identify risk factors for pre-eclampsia"
+      }
+    },
+    "treatment_protocols": {
+      "seizure_control": {
+        "magnesium_sulphate_loading": "4g IV in 20ml saline over 20 mins + 5g IM in each buttock",
+        "magnesium_sulphate_maintenance": "5g IM in alternate buttocks every 4 hours until 24 hours after delivery",
+        "monitoring": "Patellar reflex, respiratory rate >16/min, urine output >100ml/4hrs"
+      },
+      "blood_pressure": {
+        "hydralazine": "10mg IM/IV, repeat if needed"
+      },
+      "delivery": {
+        "timing": "Urgent delivery within 6 hours of seizure"
+      },
+      "airway": {
+        "management": "Ensure clear airway, oxygen if available"
+      }
+    }
+  },
+  {
+    "name": "Pre-eclampsia",
+    "icd_11_code": "JA20",
+    "severity": "High",
+    "transmission": "Obstetric",
+    "symptoms": ["High BP", "Proteinuria", "Visual disturbances"],
+    "edliz_treatment_path": "Methyldopa, Nifedipine, Delivery",
+    "outbreak_status": "Obstetric Emergency",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-140/90 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "calcium_supplementation": {
+        "calcium_carbonate": "Daily from booking until delivery"
+      }
+    },
+    "treatment_protocols": {
+      "mild_pih": {
+        "management": "Bed rest at home, weekly visits"
+      },
+      "moderate_pih": {
+        "methyldopa": "250-500mg 3-4 times daily",
+        "nifedipine_sr": "20mg twice daily"
+      },
+      "severe_pih": {
+        "methyldopa": "250-500mg 3-4 times daily",
+        "nifedipine_sr": "20mg twice daily",
+        "add_hydralazine": "10mg IM/IV every 4 hours"
+      },
+      "imminent_eclampsia": {
+        "magnesium_sulphate": "4g IV + 5g IM loading, then 5g IM every 4 hours",
+        "delivery": "Plan urgent delivery"
+      },
+      "monitoring": {
+        "bp": "4-hourly",
+        "urine_protein": "Daily",
+        "organ_function": "Monitor kidney, liver, haematology"
+      }
+    }
+  },
+  {
+    "name": "Postpartum Haemorrhage (PPH)",
+    "icd_11_code": "JA40",
+    "severity": "Emergency",
+    "transmission": "Obstetric",
+    "symptoms": ["Excessive vaginal bleeding", "Hypotension", "Tachycardia"],
+    "edliz_treatment_path": "Oxytocin, Uterine massage, IV fluids",
+    "outbreak_status": "Obstetric Emergency",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "90-130 bpm",
+      "rr_range": "16-26 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "active_management_3rd_stage": {
+        "oxytocin": "10 units IM with delivery of anterior shoulder",
+        "controlled_cord_traction": "Gentle cord traction",
+        "uterine_massage": "Fundal massage after delivery"
+      },
+      "risk_identification": {
+        "risk_factors": "Identify high-risk patients (grand multipara, prolonged labour, anaemia)"
+      }
+    },
+    "treatment_protocols": {
+      "acute_management": {
+        "oxytocin_infusion": "20 units in 1L Normal Saline at 10-60 drops/min",
+        "misoprostol": "600mcg PR single dose",
+        "uterine_massage": "Bimanual uterine compression"
+      },
+      "resuscitation": {
+        "iv_fluids": "Normal saline or Ringer's Lactate",
+        "blood_transfusion": "If haemodynamically unstable"
+      },
+      "monitoring": {
+        "vital_signs": "BP, HR, respiration",
+        "blood_loss": "Quantify blood loss",
+        "urine_output": "Monitor output"
+      }
+    }
+  },
+  {
+    "name": "Obstructed Labour",
+    "icd_11_code": "JB01",
+    "severity": "Emergency",
+    "transmission": "Obstetric",
+    "symptoms": ["Failed progress of labour", "Uterine contractions"],
+    "edliz_treatment_path": "Caesarean Section",
+    "outbreak_status": "Obstetric Emergency",
+    "vital_signs": {
+      "temp_range": "36.0-38.0°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "14-24 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "partograph": {
+        "use_partograph": "Monitor labour progress with partograph",
+        "early_detection": "Detect prolonged labour early"
+      },
+      "risk_factors": {
+        "identification": "Identify risk factors (cephalopelvic disproportion, malpresentation)"
+      }
+    },
+    "treatment_protocols": {
+      "management": {
+        "caesarean_section": "Definitive treatment",
+        "antibiotics": "Prophylactic antibiotics if membranes ruptured >24 hours",
+        "hydration": "IV fluids"
+      },
+      "antibiotics": {
+        "benzylpenicillin": "2MU IV 6-hourly + Chloramphenicol 500mg IV 6-hourly + Metronidazole 500mg IV 8-hourly"
+      }
+    }
+  },
+  {
+    "name": "Maternal Sepsis",
+    "icd_11_code": "JB02",
+    "severity": "Emergency",
+    "transmission": "Obstetric/Infectious",
+    "symptoms": ["Fever", "Foul discharge", "Abdominal pain"],
+    "edliz_treatment_path": "Ampicillin + Gentamicin + Metronidazole",
+    "outbreak_status": "Obstetric Emergency",
+    "vital_signs": {
+      "temp_range": "37.5-39.5°C",
+      "hr_range": "90-130 bpm",
+      "rr_range": "18-26 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "infection_control": {
+        "hygiene": "Aseptic technique during delivery",
+        "early_detection": "Monitor for signs of infection post-delivery"
+      }
+    },
+    "treatment_protocols": {
+      "mild_moderate": {
+        "antibiotics": "Amoxicillin 500mg 3 times daily + Metronidazole 400mg 3 times daily",
+        "alternative": "Ciprofloxacin 500mg + Metronidazole 400mg"
+      },
+      "severe": {
+        "ampicillin": "1g IV 6-hourly",
+        "gentamicin": "160mg IV 12-hourly",
+        "metronidazole": "500mg IV 8-hourly"
+      },
+      "source_control": {
+        "evacuation": "Evacuate uterus if retained products",
+        "laparotomy": "If no response to antibiotics"
+      },
+      "monitoring": {
+        "vital_signs": "Continuous monitoring",
+        "organ_function": "Monitor renal, hepatic, haematological function"
+      }
+    }
+  },
+  {
+    "name": "Anaemia in Pregnancy",
+    "icd_11_code": "3A10",
+    "severity": "Moderate",
+    "transmission": "Nutritional",
+    "symptoms": ["Fatigue", "Pallor", "Dizziness"],
+    "edliz_treatment_path": "Ferrous Sulphate, Folic Acid",
+    "outbreak_status": "Nutritional (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "80-110 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "antenatal_supplementation": {
+        "iron": "Ferrous Sulphate 200mg daily",
+        "folic_acid": "5mg daily",
+        "start": "At booking, continue 6 weeks post-delivery"
+      },
+      "nutrition": {
+        "dietary_advice": "Iron-rich foods (meat, fish, dark green vegetables)"
+      }
+    },
+    "treatment_protocols": {
+      "iron_deficiency": {
+        "iron_supplement": "Ferrous Sulphate 200mg 3 times daily",
+        "folic_acid": "5mg daily",
+        "duration": "Until Hb normal plus 3 months"
+      },
+      "severe_anaemia": {
+        "haemoglobin": "Hb ≤ 8g/dl",
+        "investigations": "Stool for ova, blood film, FBC, HIV test",
+        "transfusion": "If Hb <7g/dl or approaching term",
+        "parenteral_iron": "If oral iron not tolerated"
+      }
+    }
+  },
+  {
+    "name": "Ruptured Ectopic Pregnancy",
+    "icd_11_code": "JA00",
+    "severity": "Emergency",
+    "transmission": "Obstetric",
+    "symptoms": ["Sharp abdominal pain", "Fainting/Collapse"],
+    "edliz_treatment_path": "Emergency Laparotomy, Resuscitation",
+    "outbreak_status": "Obstetric Emergency",
+    "vital_signs": {
+      "temp_range": "35.5-37.5°C",
+      "hr_range": ">110 bpm",
+      "rr_range": ">24 bpm",
+      "bp_target": "<90/60 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "early_diagnosis": {
+        "pregnancy_test": "Routine pregnancy test in women of childbearing age with abdominal pain",
+        "ultrasound": "US$ to confirm intrauterine pregnancy"
+      }
+    },
+    "treatment_protocols": {
+      "resuscitation": {
+        "iv_access": "Large bore IV cannula x2",
+        "iv_fluids": "Normal saline or Ringer's Lactate",
+        "blood_transfusion": "Cross-match for emergency transfusion"
+      },
+      "definitive_management": {
+        "surgery": "Emergency laparotomy with salpingectomy or salpingotomy"
+      }
+    }
+  },
+  {
+    "name": "Pneumonia",
+    "icd_11_code": "CA40",
+    "severity": "High",
+    "transmission": "Airborne/Respiratory",
+    "symptoms": ["Cough", "Fever", "Difficulty breathing", "Chest pain"],
+    "edliz_treatment_path": "Amoxicillin (1st line), Benzyl Penicillin (severe)",
+    "outbreak_status": "Notifiable (Healthcare-associated)",
+    "vital_signs": {
+      "temp_range": "37.5-39.5°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "20-30 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "pneumococcal": "PCV at 6, 10, 14 weeks",
+        "influenza": "Annual influenza vaccine for high-risk groups"
+      },
+      "infection_control": {
+        "cough_hygiene": "Cover mouth when coughing",
+        "hand_hygiene": "Regular hand washing"
+      }
+    },
+    "treatment_protocols": {
+      "outpatient": {
+        "first_line": "Amoxicillin 500mg 3 times daily for 7 days",
+        "penicillin_allergy": "Erythromycin 500mg 4 times daily for 7 days",
+        "alternative": "Doxycycline 100mg twice daily for 7 days"
+      },
+      "inpatient": {
+        "severe": "Benzylpenicillin 1.5g (2.5MU) IV 6-hourly for 7 days",
+        "alternative": "Ceftriaxone 1g IV daily/twice daily for 7 days"
+      },
+      "special_populations": {
+        "hiv_positive": "Amoxicillin 500mg 3 times daily for 7 days, consider PCP",
+        "elderly_chronic": "Lower threshold for admission"
+      },
+      "monitoring": {
+        "review": "Review at 48 hours, switch to oral if improving"
+      }
+    }
+  },
+  {
+    "name": "Bronchiolitis",
+    "icd_11_code": "CA21",
+    "severity": "Moderate",
+    "transmission": "Respiratory",
+    "symptoms": ["Wheezing", "Fast breathing", "Nasal flaring"],
+    "edliz_treatment_path": "Oxygen, Supportive fluids",
+    "outbreak_status": "Respiratory (Seasonal)",
+    "vital_signs": {
+      "temp_range": "36.5-38.5°C",
+      "hr_range": "100-160 bpm (Pediatric)",
+      "rr_range": "30-50 bpm (Pediatric)",
+      "bp_target": "80/40-105/70 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "infection_control": {
+        "hand_hygiene": "Regular hand washing",
+        "avoid_smoke": "Avoid exposure to cigarette smoke"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "oxygen": "Supplemental oxygen if SpO2 <92%",
+        "hydration": "Ensure adequate fluid intake",
+        "feeding": "Small, frequent feeds"
+      },
+      "bronchodilators": {
+        "salbutamol_nebulised": "2.5mg for children <5 years, 5mg for >5 years",
+        "response": "Trial to assess response"
+      },
+      "referral": {
+        "criteria": "Chest indrawing, danger signs, hypoxia"
+      }
+    }
+  },
+  {
+    "name": "Croup",
+    "icd_11_code": "CA01",
+    "severity": "Moderate",
+    "transmission": "Respiratory",
+    "symptoms": ["Barking cough", "Hoarse voice", "Stridor"],
+    "edliz_treatment_path": "Dexamethasone, Oxygen",
+    "outbreak_status": "Respiratory (Seasonal)",
+    "vital_signs": {
+      "temp_range": "36.5-38.5°C",
+      "hr_range": "90-140 bpm (Pediatric)",
+      "rr_range": "22-35 bpm (Pediatric)",
+      "bp_target": "80/40-105/70 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "diphtheria": "DPT vaccine"
+      }
+    },
+    "treatment_protocols": {
+      "mild_moderate": {
+        "dexamethasone": "0.1-0.6mg/kg IM/IV",
+        "oxygen": "Supplemental oxygen if needed"
+      },
+      "severe": {
+        "airway": "Secure airway if needed",
+        "racemic_adrenaline": "Nebulised every 2 hours if needed",
+        "dexamethasone": "0.1-0.6mg/kg"
+      },
+      "monitoring": {
+        "stridor": "Monitor severity",
+        "oxygen_saturation": "Continuous pulse oximetry"
+      }
+    }
+  },
+  {
+    "name": "Acute Otitis Media",
+    "icd_11_code": "AB00",
+    "severity": "Moderate",
+    "transmission": "Bacterial/Viral",
+    "symptoms": ["Ear pain", "Fever", "Irritability"],
+    "edliz_treatment_path": "Amoxicillin",
+    "outbreak_status": "Non-outbreak (Common childhood infection)",
+    "vital_signs": {
+      "temp_range": "37.5-39.0°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "breastfeeding": "Exclusive breastfeeding for first 6 months",
+      "avoid_smoke": "Avoid exposure to cigarette smoke"
+    },
+    "treatment_protocols": {
+      "indications": {
+        "under_6_months": "Antibiotics indicated",
+        "severe": "Temperature >39.5°C",
+        "comorbidity": "Malnutrition, HIV",
+        "no_improvement": "Failure of symptoms in 48-72 hours"
+      },
+      "antibiotics": {
+        "first_line": "Amoxicillin 500mg 3 times daily for 7 days",
+        "second_line": "Amoxicillin-Clavulanic acid if recent amoxicillin use"
+      },
+      "analgesia": {
+        "paracetamol": "10mg/kg 6-hourly"
+      }
+    }
+  },
+  {
+    "name": "Mastoiditis",
+    "icd_11_code": "AB02",
+    "severity": "Emergency",
+    "transmission": "Complication of AOM",
+    "symptoms": ["Swelling behind ear", "Pain", "Fever"],
+    "edliz_treatment_path": "Ceftriaxone, Surgical consultation",
+    "outbreak_status": "Emergency (Complication)",
+    "vital_signs": {
+      "temp_range": "38.0-40.0°C",
+      "hr_range": "90-130 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "early_treatment": {
+        "aom": "Prompt treatment of acute otitis media"
+      }
+    },
+    "treatment_protocols": {
+      "antibiotics": {
+        "iv_initiation": "Benzylpenicillin 0.1MU/kg stat or Ceftriaxone 80mg/kg stat"
+      },
+      "referral": {
+        "ent_surgeon": "Refer for ENT surgical consultation"
+      }
+    }
+  },
+  {
+    "name": "Epiglottitis",
+    "icd_11_code": "CA00",
+    "severity": "Emergency",
+    "transmission": "Airborne",
+    "symptoms": ["Drooling", "Difficulty swallowing", "Severe sore throat"],
+    "edliz_treatment_path": "Emergency Airway management, Ceftriaxone + Cloxacillin",
+    "outbreak_status": "Emergency (Notifiable)",
+    "vital_signs": {
+      "temp_range": "38.0-40.0°C",
+      "hr_range": "100-140 bpm",
+      "rr_range": "24-35 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "90%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "hib": "DPT-HepB-Hib vaccine (Hib component)"
+      }
+    },
+    "treatment_protocols": {
+      "do_not_examine_throat": {
+        "warning": "Do NOT examine throat - risk of airway obstruction"
+      },
+      "antibiotics": {
+        "regimen": "Chloramphenicol 12.5mg/kg IV 6-hourly OR Ceftriaxone 50mg/kg + Cloxacillin 25mg/kg"
+      },
+      "airway": {
+        "management": "Prepare for intubation or tracheostomy",
+        "monitoring": "Watch for signs of obstruction (poor air entry, severe indrawing, restlessness)"
+      },
+      "minimal_handling": "Keep child on mother's lap"
+    }
+  },
+  {
+    "name": "Pertussis",
+    "icd_11_code": "1C11",
+    "severity": "Moderate",
+    "transmission": "Airborne",
+    "symptoms": ["Severe 'whooping' cough", "Vomiting post-cough"],
+    "edliz_treatment_path": "Azithromycin",
+    "outbreak_status": "Notifiable (Vaccine-preventable)",
+    "vital_signs": {
+      "temp_range": "36.5-38.0°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "16-26 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "routine": "DPT-HepB-Hib at 6, 10, 14 weeks",
+        "catch_up": "Vaccinate unvaccinated children"
+      },
+      "chemoprophylaxis": {
+        "household_contacts": "Azithromycin 10-20mg/kg single dose for household contacts"
+      },
+      "isolation": {
+        "duration": "Isolate until 5 days after antibiotics started"
+      }
+    },
+    "treatment_protocols": {
+      "antibiotics": {
+        "first_line": "Azithromycin 10mg/kg Day 1, 5mg/kg Days 2-5",
+        "alternative": "Erythromycin 12.5mg/kg 6-hourly for 7-14 days"
+      },
+      "supportive_care": {
+        "oxygen": "Oxygen for cyanosis/respiratory distress",
+        "hydration": "Fluids to maintain hydration",
+        "nutrition": "Small, frequent feeds"
+      },
+      "monitoring": {
+        "apnoea": "Monitor for apnoea in infants",
+        "complications": "Watch for pneumonia, seizures"
+      },
+      "referral": {
+        "infants": "Infants <6 months with severe symptoms to tertiary care"
+      }
+    }
+  },
+  {
+    "name": "Foreign Body Inhalation",
+    "icd_11_code": "PB40",
+    "severity": "Emergency",
+    "transmission": "Accidental",
+    "symptoms": ["Sudden acute cough", "Choking", "Difficulty breathing"],
+    "edliz_treatment_path": "Emergency bronchoscopy/Surgical retrieval",
+    "outbreak_status": "Accidental (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "90-130 bpm",
+      "rr_range": "24-35 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "<90%"
+    },
+    "preventive_protocols": {
+      "education": {
+        "parents": "Educate parents on choking hazards (small objects, nuts, beads)",
+        "supervision": "Supervise children during eating"
+      }
+    },
+    "treatment_protocols": {
+      "bronchoscopy": {
+        "procedure": "Emergency bronchoscopy for foreign body removal",
+        "consult": "Refer to cardiothoracic surgeons"
+      },
+      "antibiotics": {
+        "indication": "If secondary infection with fast breathing"
+      }
+    }
+  },
+  {
+    "name": "Road Traffic Trauma",
+    "icd_11_code": "VB00",
+    "severity": "Emergency",
+    "transmission": "Accidental",
+    "symptoms": ["Fractures", "Head injury", "Internal bleeding"],
+    "edliz_treatment_path": "Trauma protocol (ATLS), Fluid resuscitation, Surgery",
+    "outbreak_status": "Not an outbreak disease (Trauma)",
+    "vital_signs": {
+      "temp_range": "35.0-37.5°C",
+      "hr_range": ">110 bpm",
+      "rr_range": ">24 bpm",
+      "bp_target": "<90/60 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "road_safety": {
+        "seatbelts": "Promote seatbelt use",
+        "helmets": "Encourage helmet use for motorcyclists",
+        "speed_limits": "Observe speed limits"
+      }
+    },
+    "treatment_protocols": {
+      "primary_survey": {
+        "atls": "Airway, Breathing, Circulation (ATLS protocol)",
+        "c_spine": "Cervical spine immobilization",
+        "cpr": "CPR if indicated"
+      },
+      "resuscitation": {
+        "iv_fluids": "Normal saline or Ringer's Lactate",
+        "blood_transfusion": "Cross-match for transfusion",
+        "oxygen": "High-flow oxygen"
+      },
+      "definitive_care": {
+        "surgery": "Surgical intervention as needed",
+        "referral": "Refer to trauma center"
+      }
+    }
+  },
+  {
+    "name": "Burns",
+    "icd_11_code": "NC00",
+    "severity": "Variable",
+    "transmission": "Accidental/Thermal",
+    "symptoms": ["Skin redness", "Blisters", "Charring"],
+    "edliz_treatment_path": "Fluid resuscitation, Wound care, Antibiotics",
+    "outbreak_status": "Not an outbreak disease (Trauma)",
+    "vital_signs": {
+      "temp_range": "36.0-38.5°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "14-24 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "fire_safety": {
+        "education": "Educate on burn prevention (hot liquids, fire, electricity)",
+        "safe_cooking": "Use safe cooking methods"
+      }
+    },
+    "treatment_protocols": {
+      "small_burns": {
+        "analgesia": "Paracetamol or codeine",
+        "tetanus_prophylaxis": "Tetanus toxoid 0.5ml IM",
+        "wound_care": "Simple dry or non-adherent dressings"
+      },
+      "large_burns": {
+        "fluid_resuscitation": "Parkland Formula: 4 x weight(kg) x %BSA (adults)",
+        "monitoring": "Monitor input/output, pulse, BP, urine output",
+        "wound_care": "Silver sulfadiazine 1% cream or povidone-iodine",
+        "antibiotics": "Benzylpenicillin 2.5MU IV 6-hourly if contaminated"
+      },
+      "airway": {
+        "smoke_inhalation": "100% oxygen if in enclosed space"
+      },
+      "referral": {
+        "criteria": "Adults >10% BSA, children >8-10% BSA, burns of special regions"
+      }
+    }
+  },
+  {
+    "name": "Stabbing/Assault",
+    "icd_11_code": "PJ00",
+    "severity": "Emergency",
+    "transmission": "Violence",
+    "symptoms": ["Lacerations", "Internal pain", "Haemorrhage"],
+    "edliz_treatment_path": "Surgical debridement, Tetanus prophylaxis, Analgesia",
+    "outbreak_status": "Not an outbreak disease (Trauma)",
+    "vital_signs": {
+      "temp_range": "35.5-37.5°C",
+      "hr_range": ">100 bpm",
+      "rr_range": "16-26 bpm",
+      "bp_target": "<95/60 mmHg",
+      "spo2_min": "93%"
+    },
+    "preventive_protocols": {
+      "violence_prevention": {
+        "community": "Community violence prevention programs"
+      }
+    },
+    "treatment_protocols": {
+      "wound_care": {
+        "cleaning": "Thorough wound cleaning",
+        "debridement": "Surgical debridement",
+        "dressing": "Appropriate dressing"
+      },
+      "tetanus_prophylaxis": {
+        "toxoid": "Tetanus toxoid 0.5ml IM"
+      },
+      "analgesia": {
+        "paracetamol": "500mg-1g 4-6 hourly",
+        "opioids": "Morphine or pethidine for severe pain"
+      },
+      "antibiotics": {
+        "indication": "If contaminated wounds"
+      },
+      "mental_health": {
+        "referral": "Psychological support and counseling"
+      }
+    }
+  },
+  {
+    "name": "Cervical Cancer",
+    "icd_11_code": "2C77",
+    "severity": "High",
+    "transmission": "HPV (Non-comm.)",
+    "symptoms": ["Bleeding", "Pelvic pain"],
+    "edliz_treatment_path": "Surgery/Radiotherapy (Referral)",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "hpv_vaccine": "HPV1 at 10 years, HPV2 at 11 years (routine)",
+        "target": "Girls aged 10-11 years"
+      },
+      "screening": {
+        "pap_smear": "Screening for women aged 25-65",
+        "vulva_self_exam": "Encourage self-examination"
+      }
+    },
+    "treatment_protocols": {
+      "referral": {
+        "oncology": "Refer for surgery, radiotherapy, or chemotherapy"
+      }
+    }
+  },
+  {
+    "name": "Breast Cancer",
+    "icd_11_code": "2C61",
+    "severity": "High",
+    "transmission": "Non-comm.",
+    "symptoms": ["Breast lump", "Nipple change"],
+    "edliz_treatment_path": "Mastectomy/Chemo (Referral)",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "screening": {
+        "breast_self_exam": "Monthly self-examination",
+        "mammogram": "Screening for high-risk women"
+      }
+    },
+    "treatment_protocols": {
+      "referral": {
+        "oncology": "Refer for surgery, chemotherapy, radiotherapy, or hormonal therapy"
+      }
+    }
+  },
+  {
+    "name": "Prostate Cancer",
+    "icd_11_code": "2C82",
+    "severity": "High",
+    "transmission": "Non-comm.",
+    "symptoms": ["Urinary obstruction", "Bone pain"],
+    "edliz_treatment_path": "Hormonal therapy/Radiotherapy",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "screening": {
+        "psa_test": "PSA screening in high-risk groups"
+      }
+    },
+    "treatment_protocols": {
+      "referral": {
+        "oncology": "Refer for hormonal therapy, radiotherapy, or chemotherapy"
+      }
+    }
+  },
+  {
+    "name": "Leukemia",
+    "icd_11_code": "2B33",
+    "severity": "High",
+    "transmission": "Non-comm.",
+    "symptoms": ["Easy bruising", "Pallor", "Bone pain"],
+    "edliz_treatment_path": "Chemotherapy (Referral)",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-38.5°C",
+      "hr_range": "70-115 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "screening": {
+        "fbc": "Full blood count for suspected cases"
+      }
+    },
+    "treatment_protocols": {
+      "referral": {
+        "oncology": "Refer for chemotherapy and specialist management"
+      }
+    }
+  },
+  {
+    "name": "Lung Cancer",
+    "icd_11_code": "2C25",
+    "severity": "High",
+    "transmission": "Non-comm.",
+    "symptoms": ["Persistent cough", "Chest pain"],
+    "edliz_treatment_path": "Chemotherapy/Radiation",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "93%"
+    },
+    "preventive_protocols": {
+      "smoking_cessation": {
+        "counseling": "Smoking cessation counseling"
+      }
+    },
+    "treatment_protocols": {
+      "referral": {
+        "oncology": "Refer for chemotherapy, radiotherapy, or surgery"
+      }
+    }
+  },
+  {
+    "name": "Stomach Cancer",
+    "icd_11_code": "2C12",
+    "severity": "High",
+    "transmission": "Non-comm.",
+    "symptoms": ["Weight loss", "Indigestion"],
+    "edliz_treatment_path": "Surgery/Chemo (Referral)",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "h_pylori_treatment": {
+        "eradication": "Treat H. pylori infection"
+      }
+    },
+    "treatment_protocols": {
+      "referral": {
+        "oncology": "Refer for surgery, chemotherapy, or palliative care"
+      }
+    }
+  },
+  {
+    "name": "Colon Cancer",
+    "icd_11_code": "2C16",
+    "severity": "High",
+    "transmission": "Non-comm.",
+    "symptoms": ["Bowel habit change", "Rectal bleeding"],
+    "edliz_treatment_path": "Surgery/Chemo (Referral)",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "screening": {
+        "colonoscopy": "Screening in high-risk groups"
+      }
+    },
+    "treatment_protocols": {
+      "referral": {
+        "oncology": "Refer for surgery, chemotherapy, or palliative care"
+      }
+    }
+  },
+  {
+    "name": "Liver Cancer",
+    "icd_11_code": "2C13",
+    "severity": "High",
+    "transmission": "Non-comm.",
+    "symptoms": ["Jaundice", "Abdominal lump"],
+    "edliz_treatment_path": "Palliative/Targeted therapy",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "hepatitis_management": {
+        "treat_hepatitis_b_c": "Treat chronic hepatitis B and C"
+      },
+      "alcohol_avoidance": {
+        "avoid_alcohol": "Avoid excessive alcohol consumption"
+      }
+    },
+    "treatment_protocols": {
+      "referral": {
+        "oncology": "Refer for palliative care, targeted therapy, or specialist management"
+      }
+    }
+  },
+  {
+    "name": "Oral Cancer",
+    "icd_11_code": "2C60",
+    "severity": "High",
+    "transmission": "Non-comm.",
+    "symptoms": ["Mouth ulcer", "Difficulty speaking"],
+    "edliz_treatment_path": "Surgery/Radiation",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "tobacco_avoidance": {
+        "smoking_cessation": "Stop smoking, avoid chewing tobacco",
+        "alcohol_avoidance": "Limit alcohol consumption"
+      }
+    },
+    "treatment_protocols": {
+      "referral": {
+        "oncology": "Refer for surgery, radiotherapy, or chemotherapy"
+      },
+      "biopsy": {
+        "indication": "Biopsy any ulcer that does not heal in 14 days"
+      }
+    }
+  },
+  {
+    "name": "Marburg Virus",
+    "icd_11_code": "1D81",
+    "severity": "Emergency",
+    "transmission": "Bodily fluids",
+    "symptoms": ["Sudden fever", "Haemorrhaging", "Muscle pain"],
+    "edliz_treatment_path": "Isolation/Supportive care",
+    "outbreak_status": "Notifiable (Preparedness - No confirmed cases)",
+    "vital_signs": {
+      "temp_range": ">38.5°C",
+      "hr_range": "90-140 bpm",
+      "rr_range": "20-30 bpm",
+      "bp_target": "<90/60 mmHg",
+      "spo2_min": "91%"
+    },
+    "preventive_protocols": {
+      "infection_prevention_control": {
+        "hand_hygiene": "Alcohol-based hand rub or soap and water",
+        "ppe": "Full PPE for all patient contacts",
+        "isolation": "Strict isolation in designated facilities",
+        "safe_burial": "Safe burial protocols"
+      },
+      "surveillance": {
+        "case_definition": "Acute fever + haemorrhagic symptoms + epidemiological link",
+        "reporting": "IMMEDIATE NOTIFICATION using T1 form",
+        "contact_tracing": "Trace all contacts for 21 days"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "fluid_resuscitation": "IV fluids for dehydration",
+        "electrolytes": "Monitor and correct electrolyte imbalances",
+        "oxygen": "Supplemental oxygen for hypoxia",
+        "nutrition": "High-calorie nutritional support"
+      },
+      "symptom_management": {
+        "fever": "Paracetamol (avoid NSAIDs - bleeding risk)",
+        "pain": "Morphine for severe pain",
+        "diarrhoea": "ORS, loperamide if severe",
+        "vomiting": "Metoclopramide 10mg 8-hourly"
+      },
+      "referral": "All suspected cases to designated treatment facility"
+    }
+  },
+  {
+    "name": "Osteoporosis",
+    "icd_11_code": "FB80",
+    "severity": "Moderate",
+    "transmission": "Non-communicable",
+    "symptoms": ["Back pain", "Fractures"],
+    "edliz_treatment_path": "Calcium, Vitamin D",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "lifestyle": {
+        "calcium_diet": "Ensure adequate dietary calcium (kapenta, dairy, green vegetables)",
+        "vitamin_d": "Sun exposure for vitamin D",
+        "exercise": "Weight-bearing and muscle-strengthening exercises"
+      }
+    },
+    "treatment_protocols": {
+      "supplements": {
+        "calcium": "500mg daily",
+        "vitamin_d": "400 IU daily"
+      },
+      "anti_resorptive": {
+        "alendronate": "70mg once weekly (Specialist)",
+        "zoledronic_acid": "5mg IV every 12-18 months (Specialist)"
+      },
+      "monitoring": {
+        "fracture_risk": "Assess fracture risk regularly"
+      }
+    }
+  },
+  {
+    "name": "Frailty",
+    "icd_11_code": "MB42",
+    "severity": "Moderate",
+    "transmission": "Non-communicable",
+    "symptoms": ["Muscle weakness", "Fatigue"],
+    "edliz_treatment_path": "Multidisciplinary rehabilitation",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.3°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "exercise": {
+        "muscle_strengthening": "Resistance training",
+        "balance_training": "Balance exercises"
+      },
+      "nutrition": {
+        "protein": "Adequate protein intake"
+      }
+    },
+    "treatment_protocols": {
+      "multidisciplinary": {
+        "medical_review": "Comprehensive Geriatric Assessment",
+        "medication_review": "Review and de-prescribe if needed",
+        "exercise": "Exercise program",
+        "nutrition": "Nutritional optimization",
+        "social_support": "Social support"
+      }
+    }
+  },
+  {
+    "name": "Dementia",
+    "icd_11_code": "6D80",
+    "severity": "High",
+    "transmission": "Non-communicable",
+    "symptoms": ["Memory loss", "Confusion"],
+    "edliz_treatment_path": "Supportive/Cognitive care",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "lifestyle": {
+        "cognitive_activity": "Cognitive stimulation training",
+        "physical_activity": "Regular exercise",
+        "social_engagement": "Social engagement"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "family_support": "Counsel family and caregivers",
+        "safety": "Home safety assessment",
+        "routine": "Maintain daily routines"
+      },
+      "medication": {
+        "donepezil": "5-10mg once daily (Specialist - Alzheimer's only)",
+        "monitoring": "Review after 2-3 months trial"
+      },
+      "comorbidity_management": {
+        "delirium_prevention": "Avoid anticholinergics, manage infections"
+      }
+    }
+  },
+  {
+    "name": "Antimicrobial Resistance",
+    "icd_11_code": "QA00",
+    "severity": "Emergency",
+    "transmission": "Environmental/Clinical",
+    "symptoms": ["Persistent fever", "Treatment failure"],
+    "edliz_treatment_path": "Antibiotic stewardship/Tailored therapy",
+    "outbreak_status": "Global Emergency (Notifiable)",
+    "vital_signs": {
+      "temp_range": "37.5-39.5°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "antibiotic_stewardship": {
+        "aware": "Use Access, Watch, Reserve principles",
+        "restrict_watch": "Restrict Watch antibiotics",
+        "reserve_only": "Reserve antibiotics only as last resort"
+      },
+      "infection_control": {
+        "hand_hygiene": "Strict hand hygiene",
+        "isolation": "Isolate patients with resistant organisms"
+      },
+      "surveillance": {
+        "antibiogram": "Maintain susceptibility database",
+        "reporting": "Report resistant cases"
+      }
+    },
+    "treatment_protocols": {
+      "culture_guided": {
+        "specimen": "Collect specimens before antibiotics",
+        "susceptibility": "Treat based on culture and sensitivity results"
+      },
+      "empiric": {
+        "sepsis": "Ceftriaxone + Gentamicin",
+        "mdr_suspected": "Refer for specialist management"
+      },
+      "referral": {
+        "criteria": "All MDR cases to tertiary care"
+      }
+    }
+  },
+  {
+    "name": "Opportunistic Infections",
+    "icd_11_code": "1C60",
+    "severity": "High",
+    "transmission": "Immunocompromised",
+    "symptoms": ["Fever", "Weight loss"],
+    "edliz_treatment_path": "Targeted anti-infectives",
+    "outbreak_status": "HIV-related (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.5-39.0°C",
+      "hr_range": "75-115 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "cotrimoxazole_prophylaxis": {
+        "adults": "960mg once daily if CD4 <350 or WHO stage 3/4",
+        "children": "Weight-based dosing for all HIV+ children"
+      },
+      "tb_preventive_therapy": {
+        "adults": "3HP (Rifapentine + Isoniazid) or 6H",
+        "children": "6H or 3RH"
+      },
+      "art": {
+        "initiation": "Start ART as soon as possible"
+      }
+    },
+    "treatment_protocols": {
+      "pneumocystis_pneumonia": {
+        "treatment": "Cotrimoxazole 1920mg 3 times daily for 21 days",
+        "steroids": "Prednisolone if hypoxia"
+      },
+      "cryptococcal_meningitis": {
+        "preferred": "Liposomal Amphotericin B + Flucytosine + Fluconazole",
+        "alternative": "Fluconazole + Flucytosine",
+        "duration": "Induction 2 weeks, consolidation 8 weeks, maintenance 1 year"
+      },
+      "toxoplasmosis": {
+        "treatment": "Sulphadiazine + Pyrimethamine for 6 weeks"
+      },
+      "esophageal_candidiasis": {
+        "treatment": "Fluconazole 200mg twice daily for 7-14 days"
+      }
+    }
+  },
+  {
+    "name": "Anaerobic Infections",
+    "icd_11_code": "1B91",
+    "severity": "Moderate",
+    "transmission": "Bacterial",
+    "symptoms": ["Abscess", "Foul discharge"],
+    "edliz_treatment_path": "Metronidazole",
+    "outbreak_status": "Not an outbreak disease",
+    "vital_signs": {
+      "temp_range": "36.5-38.5°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "wound_care": {
+        "cleaning": "Thorough wound cleaning and debridement"
+      },
+      "surgical_prophylaxis": {
+        "antibiotics": "Metronidazole for gastrointestinal surgery"
+      }
+    },
+    "treatment_protocols": {
+      "first_line": {
+        "metronidazole": "400mg 3 times daily (PO) or 500mg 3 times daily (IV)",
+        "child": "7.5mg/kg 8-hourly"
+      },
+      "surgical": {
+        "abscess": "Incision and drainage if abscess present"
+      }
+    }
+  },
+  {
+    "name": "Subacute Bacterial Endocarditis",
+    "icd_11_code": "1C01",
+    "severity": "Emergency",
+    "transmission": "Bacterial",
+    "symptoms": ["Heart murmur", "Fever"],
+    "edliz_treatment_path": "Intravenous Penicillin/Gentamicin",
+    "outbreak_status": "Not an outbreak disease",
+    "vital_signs": {
+      "temp_range": "37.0-38.8°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "prophylaxis": {
+        "dental": "Amoxicillin 3g PO 1 hour before dental procedures (high-risk patients)",
+        "penicillin_allergy": "Clindamycin 600mg PO 1 hour before"
+      }
+    },
+    "treatment_protocols": {
+      "native_valve": {
+        "empiric": "Benzylpenicillin 5MU IV 6-hourly + Gentamicin 80-120mg IV 12-hourly",
+        "duration": "2-6 weeks"
+      },
+      "prosthetic_valve": {
+        "regimen": "Cloxacillin 2g IV 6-hourly + Gentamicin 80-120mg IV 12-hourly",
+        "duration": "4-6 weeks"
+      },
+      "culture_positive": {
+        "streptococcal": "Benzylpenicillin + Gentamicin",
+        "staphylococcal": "Cloxacillin + Gentamicin",
+        "enterococcal": "Benzylpenicillin + Gentamicin"
+      }
+    }
+  },
+  {
+    "name": "Haemorrhagic Fever",
+    "icd_11_code": "1D80",
+    "severity": "Emergency",
+    "transmission": "Vector/Fluids",
+    "symptoms": ["Bleeding", "Fever"],
+    "edliz_treatment_path": "Supportive care",
+    "outbreak_status": "Notifiable (Emergency)",
+    "vital_signs": {
+      "temp_range": ">38.5°C",
+      "hr_range": "90-140 bpm",
+      "rr_range": "20-30 bpm",
+      "bp_target": "<90/60 mmHg",
+      "spo2_min": "91%"
+    },
+    "preventive_protocols": {
+      "infection_control": {
+        "ppe": "Full PPE for all patient contacts",
+        "isolation": "Strict isolation in designated facilities",
+        "safe_burial": "Safe burial protocols"
+      },
+      "vector_control": {
+        "mosquito_control": "Control vector populations"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "fluid_resuscitation": "IV fluids for dehydration",
+        "oxygen": "Supplemental oxygen",
+        "monitoring": "Strict monitoring of vital signs"
+      },
+      "referral": "All suspected cases to designated treatment facility"
+    }
+  },
+  {
+    "name": "Multi-Drug Resistant Bacteria",
+    "icd_11_code": "QA00",
+    "severity": "Emergency",
+    "transmission": "Clinical",
+    "symptoms": ["Non-responsive infection"],
+    "edliz_treatment_path": "Referral for culture-guided therapy",
+    "outbreak_status": "Emergency (Healthcare-associated)",
+    "vital_signs": {
+      "temp_range": "37.5-39.5°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "93%"
+    },
+    "preventive_protocols": {
+      "antibiotic_stewardship": {
+        "culture_before_antibiotics": "Collect cultures before starting antibiotics",
+        "restrict_broad_spectrum": "Restrict use of broad-spectrum antibiotics"
+      },
+      "infection_control": {
+        "contact_precautions": "Contact precautions for MDR patients",
+        "hand_hygiene": "Strict hand hygiene",
+        "environmental_cleaning": "Thorough environmental cleaning"
+      }
+    },
+    "treatment_protocols": {
+      "referral": {
+        "specialist": "Refer for culture-guided therapy and specialist management"
+      }
+    }
+  },
+  {
+    "name": "Hemorrhagic Disease of Newborn",
+    "icd_11_code": "3A70",
+    "severity": "High",
+    "transmission": "Nutritional",
+    "symptoms": ["Bleeding", "Bruising"],
+    "edliz_treatment_path": "Vitamin K",
+    "outbreak_status": "Not an outbreak disease (Preventable)",
+    "vital_signs": {
+      "temp_range": "36.5-37.5°C",
+      "hr_range": "120-170 bpm (Neonatal)",
+      "rr_range": "30-50 bpm (Neonatal)",
+      "bp_target": "60/40-80/50 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "vitamin_k_prophylaxis": {
+        "dose": "1mg IM for neonates >1.5kg, 0.5mg for <1.5kg",
+        "timing": "At birth"
+      }
+    },
+    "treatment_protocols": {
+      "active_bleeding": {
+        "vitamin_k": "1mg IM once daily for 3 days",
+        "ffp": "Fresh Frozen Plasma if bleeding is active"
+      }
+    }
+  },
+  {
+    "name": "Respiratory Depression",
+    "icd_11_code": "MA00",
+    "severity": "Emergency",
+    "transmission": "Metabolic/Drug",
+    "symptoms": ["Slow breathing", "Confusion", "Cyanosis"],
+    "edliz_treatment_path": "Naloxone/Oxygen",
+    "outbreak_status": "Not an outbreak disease (Medical emergency)",
+    "vital_signs": {
+      "temp_range": "35.5-37.5°C",
+      "hr_range": "50-90 bpm",
+      "rr_range": "<10 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "<90%"
+    },
+    "preventive_protocols": {
+      "medication_management": {
+        "opioid_caution": "Use opioids cautiously, especially in elderly",
+        "monitoring": "Monitor respiratory rate after opioid administration"
+      }
+    },
+    "treatment_protocols": {
+      "opioid_induced": {
+        "naloxone": "0.01mg/kg IV, repeat as needed"
+      },
+      "supportive": {
+        "oxygen": "Supplemental oxygen",
+        "ventilation": "Assisted ventilation if needed"
+      }
+    }
+  },
+  {
+    "name": "Necrotising Enterocolitis",
+    "icd_11_code": "DB90",
+    "severity": "Emergency",
+    "transmission": "Neonatal",
+    "symptoms": ["Abdominal swelling", "Vomiting", "Bloody stools"],
+    "edliz_treatment_path": "Surgery, Broad-spectrum antibiotics",
+    "outbreak_status": "Neonatal (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.8°C",
+      "hr_range": "120-180 bpm (Neonatal)",
+      "rr_range": "40-70 bpm (Neonatal)",
+      "bp_target": "50/30-75/45 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "feeding": {
+        "breast_milk": "Promote breast milk feeding",
+        "slow_feeding": "Slow advancement of feeds in preterm infants"
+      }
+    },
+    "treatment_protocols": {
+      "supportive": {
+        "nil_by_mouth": "Give nothing by mouth",
+        "ng_drainage": "Nasogastric continuous drainage",
+        "iv_fluids": "Intravenous fluids",
+        "oxygen": "Supplemental oxygen",
+        "warmth": "Maintain body temperature"
+      },
+      "antibiotics": {
+        "regimen": "Benzylpenicillin 0.1MU/kg + Gentamicin 2.5mg/kg + Metronidazole 7.5mg/kg"
+      },
+      "referral": {
+        "surgery": "Refer for specialist diagnosis and possible surgery"
+      }
+    }
+  },
+  {
+    "name": "Hypocalcaemia",
+    "icd_11_code": "5E50",
+    "severity": "Moderate",
+    "transmission": "Metabolic",
+    "symptoms": ["Muscle cramps", "Tingling", "Seizures"],
+    "edliz_treatment_path": "Calcium Gluconate",
+    "outbreak_status": "Not an outbreak disease",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "screening": {
+        "at_risk": "Monitor calcium in neonates, renal failure, post-thyroidectomy"
+      }
+    },
+    "treatment_protocols": {
+      "acute_symptomatic": {
+        "calcium_gluconate_10_percent": "2mls/kg slow IV (neonates 0.5ml/kg over 5 mins)",
+        "monitoring": "Monitor ECG and calcium levels"
+      }
+    }
+  },
+  {
+    "name": "Pneumothorax",
+    "icd_11_code": "LA20",
+    "severity": "Emergency",
+    "transmission": "Trauma/Spontaneous",
+    "symptoms": ["Sudden chest pain", "Shortness of breath"],
+    "edliz_treatment_path": "Chest tube/Needle decompression",
+    "outbreak_status": "Not an outbreak disease",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "90-130 bpm",
+      "rr_range": "24-35 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "<92%"
+    },
+    "preventive_protocols": {
+      "risk_factors": {
+        "spontaneous": "Manage underlying lung disease"
+      }
+    },
+    "treatment_protocols": {
+      "emergency": {
+        "needle_decompression": "For tension pneumothorax",
+        "chest_tube": "Chest tube insertion for significant pneumothorax",
+        "oxygen": "High-flow oxygen"
+      }
+    }
+  },
+  {
+    "name": "Apnoea of Prematurity",
+    "icd_11_code": "KA61",
+    "severity": "High",
+    "transmission": "Developmental",
+    "symptoms": ["Cessation of breathing", "Bradycardia"],
+    "edliz_treatment_path": "Caffeine citrate, Stimulants",
+    "outbreak_status": "Neonatal (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.5-37.5°C",
+      "hr_range": "120-170 bpm (Preterm)",
+      "rr_range": "30-60 bpm (Preterm)",
+      "bp_target": "50/30-70/40 mmHg",
+      "spo2_min": "90%"
+    },
+    "preventive_protocols": {
+      "caffeine_prophylaxis": {
+        "caffeine_citrate": "20mg/kg loading dose, then 5mg/kg daily for preterm <32 weeks",
+        "duration": "Until 34/40 weeks"
+      }
+    },
+    "treatment_protocols": {
+      "pharmacological": {
+        "caffeine_citrate": "Loading 20mg/kg, maintenance 5mg/kg daily",
+        "aminophylline": "Loading 6mg/kg, maintenance 2.5mg/kg 12-hourly"
+      },
+      "monitoring": {
+        "apnoea_monitor": "Use apnoea monitor or pulse oximeter",
+        "exclude_causes": "Rule out infection, hypoxia, hypoglycaemia, anaemia"
+      }
+    }
+  },
+  {
+    "name": "Congestive Cardiac Failure",
+    "icd_11_code": "BD11",
+    "severity": "High",
+    "transmission": "Non-communicable",
+    "symptoms": ["Swelling", "Breathlessness", "Fatigue"],
+    "edliz_treatment_path": "Frusemide, ACE-Inhibitors",
+    "outbreak_status": "Non-communicable (Not an outbreak disease)",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "75-115 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "risk_factor_management": {
+        "hypertension": "Control blood pressure",
+        "anaemia": "Treat anaemia",
+        "infection": "Prompt treatment of infections"
+      }
+    },
+    "treatment_protocols": {
+      "pharmacological": {
+        "diuretic": "Frusemide 40-80mg daily",
+        "ace_inhibitor": "Enalapril 5-20mg twice daily",
+        "beta_blocker": "Carvedilol or Bisoprolol",
+        "mra": "Spironolactone 25-50mg daily"
+      },
+      "acute_pulmonary_oedema": {
+        "oxygen": "40% oxygen by mask",
+        "morphine": "5-10mg IV slowly",
+        "frusemide": "40-80mg IV"
+      },
+      "monitoring": {
+        "weight": "Daily",
+        "fluid_balance": "Strict input/output"
+      }
+    }
+  },
+  {
+    "name": "Severe Anaemia",
+    "icd_11_code": "3A10",
+    "severity": "High",
+    "transmission": "Nutritional/Haemolytic",
+    "symptoms": ["Pallor", "Tachycardia", "Dizziness"],
+    "edliz_treatment_path": "Blood transfusion",
+    "outbreak_status": "Not an outbreak disease",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "90-120 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/50-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "nutrition": {
+        "iron_rich_foods": "Encourage iron-rich foods",
+        "folate_supplementation": "Folic acid in pregnancy"
+      }
+    },
+    "treatment_protocols": {
+      "blood_transfusion": {
+        "indications": "Hb <5g/dl, cardiac failure, sepsis",
+        "packed_cells": "Red cell concentrate"
+      },
+      "investigations": {
+        "diagnosis": "Determine underlying cause"
+      }
+    }
+  },
+  {
+    "name": "Stridor",
+    "icd_11_code": "MA02",
+    "severity": "Moderate",
+    "transmission": "Respiratory",
+    "symptoms": ["High-pitched breathing"],
+    "edliz_treatment_path": "Oxygen, Airway assessment",
+    "outbreak_status": "Not an outbreak disease (Symptom)",
+    "vital_signs": {
+      "temp_range": "36.0-38.0°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "18-28 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "92%"
+    },
+    "preventive_protocols": {
+      "airway_management": {
+        "monitoring": "Monitor for signs of airway obstruction"
+      }
+    },
+    "treatment_protocols": {
+      "mild": {
+        "supportive": "Observation, oxygen if needed"
+      },
+      "severe": {
+        "airway": "Secure airway if needed",
+        "oxygen": "Supplemental oxygen"
+      }
+    }
+  },
+  {
+    "name": "Retropharyngeal Abscess",
+    "icd_11_code": "DA02",
+    "severity": "Emergency",
+    "transmission": "Infectious",
+    "symptoms": ["Difficulty swallowing", "Fever", "Drooling"],
+    "edliz_treatment_path": "Surgery, IV Antibiotics",
+    "outbreak_status": "Not an outbreak disease",
+    "vital_signs": {
+      "temp_range": "38.0-40.0°C",
+      "hr_range": "90-130 bpm",
+      "rr_range": "18-26 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "early_treatment": {
+        "pharyngitis": "Prompt treatment of throat infections"
+      }
+    },
+    "treatment_protocols": {
+      "surgery": {
+        "drainage": "Surgical drainage required"
+      },
+      "antibiotics": {
+        "regimen": "Cloxacillin 25mg/kg IV 6-hourly + Gentamicin 6mg/kg IV daily"
+      }
+    }
+  },
+  {
+    "name": "Lung Abscess",
+    "icd_11_code": "CA41",
+    "severity": "High",
+    "transmission": "Infectious",
+    "symptoms": ["Fever", "Productive cough", "Chest pain"],
+    "edliz_treatment_path": "Long-term Antibiotics",
+    "outbreak_status": "Not an outbreak disease",
+    "vital_signs": {
+      "temp_range": "37.5-39.5°C",
+      "hr_range": "80-115 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "93%"
+    },
+    "preventive_protocols": {
+      "aspiration_prevention": {
+        "positioning": "Position patients appropriately to prevent aspiration"
+      }
+    },
+    "treatment_protocols": {
+      "antibiotics": {
+        "regimen": "Benzylpenicillin 1.5g IV 6-hourly + Metronidazole 400mg 3 times daily",
+        "duration": "4-8 weeks"
+      },
+      "physiotherapy": {
+        "postural_drainage": "Postural drainage and physiotherapy"
+      },
+      "monitoring": {
+        "cxr": "Repeat CXR at 6 weeks",
+        "referral": "Refer if no resolution"
+      }
+    }
+  },
+  {
+    "name": "Rheumatic Fever",
+    "icd_11_code": "1B90",
+    "severity": "Moderate",
+    "transmission": "Post-streptococcal",
+    "symptoms": ["Joint pain", "Jerky movements"],
+    "edliz_treatment_path": "Benzathine Penicillin",
+    "outbreak_status": "Not an outbreak disease (Complication)",
+    "vital_signs": {
+      "temp_range": "37.5-39.0°C",
+      "hr_range": "75-115 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "streptococcal_treatment": {
+        "sore_throat": "Treat streptococcal sore throat with penicillin"
+      }
+    },
+    "treatment_protocols": {
+      "acute_attack": {
+        "penicillin": "Benzathine Penicillin 0.6-1.2MU IM single dose",
+        "aspirin": "25mg/kg 4 times daily (reduce if tinnitus)",
+        "prednisolone": "1-2mg/kg daily for carditis"
+      },
+      "prophylaxis": {
+        "benzathine_penicillin": "2.4MU IM monthly up to 21-30 years",
+        "amoxicillin": "250mg once daily (alternative)"
+      },
+      "monitoring": {
+        "carditis": "Monitor for heart failure",
+        "esr": "Monitor ESR for disease activity"
+      }
+    }
+  },
+  {
+    "name": "Oral Candidiasis (Thrush)",
+    "icd_11_code": "1F21",
+    "severity": "Low",
+    "transmission": "Fungal",
+    "symptoms": ["White patches on tongue"],
+    "edliz_treatment_path": "Nystatin",
+    "outbreak_status": "Not an outbreak disease",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "risk_factors": {
+        "antibiotics": "Limit unnecessary antibiotics",
+        "diabetes": "Control diabetes"
+      }
+    },
+    "treatment_protocols": {
+      "topical": {
+        "nystatin_suspension": "200,000 units 5 times daily for 7-14 days",
+        "miconazole_gel": "Apply 4 times daily for 7-14 days"
+      },
+      "systemic": {
+        "fluconazole": "200mg twice daily for 7-14 days (for oesophageal candidiasis)"
+      }
+    }
+  },
+  {
+    "name": "Persistent Diarrhoea",
+    "icd_11_code": "1A41",
+    "severity": "Moderate",
+    "transmission": "Infectious",
+    "symptoms": ["Loose stools >14 days"],
+    "edliz_treatment_path": "Zinc, Nutritional support",
+    "outbreak_status": "Not an outbreak disease",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "65-105 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "nutrition": {
+        "breastfeeding": "Exclusive breastfeeding for first 6 months",
+        "weaning": "Gradual introduction of complementary foods"
+      }
+    },
+    "treatment_protocols": {
+      "nutritional_support": {
+        "frequent_feeds": "More frequent, longer breast feeds",
+        "appropriate_food": "Fermented porridge, nutrient-rich foods",
+        "vitamin_a": "Vitamin A supplementation"
+      },
+      "zinc": {
+        "infants": "10mg daily for 10-14 days",
+        "children": "20mg daily for 10-14 days"
+      }
+    }
+  },
+  {
+    "name": "Dysentery",
+    "icd_11_code": "1A42",
+    "severity": "High",
+    "transmission": "Infectious",
+    "symptoms": ["Bloody diarrhoea", "Fever"],
+    "edliz_treatment_path": "Ciprofloxacin",
+    "outbreak_status": "Notifiable",
+    "vital_signs": {
+      "temp_range": "37.5-39.0°C",
+      "hr_range": "75-115 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "hygiene": {
+        "hand_washing": "Wash hands with soap after toilet",
+        "sanitation": "Safe disposal of feces",
+        "food_safety": "Safe food handling"
+      }
+    },
+    "treatment_protocols": {
+      "antibiotics": {
+        "first_line": "Ciprofloxacin 500mg twice daily for 5 days",
+        "alternative": "Ceftriaxone 1g twice daily for 5 days"
+      },
+      "rehydration": {
+        "oral": "ORS for dehydration",
+        "iv": "IV fluids for severe dehydration"
+      }
+    }
+  },
+  {
+    "name": "Intestinal Amoebiasis",
+    "icd_11_code": "1A43",
+    "severity": "Moderate",
+    "transmission": "Infectious",
+    "symptoms": ["Diarrhoea", "Bloody stools", "Abdominal pain"],
+    "edliz_treatment_path": "Metronidazole",
+    "outbreak_status": "Not an outbreak disease",
+    "vital_signs": {
+      "temp_range": "36.5-38.0°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "hygiene": {
+        "hand_washing": "Wash hands with soap after toilet",
+        "water_safety": "Use safe water sources"
+      }
+    },
+    "treatment_protocols": {
+      "amoebic_dysentery": {
+        "metronidazole": "800mg 3 times daily for 5 days",
+        "child": "10mg/kg 3 times daily"
+      },
+      "amoebic_liver_abscess": {
+        "metronidazole": "400mg 3 times daily for 7-10 days"
+      }
+    }
+  },
+  {
+    "name": "Violence/Injuries",
+    "icd_11_code": "PE00",
+    "severity": "Moderate",
+    "transmission": "Social",
+    "symptoms": ["Bruises", "Fractures", "Trauma"],
+    "edliz_treatment_path": "Wound care, Mental health referral",
+    "outbreak_status": "Not an outbreak disease",
+    "vital_signs": {
+      "temp_range": "36.0-37.5°C",
+      "hr_range": "60-110 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-130/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "violence_prevention": {
+        "community": "Community violence prevention programs",
+        "mental_health": "Mental health support"
+      }
+    },
+    "treatment_protocols": {
+      "wound_care": {
+        "cleaning": "Thorough wound cleaning",
+        "dressing": "Appropriate dressing"
+      },
+      "mental_health": {
+        "referral": "Refer for psychological support and counseling"
+      }
+    }
+  },
+  {
+    "name": "Anthrax (Cutaneous)",
+    "icd_11_code": "1B20",
+    "severity": "High",
+    "transmission": "Zoonotic (Contact with infected animals)",
+    "symptoms": ["Painful lesion", "Black eschar", "Fever", "Swelling"],
+    "edliz_treatment_path": "Benzylpenicillin, Doxycycline",
+    "outbreak_status": "Notifiable (Zoonotic)",
+    "vital_signs": {
+      "temp_range": "37.0-39.0°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "animal_control": {
+        "vaccination": "Vaccinate livestock (Veterinary Department)",
+        "quarantine": "Quarantine affected areas",
+        "carcass_disposal": "Burn or deep bury animal carcasses"
+      },
+      "human_prevention": {
+        "avoid_contact": "Avoid contact with sick/dead animals",
+        "protective_clothing": "Wear gloves when handling animals",
+        "cooking": "Cook meat thoroughly"
+      },
+      "surveillance": {
+        "reporting": "Immediate notification using T1 form",
+        "no_lab_specimens": "Do NOT take laboratory specimens (treat clinically)"
+      }
+    },
+    "treatment_protocols": {
+      "severe_cases": {
+        "first_line": "Benzylpenicillin 1-2MU IV 4 times daily initially",
+        "then": "Procaine penicillin 3g IM once daily",
+        "duration": "7-10 days"
+      },
+      "mild_cases": {
+        "regimen": "Doxycycline 200mg first dose, then 100mg once daily",
+        "duration": "7 days"
+      },
+      "pulmonary_anthrax": {
+        "treatment": "Refer to designated Infectious Disease Hospital",
+        "specialist": "Specialist care required"
+      },
+      "wound_care": {
+        "hygiene": "Keep lesion clean and covered",
+        "incision": "Do NOT incise or drain the eschar"
+      }
+    }
+  },
+  {
+    "name": "Plague (Bubonic)",
+    "icd_11_code": "1B30",
+    "severity": "Emergency",
+    "transmission": "Zoonotic (Flea bites, rodents)",
+    "symptoms": ["Sudden fever", "Chills", "Severe headache", "Painful swollen lymph nodes (buboes)"],
+    "edliz_treatment_path": "Streptomycin, Chloramphenicol",
+    "outbreak_status": "Notifiable (Preparedness)",
+    "vital_signs": {
+      "temp_range": ">38.5°C",
+      "hr_range": "90-130 bpm",
+      "rr_range": "18-28 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "rodent_control": {
+        "rat_proofing": "Rat-proof buildings, store food securely",
+        "rodenticide": "Use appropriate rodenticides"
+      },
+      "flea_control": {
+        "insecticides": "Apply insecticides to areas with high flea populations"
+      },
+      "chemoprophylaxis": {
+        "contacts": "Doxycycline 100mg twice daily for 10 days",
+        "healthcare_workers": "Prophylaxis for all exposed staff"
+      },
+      "isolation": {
+        "pneumonic_plague": "Strict respiratory isolation",
+        "bubonic_plague": "Standard precautions"
+      }
+    },
+    "treatment_protocols": {
+      "first_line": {
+        "adult": "Streptomycin 1g IM first dose, then 0.5g 6-hourly",
+        "child": "Streptomycin 5-10mg/kg 6-hourly"
+      },
+      "alternative": {
+        "adult": "Chloramphenicol 12.5-25mg/kg IV 6-hourly",
+        "child": "Chloramphenicol 6.25-12.5mg/kg 6-hourly"
+      },
+      "duration": "10 days",
+      "supportive_care": {
+        "oxygen": "For pneumonic plague",
+        "fluid": "IV fluids for dehydration"
+      },
+      "monitoring": {
+        "vital_signs": "Monitor BP, HR, temperature 4-hourly",
+        "lymph_nodes": "Monitor bubo size and tenderness"
+      }
+    }
+  },
+  {
+    "name": "Rabies",
+    "icd_11_code": "1C40",
+    "severity": "Emergency (100% fatal if untreated)",
+    "transmission": "Zoonotic (Bite from infected animal)",
+    "symptoms": ["Hydrophobia", "Agitation", "Confusion", "Muscle spasms", "Paralysis"],
+    "edliz_treatment_path": "Rabies Vaccine, Human Rabies Immunoglobulin",
+    "outbreak_status": "Notifiable (Endemic)",
+    "vital_signs": {
+      "temp_range": "37.0-39.0°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "animal_vaccination": {
+        "dog_vaccination": "Annual vaccination of dogs (Veterinary Department)",
+        "stray_control": "Control stray dog populations"
+      },
+      "human_pre_exposure": {
+        "high_risk_groups": "Veterinarians, animal handlers, wildlife personnel",
+        "schedule": "Rabies vaccine 0.1ml ID on Day 0 and Day 7",
+        "booster": "Every 2-3 years if serological testing not available"
+      },
+      "community_education": {
+        "bite_management": "Wash wound immediately with soap and water",
+        "avoid_wildlife": "Avoid handling stray or wild animals",
+        "reporting": "Report animal bites to health facility"
+      }
+    },
+    "treatment_protocols": {
+      "wound_care": {
+        "immediate": "Thoroughly wash with soap and water or povidone-iodine",
+        "do_not": "Do not suture wound unless absolutely necessary"
+      },
+      "post_exposure_prophylaxis": {
+        "category_ii": {
+          "definition": "Minor abrasions, scratches without bleeding",
+          "vaccine": "Rabies vaccine 0.1ml ID on Day 0, 3, 7"
+        },
+        "category_iii": {
+          "definition": "Deep bites, mucosal contamination",
+          "vaccine": "Rabies vaccine 0.1ml ID on Day 0, 3, 7",
+          "immunoglobulin": "Human RIG 10 IU/kg infiltrated at wound site"
+        }
+      },
+      "monitoring": {
+        "animal_observation": "Observe animal for 10 days (if possible)",
+        "vaccine_course": "Complete full vaccine course regardless of time since exposure",
+        "symptoms": "Monitor for hydrophobia, agitation, confusion"
+      }
+    }
+  },
+  {
+    "name": "Tick Typhus (African)",
+    "icd_11_code": "1C80",
+    "severity": "Moderate",
+    "transmission": "Vector-borne (Tick bite)",
+    "symptoms": ["Sudden headache", "Fever", "Chills", "Maculopapular rash", "Chancre at bite site"],
+    "edliz_treatment_path": "Doxycycline",
+    "outbreak_status": "Notifiable (Endemic)",
+    "vital_signs": {
+      "temp_range": "37.5-39.5°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "tick_control": {
+        "avoidance": "Avoid tick-infested areas",
+        "protective_clothing": "Wear long sleeves, trousers",
+        "repellents": "Use insect repellents"
+      },
+      "awareness": {
+        "education": "Educate on tick bite prevention",
+        "early_treatment": "Seek treatment early if symptoms appear"
+      }
+    },
+    "treatment_protocols": {
+      "treatment": {
+        "adult": "Doxycycline 200mg first dose, then 100mg once daily",
+        "duration": "7 days"
+      },
+      "monitoring": {
+        "response": "Monitor for clinical improvement",
+        "complications": "Watch for CNS involvement"
+      },
+      "referral": {
+        "criteria": "If no improvement after 7 days, refer for further evaluation"
+      }
+    }
+  },
+  {
+    "name": "Polio / Acute Flaccid Paralysis",
+    "icd_11_code": "1C80",
+    "severity": "High",
+    "transmission": "Fecal-oral (Waterborne)",
+    "symptoms": ["Acute flaccid paralysis", "Fever", "Muscle weakness", "Difficulty swallowing"],
+    "edliz_treatment_path": "Supportive care, Rehabilitation",
+    "outbreak_status": "Notifiable (Surveillance)",
+    "vital_signs": {
+      "temp_range": "36.5-38.5°C",
+      "hr_range": "70-110 bpm",
+      "rr_range": "14-22 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "routine": "OPV1, OPV2, OPV3 at 6, 10, 14 weeks; IPV at 9 and 14 weeks",
+        "campaigns": "National Immunization Days (NIDs) when indicated",
+        "catch_up": "Vaccinate all under-vaccinated children"
+      },
+      "surveillance": {
+        "case_definition": "Acute flaccid paralysis in a child < 15 years",
+        "reporting": "Immediate notification using T1 form",
+        "stool_collection": "Collect two stool samples 24 hours apart, within 14 days of paralysis"
+      },
+      "contact_tracing": {
+        "immunization": "Vaccinate all contacts < 15 years",
+        "investigation": "Investigate all AFP cases within 48 hours"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "pain_management": "Paracetamol 10-15mg/kg 6-hourly",
+        "physiotherapy": "Physical therapy to prevent contractures",
+        "positioning": "Position patient to avoid pressure ulcers"
+      },
+      "respiratory_support": {
+        "bulbar_polio": "Monitor for respiratory failure",
+        "ventilation": "Mechanical ventilation if needed"
+      },
+      "management": {
+        "hydration": "IV fluids if swallowing difficulty",
+        "nutrition": "High-calorie diet via NG tube if needed"
+      },
+      "follow_up": {
+        "long_term": "Rehabilitation and physiotherapy",
+        "assistive_devices": "Provide calipers, wheelchairs as needed"
+      }
+    }
+  },
+  {
+    "name": "Hepatitis A",
+    "icd_11_code": "1D50",
+    "severity": "Moderate",
+    "transmission": "Fecal-oral (Contaminated water/food)",
+    "symptoms": ["Fatigue", "Jaundice", "Dark urine", "Nausea", "Abdominal pain"],
+    "edliz_treatment_path": "Supportive care",
+    "outbreak_status": "Notifiable (Waterborne)",
+    "vital_signs": {
+      "temp_range": "36.5-38.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": true,
+        "vaccine_type": "Hepatitis A vaccine (Havrix, VAQTA)",
+        "schedule": "Not currently in Zimbabwe EPI schedule",
+        "target": "High-risk groups, travelers"
+      },
+      "water_sanitation": {
+        "boil_water": "Boil drinking water during outbreaks",
+        "safe_sources": "Use protected water sources",
+        "hand_washing": "Wash hands before eating and after toilet"
+      },
+      "food_safety": {
+        "cook_thoroughly": "Cook food thoroughly",
+        "avoid_raw": "Avoid raw/undercooked food"
+      },
+      "notification": {
+        "reporting": "Notify using T1 form"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "rest": "Adequate rest",
+        "hydration": "Encourage fluid intake",
+        "nutrition": "High calorie diet",
+        "avoid": "Avoid alcohol, hepatotoxic drugs"
+      },
+      "monitoring": {
+        "lfts": "Monitor liver function tests",
+        "bilirubin": "Monitor jaundice"
+      },
+      "recovery": "Usually self-limiting in 4-6 weeks"
+    }
+  },
+  {
+    "name": "Hepatitis E",
+    "icd_11_code": "1D51",
+    "severity": "Moderate (High in pregnancy)",
+    "transmission": "Fecal-oral (Contaminated water/food)",
+    "symptoms": ["Fatigue", "Jaundice", "Dark urine", "Nausea", "Abdominal pain"],
+    "edliz_treatment_path": "Supportive care",
+    "outbreak_status": "Notifiable (Waterborne)",
+    "vital_signs": {
+      "temp_range": "36.5-38.5°C",
+      "hr_range": "60-100 bpm",
+      "rr_range": "12-20 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "water_sanitation": {
+        "boil_water": "Boil drinking water during outbreaks",
+        "safe_sources": "Use protected water sources",
+        "hand_washing": "Wash hands before eating and after toilet"
+      },
+      "food_safety": {
+        "cook_thoroughly": "Cook food thoroughly"
+      },
+      "notification": {
+        "reporting": "Notify using T1 form"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "rest": "Adequate rest",
+        "hydration": "Encourage fluid intake",
+        "nutrition": "High calorie diet",
+        "avoid": "Avoid alcohol, hepatotoxic drugs"
+      },
+      "pregnancy": {
+        "high_risk": "High risk of mortality in pregnancy - refer immediately",
+        "monitoring": "Monitor for signs of acute liver failure"
+      },
+      "monitoring": {
+        "lfts": "Monitor liver function tests",
+        "bilirubin": "Monitor jaundice"
+      }
+    }
+  },
+  {
+    "name": "Yellow Fever",
+    "icd_11_code": "1D80",
+    "severity": "Emergency",
+    "transmission": "Vector-borne (Mosquito)",
+    "symptoms": ["Sudden fever", "Jaundice", "Haemorrhage", "Muscle pain", "Vomiting"],
+    "edliz_treatment_path": "Supportive care",
+    "outbreak_status": "Notifiable (Preparedness)",
+    "vital_signs": {
+      "temp_range": ">38.5°C",
+      "hr_range": "90-140 bpm",
+      "rr_range": "20-30 bpm",
+      "bp_target": "<90/60 mmHg",
+      "spo2_min": "91%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "available": true,
+        "vaccine_type": "Yellow Fever vaccine",
+        "schedule": "Single dose (for travelers, high-risk areas)",
+        "target": "Travelers to endemic areas, populations in risk zones"
+      },
+      "vector_control": {
+        "mosquito_control": "Control Aedes mosquito populations",
+        "protective_clothing": "Wear long sleeves, use repellents"
+      },
+      "surveillance": {
+        "case_definition": "Acute fever + jaundice + haemorrhagic symptoms + epidemiological link",
+        "reporting": "IMMEDIATE NOTIFICATION using T1 form"
+      }
+    },
+    "treatment_protocols": {
+      "supportive_care": {
+        "fluid_resuscitation": "IV fluids for dehydration",
+        "electrolytes": "Monitor and correct electrolyte imbalances",
+        "oxygen": "Supplemental oxygen",
+        "nutrition": "High-calorie nutritional support"
+      },
+      "symptom_management": {
+        "fever": "Paracetamol (avoid NSAIDs - bleeding risk)",
+        "pain": "Morphine for severe pain"
+      },
+      "referral": "All suspected cases to designated treatment facility"
+    }
+  },
+  {
+    "name": "Noma (Cancrum Oris)",
+    "icd_11_code": "DA02",
+    "severity": "Emergency",
+    "transmission": "Infectious/Nutritional",
+    "symptoms": ["Facial swelling", "Gangrenous ulcer", "Fever", "Pain", "Foul odor"],
+    "edliz_treatment_path": "Antibiotics, Nutritional support, Surgery",
+    "outbreak_status": "Notifiable (Emergency)",
+    "vital_signs": {
+      "temp_range": "37.5-39.5°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "94%"
+    },
+    "preventive_protocols": {
+      "nutrition": {
+        "malnutrition_prevention": "Prevent and treat malnutrition in children",
+        "vitamin_supplementation": "Vitamin A supplementation",
+        "breastfeeding": "Promote exclusive breastfeeding"
+      },
+      "oral_hygiene": {
+        "oral_care": "Encourage good oral hygiene",
+        "early_treatment": "Treat oral infections promptly"
+      },
+      "surveillance": {
+        "reporting": "Immediate notification using T1 form"
+      }
+    },
+    "treatment_protocols": {
+      "antibiotics": {
+        "first_line": "Benzylpenicillin 2.5MU IV 4 times daily",
+        "alternative": "Ceftriaxone 1g IV twice daily",
+        "duration": "7-14 days"
+      },
+      "nutritional_support": {
+        "high_calorie": "High protein, high energy diet",
+        "vitamins": "Multivitamin supplementation"
+      },
+      "surgery": {
+        "debridement": "Surgical debridement of necrotic tissue",
+        "reconstruction": "Reconstructive surgery after infection controlled"
+      },
+      "monitoring": {
+        "progression": "Monitor for progression of gangrene",
+        "hydration": "Monitor hydration status"
+      },
+      "referral": "All cases to maxillofacial surgeons at central hospital"
+    }
+  },
+  {
+    "name": "Rotavirus Diarrhoea",
+    "icd_11_code": "1A40",
+    "severity": "Moderate",
+    "transmission": "Fecal-oral",
+    "symptoms": ["Watery diarrhoea", "Vomiting", "Fever", "Dehydration"],
+    "edliz_treatment_path": "ORS, Zinc, Supportive care",
+    "outbreak_status": "Vaccine-preventable (Seasonal)",
+    "vital_signs": {
+      "temp_range": "36.5-38.5°C",
+      "hr_range": "80-120 bpm",
+      "rr_range": "16-24 bpm",
+      "bp_target": "90/60-120/80 mmHg",
+      "spo2_min": "95%"
+    },
+    "preventive_protocols": {
+      "vaccination": {
+        "routine": "Rotavirus vaccine at 6, 10, 14 weeks (Oral)",
+        "schedule": "2-3 drops per dose"
+      },
+      "hygiene": {
+        "hand_washing": "Wash hands with soap after toilet",
+        "sanitation": "Safe disposal of faeces",
+        "breastfeeding": "Promote exclusive breastfeeding for first 6 months"
+      },
+      "education": {
+        "community": "Educate on diarrhoea prevention and ORT"
+      }
+    },
+    "treatment_protocols": {
+      "rehydration": {
+        "plan_a": "ORS at home for no dehydration",
+        "plan_b": "ORS at facility for some dehydration",
+        "plan_c": "IV fluids for severe dehydration"
+      },
+      "zinc_supplementation": {
+        "infants": "10mg daily for 10-14 days",
+        "children": "20mg daily for 10-14 days"
+      },
+      "nutrition": {
+        "breastfeeding": "Continue breastfeeding",
+        "diet": "Nutritious, easily digestible food"
+      },
+      "antibiotics": "NOT indicated (viral cause)"
+    }
+  }
 ]

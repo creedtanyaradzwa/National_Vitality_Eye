@@ -8,8 +8,16 @@ const {
     baseNormalise
 } = require('../utils/normalise');
 
+const { PRETRAIN_WEIGHT } = require('./pretrainer');
+
 class ContinuousLearner {
-    constructor() {
+    /**
+     * @param {Map<string,object>|null} pretrainedPatterns
+     *   Optional Map returned by pretrainer.loadBaseline().
+     *   When supplied the AI boots with knowledge of every disease in
+     *   trainer2.json, even on an empty MongoDB database.
+     */
+    constructor(pretrainedPatterns = null) {
         // Core data structures
         this.diseasePatterns = new Map();
         this.symptomCorrelations = new Map();
@@ -35,9 +43,63 @@ class ContinuousLearner {
         // Cache for patient data
         this.patientCache = new Map();
         this.lastPatientCacheUpdate = null;
+
+        // ── Pre-training ────────────────────────────────────────────────
+        // Seed the AI with EDLIZ-backed baseline patterns before any real
+        // records are processed. This keeps the AI useful on first boot.
+        if (pretrainedPatterns && pretrainedPatterns.size > 0) {
+            this._loadPretrainedBaseline(pretrainedPatterns);
+            console.log(`🧬 Pre-trained baseline loaded: ${pretrainedPatterns.size} diseases seeded`);
+        }
         
-        console.log("🤖 Enhanced Clinical AI v4.0 initialized (Production Ready)");
-        console.log("   Features: Disease Prediction | Risk Assessment | Anomaly Detection | Patient Similarity | Confidence Calibration");
+        console.log("🤖 Enhanced Clinical AI v5.0 initialized (Pre-trained + Continuous Learning)");
+        console.log("   Features: Pre-trained Baseline | Disease Prediction | Risk Assessment | Anomaly Detection | Patient Similarity | Confidence Calibration");
+    }
+
+    // ============ PRE-TRAINING ============
+
+    /**
+     * Injects pre-trained patterns into diseasePatterns.
+     * Each pattern is copied from pretrainer output and all symptom
+     * keys are also registered in the global uniqueSymptoms set.
+     */
+    _loadPretrainedBaseline(pretrainedPatterns) {
+        pretrainedPatterns.forEach((pattern, key) => {
+            // Register all pre-trained symptoms in the global symbol set
+            if (pattern.symptoms instanceof Map) {
+                pattern.symptoms.forEach((_, symptom) => {
+                    this.uniqueSymptoms.add(symptom);
+                });
+            }
+
+            // Deep-copy so future mutations on the pattern don't corrupt
+            // the original pretrainer object (not strictly necessary but safe)
+            this.diseasePatterns.set(key, {
+                ...pattern,
+                // Ensure Maps are live objects (spread gives us the same ref, that's fine —
+                // pretrainer is loaded once and discarded after this point)
+            });
+        });
+    }
+
+    /**
+     * Returns pretraining metadata for a disease, or null if not pre-trained.
+     */
+    getPretrainInfo(diseaseKey) {
+        const pattern = this.diseasePatterns.get(diseaseKey);
+        if (!pattern || !pattern.isPretrained) return null;
+        return {
+            pretrainedCount: pattern.pretrainedCount || PRETRAIN_WEIGHT,
+            realCount:       pattern.realCount || 0,
+            totalCount:      pattern.count,
+            isPrimarilyReal: (pattern.realCount || 0) > (pattern.pretrainedCount || PRETRAIN_WEIGHT),
+            edlizTreatment:  pattern.edlizTreatment  || null,
+            icd11Code:       pattern.icd11Code        || null,
+            severity:        pattern.severity         || null,
+            transmission:    pattern.transmission     || null,
+            vitalRanges:     pattern.vitalRanges      || null,
+            clinicalProtocols: pattern.clinicalProtocols || null
+        };
     }
 
     // ============ HELPER FUNCTIONS ============
@@ -153,8 +215,6 @@ class ContinuousLearner {
             this.diseasePatterns.set(disease, {
                 count: 0,
                 symptoms: new Map(),
-
-                
                 provinces: new Map(),
                 monthlyTrend: new Array(12).fill(0),
                 yearlyTrend: new Map(),
@@ -175,12 +235,17 @@ class ContinuousLearner {
                     respiratoryRate: { sum: 0, count: 0, avg: null }
                 },
                 chronicConditions: new Map(),
-                familyHistory: new Map()
+                familyHistory: new Map(),
+                // Not pre-trained — pure real-data entry
+                isPretrained: false,
+                realCount: 0,
+                pretrainedCount: 0
             });
         }
         
         const pattern = this.diseasePatterns.get(disease);
         pattern.count++;
+        pattern.realCount = (pattern.realCount || 0) + 1;
         pattern.lastSeen = new Date();
         
         // Update symptoms
@@ -209,6 +274,12 @@ class ContinuousLearner {
         pattern.yearlyTrend.set(yearKey, yearCurrent + 1);
         
         // Update vital signs averages
+        // ── Weighted merge strategy ────────────────────────────────────────
+        // When a disease has a pre-trained baseline, real vital sign readings
+        // are accumulated into the same running totals. Because the pre-trained
+        // sums were seeded at (avg * PRETRAIN_WEIGHT), each new real reading
+        // naturally dilutes the baseline towards local ground-truth values.
+        // No special logic is needed — the standard running average handles it.
         if (vitals.temperature && typeof vitals.temperature === 'number') {
             pattern.vitalSignsAverages.temperature.sum += vitals.temperature;
             pattern.vitalSignsAverages.temperature.count++;
@@ -627,6 +698,9 @@ class ContinuousLearner {
             confidence = this.calibrateConfidence(confidence, disease, pattern.count);
             
             if (confidence > this.minimumConfidence) {
+                const realCount       = pattern.realCount       || 0;
+                const pretrainedCount = pattern.pretrainedCount || 0;
+
                 predictions.push({
                     disease,
                     confidence: Math.round(confidence * 10) / 10,
@@ -656,7 +730,40 @@ class ContinuousLearner {
                             condition, 
                             prevalence: Math.min(100, Math.round((count / pattern.count) * 100))
                         })),
-                    lastSeen: pattern.lastSeen
+                    lastSeen: pattern.lastSeen,
+
+                    // ── Data source transparency ───────────────────────────────
+                    // Tells the frontend (and clinicians) how much of this
+                    // prediction is grounded in local real-world data vs the
+                    // pre-trained EDLIZ baseline.
+                    dataSource: {
+                        pretrainedRecords: pretrainedCount,
+                        realRecords:       realCount,
+                        totalWeight:       pattern.count,
+                        isPrimarilyReal:   realCount > pretrainedCount,
+                        realDataPercent:   pattern.count > 0
+                            ? Math.round((realCount / pattern.count) * 100)
+                            : 0,
+                        // Clinical metadata from EDLIZ pretraining (null if not pre-trained)
+                        edlizTreatment: pattern.edlizTreatment  || null,
+                        icd11Code:      pattern.icd11Code        || null,
+                        severity:       pattern.severity         || null,
+                        transmission:   pattern.transmission     || null,
+                        vitalRanges:    pattern.vitalRanges      || null
+                    },
+
+                    // ── Clinical protocol recommendations ──────────────────────
+                    // These come EXCLUSIVELY from the pre-trained EDLIZ knowledge
+                    // base (trainer2.json). They are fixed clinical facts and are
+                    // NEVER derived from or filtered by medical records — so they
+                    // are always present and always accurate, even on day one.
+                    treatmentRecommendations:  pattern.clinicalProtocols?.treatmentLines  || [],
+                    preventiveRecommendations: pattern.clinicalProtocols?.preventionLines || [],
+                    outbreakStatus:            pattern.outbreakStatus || null,
+
+                    // Structured raw protocols for detail panels / PDF export
+                    treatmentProtocols:  pattern.clinicalProtocols?.treatmentProtocols  || null,
+                    preventiveProtocols: pattern.clinicalProtocols?.preventiveProtocols || null
                 });
             }
         });
@@ -667,7 +774,7 @@ class ContinuousLearner {
             predictions: predictions.slice(0, 5),
             basedOnRecords: this.totalRecords,
             lastUpdated: this.lastUpdated,
-            enhancedWith: ["Vital Signs", "Chronic Conditions", "Family History", "Confidence Calibration"],
+            enhancedWith: ["Pre-trained EDLIZ Baseline", "Vital Signs", "Chronic Conditions", "Family History", "Confidence Calibration"],
             calibrationMetrics: {
                 totalPredictions: this.totalPredictions,
                 correctPredictions: this.correctPredictions,
@@ -873,9 +980,16 @@ class ContinuousLearner {
     // ============ STATISTICS ============
 
     getStats() {
+        const pretrainedDiseases = Array.from(this.diseasePatterns.values())
+            .filter(p => p.isPretrained).length;
+        const pureRealDiseases = Array.from(this.diseasePatterns.values())
+            .filter(p => !p.isPretrained).length;
+
         return {
             totalRecords: this.totalRecords,
             diseasesTracked: this.diseasePatterns.size,
+            pretrainedDiseases,
+            pureRealDiseases,
             provincesTracked: this.provinceStats.size,
             symptomCorrelations: this.symptomCorrelations.size,
             chronicConditionCorrelations: this.chronicConditionCorrelations.size,
@@ -896,6 +1010,8 @@ class ContinuousLearner {
                 .map(([disease, data]) => ({
                     disease,
                     cases: data.count,
+                    realCases: data.realCount || 0,
+                    isPretrained: data.isPretrained || false,
                     recoveryRate: data.count > 0 ? Math.min(100, Math.round((data.outcomes.recovered / data.count) * 100)) : 0,
                     mortalityRate: data.count > 0 ? Math.min(100, Math.round((data.outcomes.deceased / data.count) * 100)) : 0,
                     mostAffectedAgeGroup: Object.entries(data.ageGroups).sort((a, b) => b[1] - a[1])[0]?.[0],

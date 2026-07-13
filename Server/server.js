@@ -19,6 +19,7 @@ const ContinuousLearner = require("./ai/continuousLearner");
 const AlertEmitter = require("./ai/alertEmitter");
 const RealTimeLearner = require("./ai/realTimeLearner");
 const OutbreakDetector = require("./ai/outbreakDetector");
+const Pretrainer = require("./ai/pretrainer");
 const MedicalRecord = require("./models/MedicalRecord");
 const Patient = require("./models/Patient");
 
@@ -149,8 +150,16 @@ async function initializeAI() {
     try {
         console.log("\n🧠 Initializing Enhanced Clinical AI...");
         const startTime = Date.now();
-        
-        const ai = new ContinuousLearner();
+
+        // ── STEP 1: Load EDLIZ-backed pre-trained baseline ──────────────
+        // This runs synchronously from disk and takes < 50 ms.
+        // The AI will be usable for predictions immediately — even on an
+        // empty MongoDB database.
+        console.log("🧬 Loading pre-trained EDLIZ baseline...");
+        const pretrainedPatterns = Pretrainer.loadBaseline();
+
+        // ── STEP 2: Create AI with pre-trained patterns injected ────────
+        const ai = new ContinuousLearner(pretrainedPatterns);
         const emitter = new AlertEmitter(io);
 
         // 1. Load all patients into a Map first. 
@@ -165,7 +174,7 @@ async function initializeAI() {
         console.log(`✅ Indexed ${patientMap.size} patients`);
 
         // 2. Stream medical records and use the patientMap for demographics
-        console.log("📚 Training AI with medical records...");
+        console.log("📚 Continuous-learning: training AI with real medical records...");
         const cursor = MedicalRecord.find({})
             .select({
                 disease: 1, symptoms: 1, province: 1, visitDate: 1,
@@ -194,8 +203,9 @@ async function initializeAI() {
         }
         
         const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-        console.log(`\n✅ AI trained with ${count} records in ${duration}s`);
-        console.log(`📊 Tracking ${ai.diseasePatterns.size} diseases`);
+        console.log(`\n✅ AI trained with ${count} real records in ${duration}s`);
+        console.log(`📊 Tracking ${ai.diseasePatterns.size} diseases (${pretrainedPatterns.size} pre-trained baseline + real data)`);
+        console.log(`   Real-data diseases: ${count > 0 ? [...ai.diseasePatterns.values()].filter(p => p.realCount > 0).length : 0}`);
         
         // Store references
         realTimeAI = ai;
