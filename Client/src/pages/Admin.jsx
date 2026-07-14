@@ -637,7 +637,7 @@ const Admin = () => {
                                         </h3>
                                         <div className="space-y-2">
                                             {Object.entries(selectedUserDetails.documents.documents).map(([key, url]) => (
-                                                <a key={key} href={`http://localhost:5000${url}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                                                <a key={key} href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${url}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
                                                     <span className="text-gray-300 capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
                                                     <DocumentTextIcon className="h-5 w-5 text-purple-400 group-hover:scale-110 transition" />
                                                 </a>
@@ -723,7 +723,7 @@ const Admin = () => {
                                 {documents.documents && Object.keys(documents.documents).length > 0 ? (
                                     <div className="space-y-3">
                                         {Object.entries(documents.documents).map(([key, url]) => (
-                                            <a key={key} href={`http://localhost:5000${url}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
+                                            <a key={key} href={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${url}`} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all duration-300 group">
                                                 <div>
                                                     <p className="text-white font-medium capitalize">{key.replace(/([A-Z])/g, ' $1').trim()}</p>
                                                     <p className="text-xs text-gray-500 mt-1">Click to view</p>

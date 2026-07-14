@@ -16,7 +16,7 @@ import {
 } from 'recharts';
 import toast from 'react-hot-toast';
 
-const PORTAL_API = 'http://localhost:5000/api/patient';
+const PORTAL_API = `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/patient`;
 
 const VitalCard = ({ anomaly }) => {
     const isHigh = anomaly.severity === 'HIGH';

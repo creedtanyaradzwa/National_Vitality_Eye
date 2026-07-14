@@ -14,7 +14,7 @@ const PatientVerify = () => {
     // Wrap verifyEmail in useCallback to prevent recreation
     const verifyEmail = useCallback(async (token) => {
         try {
-            const response = await axios.get(`http://localhost:5000/api/patient/verify?token=${token}`);
+            const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/patient/verify?token=${token}`);
             
             if (response.data.success) {
                 setSuccess(true);

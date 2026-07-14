@@ -29,9 +29,10 @@ function AlertProvider({ children }) {
 
         console.log('🔌 Attempting WebSocket connection...');
 
-        const socketUrl = window.location.hostname === 'localhost' 
-            ? 'http://localhost:5000' 
-            : `http://${window.location.hostname}:5000`;
+        const socketUrl = import.meta.env.VITE_API_URL ||
+            (window.location.hostname === 'localhost'
+                ? 'http://localhost:5000'
+                : `https://${window.location.hostname}`);
 
         // If socket exists and is connected, don't reconnect
         if (socketRef.current?.connected) {

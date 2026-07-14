@@ -24,7 +24,7 @@ const PatientMedicalRecords = () => {
         try {
             const token = localStorage.getItem('patientToken');
             if (!token) { navigate('/patient/login'); return; }
-            const response = await fetch('http://localhost:5000/api/patient/records', {
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/patient/records`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();

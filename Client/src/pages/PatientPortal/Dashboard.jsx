@@ -38,13 +38,14 @@ const PatientDashboard = () => {
             const token = localStorage.getItem('patientToken');
             if (!token) { navigate('/patient/login'); return; }
             const h = { 'Authorization': `Bearer ${token}` };
+            const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
             await Promise.allSettled([
-                fetch('http://localhost:5000/api/patient/profile', { headers: h })
+                fetch(`${BASE}/api/patient/profile`, { headers: h })
                     .then(r => r.ok ? r.json() : null)
                     .then(d => { if (d?.stats) setStats(d.stats); }),
 
-                fetch('http://localhost:5000/api/patient/records', { headers: h })
+                fetch(`${BASE}/api/patient/records`, { headers: h })
                     .then(r => r.ok ? r.json() : null)
                     .then(d => {
                         const recs = Array.isArray(d) ? d : (d?.records || []);
@@ -52,7 +53,7 @@ const PatientDashboard = () => {
                         setStats(prev => ({ ...prev, totalRecords: prev.totalRecords || recs.length }));
                     }),
 
-                fetch('http://localhost:5000/api/patient/ai/health-summary', { headers: h })
+                fetch(`${BASE}/api/patient/ai/health-summary`, { headers: h })
                     .then(r => r.ok ? r.json() : null)
                     .then(d => { if (d) setAiSummary(d); }),
             ]);
