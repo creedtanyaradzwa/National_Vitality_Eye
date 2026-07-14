@@ -638,10 +638,23 @@ async function buildDiseasePeriodAnalytics({ MedicalRecord, baseMatch, period = 
         MedicalRecord.aggregate([{ $match: current }, { $group: { _id: '$disposition', count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
         MedicalRecord.aggregate([{ $match: current }, { $group: { _id: '$visitType', count: { $sum: 1 } } }]),
         MedicalRecord.aggregate([
-            { $match: { ...current, symptoms: { $exists: true, $ne: [] } } },
-            { $unwind: '$symptoms' },
-            { $group: { _id: '$symptoms', count: { $sum: 1 } } },
-            { $sort: { count: -1 } }
+            { $match: { ...current, $or: [
+                { symptoms: { $exists: true, $ne: [] } },
+                { 'presentingComplaints.symptom': { $exists: true } }
+            ] } },
+            { $facet: {
+                fromSymptoms: [
+                    { $match: { symptoms: { $exists: true, $ne: [] } } },
+                    { $unwind: '$symptoms' },
+                    { $group: { _id: '$symptoms', count: { $sum: 1 } } }
+                ],
+                fromComplaints: [
+                    { $match: { 'presentingComplaints.0': { $exists: true } } },
+                    { $unwind: '$presentingComplaints' },
+                    { $match: { 'presentingComplaints.symptom': { $exists: true, $ne: '' } } },
+                    { $group: { _id: '$presentingComplaints.symptom', count: { $sum: 1 } } }
+                ]
+            } }
         ]),
         MedicalRecord.aggregate([
             { $match: current },
@@ -688,7 +701,19 @@ async function buildDiseasePeriodAnalytics({ MedicalRecord, baseMatch, period = 
         return acc;
     }, {});
 
-    const topSymptomsList = symptoms.map((s) => ({
+    // Merge symptoms from both sources (symptoms[] array + presentingComplaints[].symptom)
+    const rawSymptoms = symptoms[0] || { fromSymptoms: [], fromComplaints: [] };
+    const mergedSymptomMap = new Map();
+    [...(rawSymptoms.fromSymptoms || []), ...(rawSymptoms.fromComplaints || [])].forEach(s => {
+        if (!s._id) return;
+        const existing = mergedSymptomMap.get(s._id) || 0;
+        mergedSymptomMap.set(s._id, existing + s.count);
+    });
+    const mergedSymptoms = Array.from(mergedSymptomMap.entries())
+        .map(([id, count]) => ({ _id: id, count }))
+        .sort((a, b) => b.count - a.count);
+
+    const topSymptomsList = mergedSymptoms.map((s) => ({
         symptom: s._id,
         count: s.count,
         percentage: totalInPeriod > 0 ? clampPercent((s.count / totalInPeriod) * 100) : 0
