@@ -7,7 +7,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [
     react(),
     VitePWA({
@@ -39,10 +39,12 @@ export default defineConfig({
       }
     })
   ],
+  // Use /showcase/ for production builds (GitHub Pages), / for local dev
+  base: command === 'build' ? '/showcase/' : '/',
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
   },
-})
+}))

@@ -638,7 +638,8 @@ async function buildDiseasePeriodAnalytics({ MedicalRecord, baseMatch, period = 
         MedicalRecord.aggregate([{ $match: current }, { $group: { _id: '$disposition', count: { $sum: 1 } } }, { $sort: { count: -1 } }]),
         MedicalRecord.aggregate([{ $match: current }, { $group: { _id: '$visitType', count: { $sum: 1 } } }]),
         MedicalRecord.aggregate([
-            { $match: { ...current, $or: [
+            { $match: current },
+            { $match: { $or: [
                 { symptoms: { $exists: true, $ne: [] } },
                 { 'presentingComplaints.symptom': { $exists: true } }
             ] } },
@@ -684,22 +685,28 @@ async function buildDiseasePeriodAnalytics({ MedicalRecord, baseMatch, period = 
     const totalRecords = await MedicalRecord.countDocuments();
     const totalOutcomes = outcomes.reduce((s, o) => s + o.count, 0);
 
-    const provinceBreakdown = provinces.map((p) => ({
-        province: p._id,
-        count: p.count,
-        percentage: totalInPeriod > 0 ? clampPercent((p.count / totalInPeriod) * 100) : 0
-    }));
+    const provinceBreakdown = provinces
+        .filter(p => p._id)
+        .map((p) => ({
+            province: p._id,
+            count: p.count,
+            percentage: totalInPeriod > 0 ? clampPercent((p.count / totalInPeriod) * 100) : 0
+        }));
     const primaryHotspotInfo = resolvePrimaryHotspots(provinceBreakdown);
     const projections = buildMonthlyProjections(monthlyTrend, 3);
     const trendInsight = generateTrendInsight(monthlyTrend, projections, diseaseLabel);
 
     const outcomesMap = outcomes.reduce((acc, o) => {
-        acc[o._id || 'Unknown'] = {
+        const key = o._id || 'Unknown';
+        acc[key] = {
             count: o.count,
             percentage: totalOutcomes > 0 ? clampPercent((o.count / totalOutcomes) * 100) : 0
         };
         return acc;
     }, {});
+    // Remove null/empty keys that break frontend rendering
+    delete outcomesMap[null];
+    delete outcomesMap[''];
 
     // Merge symptoms from both sources (symptoms[] array + presentingComplaints[].symptom)
     const rawSymptoms = symptoms[0] || { fromSymptoms: [], fromComplaints: [] };

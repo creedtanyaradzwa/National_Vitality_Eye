@@ -625,11 +625,11 @@ const Analytics = () => {
                                         )}
                                     </div>
                                     <div className={`px-4 py-2 rounded-xl border font-black tracking-widest text-sm ${
-                                        diseaseInsights.summary?.riskLevel === 'CRITICAL' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
-                                        diseaseInsights.summary?.riskLevel === 'HIGH' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' :
+                                        diseaseInsights?.summary?.riskLevel === 'CRITICAL' ? 'bg-red-500/20 text-red-400 border-red-500/30' :
+                                        diseaseInsights?.summary?.riskLevel === 'HIGH' ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' :
                                         'bg-blue-500/20 text-blue-400 border-blue-500/30'
                                     }`}>
-                                        {diseaseInsights.summary?.riskLevel} RISK
+                                        {diseaseInsights?.summary?.riskLevel || 'MODERATE'} RISK
                                     </div>
                                 </div>
                             </div>

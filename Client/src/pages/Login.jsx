@@ -151,12 +151,12 @@ const Login = () => {
                             <div className="flex justify-between items-center">
                                 <div>
                                     <p className="text-[8px] font-bold text-cyber-blue/50 uppercase mb-1">Node ID</p>
-                                    <p className="text-sm font-mono text-white tracking-wider">SYS1000</p>
+                                    <p className="text-sm font-mono text-white tracking-wider">CHE9376</p>
                                 </div>
                                 <div className="h-8 w-px bg-white/5" />
                                 <div className="text-right">
                                     <p className="text-[8px] font-bold text-cyber-blue/50 uppercase mb-1">Access Key</p>
-                                    <p className="text-sm font-mono text-white tracking-wider">SYS@2026</p>
+                                    <p className="text-sm font-mono text-white tracking-wider">Staff@2026</p>
                                 </div>
                             </div>
                         </div>
