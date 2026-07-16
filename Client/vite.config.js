@@ -20,17 +20,18 @@ export default defineConfig(({ command }) => ({
         theme_color: '#0a0a0b',
         background_color: '#0a0a0b',
         display: 'standalone',
-        start_url: '/',
+        start_url: '/showcase/',
+        scope: '/showcase/',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'vite.svg',
             sizes: '192x192',
-            type: 'image/png'
+            type: 'image/svg+xml'
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'vite.svg',
             sizes: '512x512',
-            type: 'image/png'
+            type: 'image/svg+xml'
           }
         ]
       },

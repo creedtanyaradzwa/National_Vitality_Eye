@@ -20,7 +20,7 @@ const ForgotPassword = () => {
         
         setLoading(true);
         try {
-            await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/patient/forgot-password`, { email });
+            await axios.post(`${import.meta.env.VITE_API_URL }/api/patient/forgot-password`, { email });
             setSubmitted(true);
             toast.success('If an account exists, a reset link has been sent');
         } catch  {

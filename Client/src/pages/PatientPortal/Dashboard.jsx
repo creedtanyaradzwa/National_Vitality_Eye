@@ -38,7 +38,7 @@ const PatientDashboard = () => {
             const token = localStorage.getItem('patientToken');
             if (!token) { navigate('/patient/login'); return; }
             const h = { 'Authorization': `Bearer ${token}` };
-            const BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const BASE = import.meta.env.VITE_API_URL ;
 
             await Promise.allSettled([
                 fetch(`${BASE}/api/patient/profile`, { headers: h })
