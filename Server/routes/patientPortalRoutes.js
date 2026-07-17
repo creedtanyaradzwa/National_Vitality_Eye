@@ -6,6 +6,7 @@ const Patient = require("../models/Patient");
 const MedicalRecord = require("../models/MedicalRecord");
 const User = require("../models/User");
 const { predictTriagePriority } = require("../utils/triageAI");
+const { normaliseSymptoms, normaliseProvince } = require("../utils/normalise");
 
 // ── Shared helper: verify patient JWT and return patient doc ──────────────
 async function getPatientFromToken(req) {
@@ -730,9 +731,12 @@ router.post("/ai/symptom-check", async (req, res) => {
         try {
             const realTimeAI = req.app?.locals?.aiInstance;
             if (realTimeAI) {
+                // Normalise symptoms so they match the AI model's stored pattern keys
+                const normalisedSymptoms = normaliseSymptoms(symptoms);
+                const normalisedProvince = normaliseProvince(patient.province || "Harare");
                 const result = realTimeAI.predictDisease(
-                    symptoms,
-                    patient.province || "Harare",
+                    normalisedSymptoms,
+                    normalisedProvince,
                     new Date().getMonth(),
                     patient.age,
                     patient.gender

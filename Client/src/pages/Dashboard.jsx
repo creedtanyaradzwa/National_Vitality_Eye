@@ -10,15 +10,43 @@ import StatsCards from '../components/dashboard/StatsCards';
 import RecentAlerts from '../components/dashboard/RecentAlerts';
 import DiseaseChart from '../components/dashboard/DiseaseChart';
 import CitizenSignalsFeed from '../components/dashboard/CitizenSignalsFeed';
+import TRAINER2 from '../data/trainer2.json';
 import {
-    SparklesIcon, ArrowPathIcon, CpuChipIcon, MapIcon, BeakerIcon,
+    SparklesIcon, ArrowPathIcon, CpuChipIcon, BeakerIcon,
     FireIcon, ChartBarIcon, UserGroupIcon, ArrowTrendingUpIcon,
-    ArrowTrendingDownIcon, CheckCircleIcon, ShieldCheckIcon,
-    BellAlertIcon, HeartIcon, DocumentTextIcon, SignalIcon,
-    GlobeAltIcon, BoltIcon, ClipboardDocumentListIcon,
+    ShieldCheckIcon,
+    BellAlertIcon, HeartIcon,
 } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
 import { toGrowthIndex, clampPercent } from '../utils/analyticsHelpers.js';
+
+// ── Build a quick lookup: disease name (lowercase) → symptom list from trainer2 ──
+const TRAINER2_SYMPTOMS = {};
+(TRAINER2 || []).forEach(d => {
+    if (d.name && Array.isArray(d.symptoms)) {
+        TRAINER2_SYMPTOMS[d.name.toLowerCase()] = d.symptoms;
+    }
+});
+
+/** Return trainer2 symptoms for a disease as percentage objects (equal weight) */
+function getTrainer2Symptoms(diseaseName) {
+    if (!diseaseName) return [];
+    const key = diseaseName.toLowerCase();
+    // Try exact, then partial match
+    let symptoms = TRAINER2_SYMPTOMS[key];
+    if (!symptoms) {
+        const found = Object.keys(TRAINER2_SYMPTOMS).find(k => k.includes(key) || key.includes(k));
+        symptoms = found ? TRAINER2_SYMPTOMS[found] : null;
+    }
+    if (!symptoms || symptoms.length === 0) return [];
+    const pct = Math.round(100 / symptoms.length);
+    return symptoms.map((s, i) => ({
+        symptom: s,
+        count: symptoms.length - i,
+        percentage: pct,
+        source: 'edliz'
+    }));
+}
 
 const Dashboard = () => {
     const [patientCount, setPatientCount]           = useState(0);
@@ -272,146 +300,6 @@ const Dashboard = () => {
                 {/* -- SECTION 2: SYSTEM STATS ROW -- */}
                 <StatsCards stats={stats} diseaseStats={diseaseStats} selectedDisease={selectedDisease} />
 
-                {/* -- SECTION 3: DISEASE INTELLIGENCE PANEL -- */}
-                {diseaseStats && (
-                    <div className="relative rounded-2xl overflow-hidden bg-brand-dark-900/60 border border-white/5 p-6"
-                         style={{ borderLeft: '3px solid transparent', borderImage: 'linear-gradient(to bottom, #a855f7, #ec4899) 1' }}>
-                        {/* Gradient left accent bar */}
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500 to-pink-500 rounded-l-2xl" />
-
-                        {/* Top row: disease name + risk badge + AI confidence */}
-                        <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pl-3">
-                            <div className="flex items-center gap-3 flex-wrap">
-                                <h2 className="text-lg font-black text-white tracking-tight uppercase">{selectedDisease}</h2>
-                                <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${riskBadgeClass}`}>
-                                    {riskLevel}
-                                </span>
-                            </div>
-                            {diseaseInsights?.summary?.confidence != null && (
-                                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/25">
-                                    <SparklesIcon className="h-3 w-3 text-purple-400" />
-                                    <span className="text-[10px] font-black text-purple-300 uppercase tracking-widest">
-                                        AI Confidence: {diseaseInsights.summary.confidence}%
-                                    </span>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* 6-tile grid (2 rows x 3 cols) */}
-                        <div className="pl-3 grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
-
-                            {/* Tile 1: Total Cases */}
-                            <div className="rounded-xl bg-brand-dark-800/60 border border-white/5 p-4">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-600 mb-2">Total Cases</p>
-                                <p className="text-3xl font-black text-white tracking-tighter leading-none">
-                                    {(diseaseStats.totalCases ?? 0).toLocaleString()}
-                                </p>
-                                <div className="mt-3 h-1 w-full bg-brand-dark-950 rounded-full overflow-hidden">
-                                    <div className="h-full bg-cyber-blue rounded-full" style={{ width: '100%' }} />
-                                </div>
-                            </div>
-
-                            {/* Tile 2: Outbreak Index */}
-                            <div className="rounded-xl bg-brand-dark-800/60 border border-white/5 p-4">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-600 mb-2">Outbreak Index</p>
-                                <p className={`text-3xl font-black tracking-tighter leading-none ${isUrgent ? 'text-red-400' : 'text-cyber-blue'}`}>
-                                    {(growthIdx / 100).toFixed(2)}
-                                </p>
-                                <div className="mt-3 h-1 w-full bg-brand-dark-950 rounded-full overflow-hidden">
-                                    <div className={`h-full rounded-full transition-all duration-1000 ${isUrgent ? 'bg-red-500' : 'bg-cyber-blue'}`}
-                                         style={{ width: `${clampPercent(growthIdx)}%` }} />
-                                </div>
-                            </div>
-
-                            {/* Tile 3: Recovery % */}
-                            <div className="rounded-xl bg-brand-dark-800/60 border border-white/5 p-4">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-600 mb-2">Recovery Rate</p>
-                                <p className="text-3xl font-black text-cyber-green tracking-tighter leading-none">
-                                    {diseaseStats.recoveryRate ?? 0}<span className="text-base text-gray-600">%</span>
-                                </p>
-                                <div className="mt-3 h-1 w-full bg-brand-dark-950 rounded-full overflow-hidden">
-                                    <div className="h-full bg-cyber-green rounded-full transition-all duration-1000"
-                                         style={{ width: `${diseaseStats.recoveryRate ?? 0}%` }} />
-                                </div>
-                            </div>
-
-                            {/* Tile 4: Admission % */}
-                            <div className="rounded-xl bg-brand-dark-800/60 border border-white/5 p-4">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-600 mb-2">Admission Rate</p>
-                                <p className="text-3xl font-black text-yellow-400 tracking-tighter leading-none">
-                                    {diseaseStats.admissionRate ?? 0}<span className="text-base text-gray-600">%</span>
-                                </p>
-                                <div className="mt-3 h-1 w-full bg-brand-dark-950 rounded-full overflow-hidden">
-                                    <div className="h-full bg-yellow-500 rounded-full transition-all duration-1000"
-                                         style={{ width: `${diseaseStats.admissionRate ?? 0}%` }} />
-                                </div>
-                            </div>
-
-                            {/* Tile 5: Mortality % */}
-                            <div className="rounded-xl bg-brand-dark-800/60 border border-white/5 p-4">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-600 mb-2">Mortality Rate</p>
-                                <p className={`text-3xl font-black tracking-tighter leading-none ${(diseaseStats.mortalityRate ?? 0) > 5 ? 'text-red-400' : 'text-gray-300'}`}>
-                                    {diseaseStats.mortalityRate ?? 0}<span className="text-base text-gray-600">%</span>
-                                </p>
-                                <div className="mt-3 h-1 w-full bg-brand-dark-950 rounded-full overflow-hidden">
-                                    <div className={`h-full rounded-full transition-all duration-1000 ${(diseaseStats.mortalityRate ?? 0) > 5 ? 'bg-red-500' : 'bg-gray-500'}`}
-                                         style={{ width: `${diseaseStats.mortalityRate ?? 0}%` }} />
-                                </div>
-                            </div>
-
-                            {/* Tile 6: Primary Hotspot */}
-                            <div className="rounded-xl bg-brand-dark-800/60 border border-white/5 p-4">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-gray-600 mb-2">Primary Hotspot</p>
-                                <p className="text-lg font-black text-orange-400 tracking-tight leading-snug truncate">
-                                    {diseaseStats.hotspot || 'N/A'}
-                                </p>
-                                <p className="text-[10px] text-gray-500 mt-1">{diseaseStats.hotspotCases ?? 0} cases</p>
-                                <div className="mt-2 h-1 w-full bg-brand-dark-950 rounded-full overflow-hidden">
-                                    <div className="h-full bg-orange-500 rounded-full" style={{ width: '75%' }} />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* EDLIZ Protocol (shown if available) */}
-                        {diseaseInsights?.edlizProtocol && (
-                            <div className="pl-3 pt-5 border-t border-white/5 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {diseaseInsights.edlizProtocol.treatmentLines?.length > 0 && (
-                                    <div>
-                                        <p className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                            <ClipboardDocumentListIcon className="h-3 w-3" />
-                                            EDLIZ Treatment Protocol
-                                        </p>
-                                        <div className="rounded-xl bg-cyan-500/5 border border-cyan-500/20 p-3 max-h-24 overflow-y-auto space-y-0.5">
-                                            {diseaseInsights.edlizProtocol.treatmentLines.slice(0, 10).map((line, i) => (
-                                                <p key={i} className={`text-[10px] leading-relaxed ${
-                                                    line.startsWith('??') ? 'text-cyan-300 font-semibold mt-1' :
-                                                    line.startsWith('  �') ? 'text-gray-300 ml-3' : 'text-gray-400'
-                                                }`}>{line}</p>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                {diseaseInsights.edlizProtocol.preventionLines?.length > 0 && (
-                                    <div>
-                                        <p className="text-[9px] font-black text-emerald-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                                            <ShieldCheckIcon className="h-3 w-3" />
-                                            Prevention Protocol
-                                        </p>
-                                        <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/20 p-3 max-h-24 overflow-y-auto space-y-0.5">
-                                            {diseaseInsights.edlizProtocol.preventionLines.slice(0, 8).map((line, i) => (
-                                                <p key={i} className={`text-[10px] leading-relaxed ${
-                                                    line.startsWith('??') ? 'text-emerald-300 font-semibold mt-1' :
-                                                    line.startsWith('  �') ? 'text-gray-300 ml-3' : 'text-gray-400'
-                                                }`}>{line}</p>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                )}
-
                 {/* -- SECTION 4: THREE METRIC CARDS ROW -- */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
@@ -515,62 +403,85 @@ const Dashboard = () => {
                         </p>
                     </div>
 
-                    {/* Card C � Symptom Signature (green accent) � FIXED */}
-                    <div className="glass-card-modern p-5 border border-white/5 relative overflow-hidden group hover:border-cyber-green/20 transition-all duration-300">
-                        <div className="absolute top-0 right-0 w-40 h-40 bg-cyber-green/5 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-cyber-green/10 transition-colors duration-500" />
+                    {/* Card C — Symptom Signature with trainer2 fallback */}
+                    {(() => {
+                        // Priority: 1) live DB records  2) trainer2 baseline  3) empty state
+                        const liveSymptoms   = diseaseAnalytics?.topSymptoms || [];
+                        const edlizSymptoms  = getTrainer2Symptoms(selectedDisease);
+                        const symptoms       = liveSymptoms.length > 0 ? liveSymptoms : edlizSymptoms;
+                        const isEdlizSource  = liveSymptoms.length === 0 && edlizSymptoms.length > 0;
+                        const hasData        = symptoms.length > 0;
 
-                        <div className="relative flex items-center justify-between mb-5">
-                            <div className="flex items-center gap-2">
-                                <div className="w-7 h-7 rounded-lg bg-cyber-green/10 border border-cyber-green/20 flex items-center justify-center">
-                                    <SparklesIcon className="h-3.5 w-3.5 text-cyber-green" />
-                                </div>
-                                <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Symptom Signature</h3>
-                            </div>
-                            <span className="text-[9px] font-bold text-cyber-green px-2 py-0.5 bg-cyber-green/10 rounded-lg border border-cyber-green/20">Neural</span>
-                        </div>
+                        return (
+                            <div className="glass-card-modern p-5 border border-white/5 relative overflow-hidden group hover:border-cyber-green/20 transition-all duration-300">
+                                <div className="absolute top-0 right-0 w-40 h-40 bg-cyber-green/5 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-cyber-green/10 transition-colors duration-500" />
 
-                        <div className="relative">
-                            {diseaseLoading ? (
-                                <div className="flex flex-col items-center justify-center h-40 gap-3">
-                                    <div className="w-8 h-8 border-2 border-cyber-green/20 rounded-full animate-spin border-t-cyber-green" />
-                                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Analyzing Neural Data...</p>
+                                <div className="relative flex items-center justify-between mb-5">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-lg bg-cyber-green/10 border border-cyber-green/20 flex items-center justify-center">
+                                            <SparklesIcon className="h-3.5 w-3.5 text-cyber-green" />
+                                        </div>
+                                        <h3 className="text-[11px] font-black text-gray-400 uppercase tracking-widest">Symptom Signature</h3>
+                                    </div>
+                                    <span className={`text-[9px] font-bold px-2 py-0.5 rounded-lg border ${
+                                        isEdlizSource
+                                            ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                                            : 'text-cyber-green bg-cyber-green/10 border-cyber-green/20'
+                                    }`}>
+                                        {isEdlizSource ? 'EDLIZ Baseline' : 'Live Data'}
+                                    </span>
                                 </div>
-                            ) : diseaseAnalytics?.topSymptoms?.length > 0 ? (
-                                <div>
-                                    <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-3">
-                                        Top presenting � {selectedDisease}
-                                    </p>
-                                    <div className="space-y-2.5">
-                                        {diseaseAnalytics.topSymptoms.slice(0, 5).map((s, idx) => (
-                                            <div key={idx}>
-                                                <div className="flex justify-between text-[11px] mb-1">
-                                                    <span className="text-gray-300 font-medium capitalize truncate pr-4">{s.symptom}</span>
-                                                    <span className="text-cyber-green font-black flex-shrink-0">{s.percentage}%</span>
-                                                </div>
-                                                <div className="w-full h-1 bg-brand-dark-800 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-gradient-to-r from-cyber-green/80 to-cyber-green transition-all duration-1000"
-                                                        style={{ width: `${s.percentage}%` }} />
-                                                </div>
+
+                                <div className="relative">
+                                    {/* Only show spinner while loading AND we have no fallback yet */}
+                                    {diseaseLoading && !hasData ? (
+                                        <div className="flex flex-col items-center justify-center h-40 gap-3">
+                                            <div className="w-8 h-8 border-2 border-cyber-green/20 rounded-full animate-spin border-t-cyber-green" />
+                                            <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Loading symptoms...</p>
+                                        </div>
+                                    ) : hasData ? (
+                                        <div>
+                                            <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-3">
+                                                {isEdlizSource ? 'EDLIZ pre-trained baseline' : 'Recorded cases'} — {selectedDisease}
+                                            </p>
+                                            <div className="space-y-2.5">
+                                                {symptoms.slice(0, 5).map((s, idx) => (
+                                                    <div key={idx}>
+                                                        <div className="flex justify-between text-[11px] mb-1">
+                                                            <span className="text-gray-300 font-medium capitalize truncate pr-4">{s.symptom}</span>
+                                                            <span className={`font-black flex-shrink-0 ${isEdlizSource ? 'text-amber-400' : 'text-cyber-green'}`}>
+                                                                {s.percentage}%
+                                                            </span>
+                                                        </div>
+                                                        <div className="w-full h-1 bg-brand-dark-800 rounded-full overflow-hidden">
+                                                            <div className={`h-full transition-all duration-1000 ${
+                                                                isEdlizSource
+                                                                    ? 'bg-gradient-to-r from-amber-500/80 to-amber-400'
+                                                                    : 'bg-gradient-to-r from-cyber-green/80 to-cyber-green'
+                                                            }`} style={{ width: `${Math.max(s.percentage, 8)}%` }} />
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
-                                    <div className="mt-4 pt-3 border-t border-white/5 flex items-center gap-2">
-                                        <HeartIcon className="h-3.5 w-3.5 text-pink-400 flex-shrink-0" />
-                                        <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">
-                                            {diseaseInsights?.summary?.primaryAgeGroup || 'General'} � {diseaseInsights?.summary?.primaryGender || 'All'}
-                                        </span>
-                                    </div>
+                                            <div className="mt-4 pt-3 border-t border-white/5 flex items-center gap-2">
+                                                <HeartIcon className="h-3.5 w-3.5 text-pink-400 flex-shrink-0" />
+                                                <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest">
+                                                    {diseaseInsights?.summary?.primaryAgeGroup || 'General Population'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center h-40 text-gray-700 gap-3">
+                                            <BeakerIcon className="h-10 w-10 opacity-20" />
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-center">
+                                                {selectedDisease ? 'No symptom data available' : 'Select a disease above'}
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center h-40 text-gray-700 gap-3">
-                                    <BeakerIcon className="h-10 w-10 opacity-20" />
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-center">
-                                        {selectedDisease ? 'No symptom data recorded yet' : 'Select a disease above'}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 {/* -- SECTION 5: CHARTS + SIGNALS ROW -- */}
@@ -596,112 +507,6 @@ const Dashboard = () => {
                             diseaseTrends={diseaseTrends}
                         />
                     </div>
-                </div>
-
-                {/* -- SECTION 6: DISEASE DEEP-DIVE -- always rendered, graceful empty states */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-
-                        {/* Card 1 � Symptom Profile */}
-                        <div className="rounded-2xl bg-brand-dark-900/60 border border-white/5 p-5 hover:border-white/10 transition-colors duration-300">
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="w-7 h-7 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
-                                    <ChartBarIcon className="h-3.5 w-3.5 text-cyan-400" />
-                                </div>
-                                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Symptom Profile</h3>
-                            </div>
-                            <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest mb-3">{selectedDisease}</p>
-                            {diseaseAnalytics?.topSymptoms?.length > 0 ? (
-                                <div className="space-y-2.5">
-                                    {diseaseAnalytics.topSymptoms.slice(0, 7).map(s => (
-                                        <div key={s.symptom}>
-                                            <div className="flex justify-between text-[11px] mb-1">
-                                                <span className="text-gray-300 capitalize">{s.symptom}</span>
-                                                <span className="text-white font-black">{s.percentage}%</span>
-                                            </div>
-                                            <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
-                                                <div className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-1000"
-                                                    style={{ width: `${s.percentage}%` }} />
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="flex flex-col items-center justify-center py-8 text-gray-700 gap-2">
-                                    <BeakerIcon className="h-8 w-8 opacity-20" />
-                                    <p className="text-[10px] font-bold uppercase tracking-widest">No symptom data recorded</p>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Card 2 � Patient Outcomes */}
-                        <div className="rounded-2xl bg-brand-dark-900/60 border border-white/5 p-5 hover:border-white/10 transition-colors duration-300">
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-                                    <CheckCircleIcon className="h-3.5 w-3.5 text-emerald-400" />
-                                </div>
-                                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Patient Outcomes</h3>
-                            </div>
-                            {Object.keys(diseaseAnalytics?.outcomes || {}).length > 0 ? (
-                                <div className="space-y-4">
-                                    {Object.entries(diseaseAnalytics.outcomes).map(([outcome, data]) => {
-                                        const colorMap = {
-                                            Discharged: { bar: 'from-emerald-500 to-green-400', text: 'text-emerald-400' },
-                                            Admitted:   { bar: 'from-yellow-500 to-orange-400', text: 'text-yellow-400' },
-                                            Deceased:   { bar: 'from-red-600 to-red-500',       text: 'text-red-400'    },
-                                        };
-                                        const c = colorMap[outcome] || { bar: 'from-blue-500 to-cyan-400', text: 'text-blue-400' };
-                                        return (
-                                            <div key={outcome}>
-                                                <div className="flex justify-between items-center text-[11px] mb-1.5">
-                                                    <span className={`font-black uppercase tracking-wide ${c.text}`}>{outcome}</span>
-                                                    <span className="text-white font-black">
-                                                        {data.count.toLocaleString()}
-                                                        <span className="text-gray-500 font-bold"> ({data.percentage}%)</span>
-                                                    </span>
-                                                </div>
-                                                <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
-                                                    <div className={`h-full rounded-full bg-gradient-to-r ${c.bar} transition-all duration-1000`}
-                                                        style={{ width: `${data.percentage}%` }} />
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <p className="text-gray-600 text-xs text-center py-8">No outcome data</p>
-                            )}
-                        </div>
-
-                        {/* Card 3 � Province Breakdown */}
-                        <div className="rounded-2xl bg-brand-dark-900/60 border border-white/5 p-5 hover:border-white/10 transition-colors duration-300">
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="w-7 h-7 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
-                                    <MapIcon className="h-3.5 w-3.5 text-purple-400" />
-                                </div>
-                                <h3 className="text-[11px] font-black text-white uppercase tracking-widest">Province Breakdown</h3>
-                            </div>
-                            {diseaseAnalytics?.provinceBreakdown?.length > 0 ? (
-                                <div className="space-y-2.5">
-                                    {diseaseAnalytics.provinceBreakdown.slice(0, 7).map((p, idx) => (
-                                        <div key={p.province} className="flex items-center gap-2">
-                                            <span className="text-[9px] text-gray-700 font-black w-4 tabular-nums text-right">{idx + 1}</span>
-                                            <div className="flex-1">
-                                                <div className="flex justify-between text-[11px] mb-1">
-                                                    <span className="text-gray-300">{p.province}</span>
-                                                    <span className="text-white font-black">{p.count}</span>
-                                                </div>
-                                                <div className="w-full bg-white/5 rounded-full h-1.5 overflow-hidden">
-                                                    <div className="h-full rounded-full bg-gradient-to-r from-purple-500 to-pink-500 transition-all duration-1000"
-                                                        style={{ width: `${p.percentage}%` }} />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <p className="text-gray-600 text-xs text-center py-8">No province data</p>
-                            )}
-                        </div>
                 </div>
 
                 {/* ── SECTION 7: AI INTERVENTION BANNER ── always rendered */}
@@ -753,48 +558,7 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                {/* ── SECTION 8: REGIONAL DISTRIBUTION ── always rendered */}
-                <div className="relative rounded-2xl overflow-hidden bg-brand-dark-900/60 border border-white/5 p-6">
-                        <div className="absolute top-0 right-0 w-80 h-80 bg-cyber-purple/4 blur-[120px] pointer-events-none" />
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="w-8 h-8 rounded-xl bg-cyber-purple/10 border border-cyber-purple/20 flex items-center justify-center">
-                                <GlobeAltIcon className="h-4 w-4 text-cyber-purple" />
-                            </div>
-                            <div>
-                                <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">National Coverage</p>
-                                <h2 className="text-sm font-black text-white uppercase tracking-widest">Regional Distribution</h2>
-                            </div>
-                            <span className="ml-auto text-[9px] font-black text-gray-600 uppercase tracking-widest">
-                                {provinceStats.length} provinces reporting
-                            </span>
-                        </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                            {provinceStats.map(prov => (
-                                <div key={prov._id}
-                                    className="group relative overflow-hidden rounded-2xl p-4 bg-brand-dark-800/50 border border-white/5
-                                               hover:border-cyber-purple/30 hover:bg-brand-dark-800/80 transition-all duration-300 cursor-default">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-cyber-purple/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl" />
-                                    <div className="relative">
-                                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-2 truncate">{prov._id}</p>
-                                        <p className="text-3xl font-black text-white tracking-tighter leading-none mb-2">
-                                            {(prov.total || 0).toLocaleString()}
-                                        </p>
-                                        <div className="h-1 w-full bg-brand-dark-950 rounded-full overflow-hidden mb-2">
-                                            <div
-                                                className="h-full bg-gradient-to-r from-cyber-purple to-pink-500 rounded-full transition-all duration-1000 group-hover:brightness-125"
-                                                style={{ width: totalCases > 0 ? `${Math.min((prov.total / totalCases) * 100, 100)}%` : '0%' }}
-                                            />
-                                        </div>
-                                        {prov.diseases?.[0] && (
-                                            <p className="text-[9px] text-gray-600 truncate">
-                                                {[...prov.diseases].sort((a, b) => b.cases - a.cases)[0]?.name}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                </div>
+                {/* ── SECTION 8: REGIONAL DISTRIBUTION ── removed per request */}
 
             </div>
         </div>

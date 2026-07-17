@@ -950,7 +950,7 @@ router.get("/disease-insights/:disease", hasPermission("view:analytics"), async 
                 growthRate,
                 provinceBreakdown,
                 outcomes: outcomesMap,
-                topSymptoms,
+                topSymptoms: dbTopSymptoms,
                 visitTypes: visitTypesList,
                 vitalsProfile,
                 monthlyTrend,
@@ -961,6 +961,30 @@ router.get("/disease-insights/:disease", hasPermission("view:analytics"), async 
                 currentPeriodCases: currentCount,
                 previousPeriodCases: prevCount
             } = analytics;
+
+            // ── Trainer2 symptom fallback ─────────────────────────────────
+            // If no symptoms are in DB records, fall back to the pre-trained
+            // EDLIZ baseline symptoms from trainer2.json (via diseasePatterns Map)
+            let topSymptoms = dbTopSymptoms;
+            if ((!topSymptoms || topSymptoms.length === 0) && realTimeAI) {
+                try {
+                    const { toAIKey } = require('../utils/normalise');
+                    const patKey = toAIKey(normaliseDisease(rawDisease));
+                    const pat = realTimeAI.diseasePatterns?.get(patKey);
+                    if (pat?.symptoms instanceof Map && pat.symptoms.size > 0) {
+                        const total_syms = Array.from(pat.symptoms.values()).reduce((s, c) => s + c, 0) || 1;
+                        topSymptoms = Array.from(pat.symptoms.entries())
+                            .sort((a, b) => b[1] - a[1])
+                            .slice(0, 8)
+                            .map(([symptom, count]) => ({
+                                symptom,
+                                count,
+                                percentage: clampPercent((count / total_syms) * 100),
+                                source: 'edliz_baseline'
+                            }));
+                    }
+                } catch (_) { /* keep dbTopSymptoms (empty) */ }
+            }
 
             const deceased = outcomesMap.Deceased?.count || outcomesMap.deceased?.count || 0;
             const mortalityRate = total > 0 ? clampPercent((deceased / total) * 100) : 0;

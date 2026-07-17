@@ -720,10 +720,17 @@ async function buildDiseasePeriodAnalytics({ MedicalRecord, baseMatch, period = 
         .map(([id, count]) => ({ _id: id, count }))
         .sort((a, b) => b.count - a.count);
 
+    // Use the top symptom count as the denominator so percentages are
+    // relative to each other, not to total disease cases (which would
+    // produce near-zero values when only some records have symptoms).
+    const topSymptomTotal = mergedSymptoms.length > 0
+        ? mergedSymptoms.reduce((s, m) => s + m.count, 0)
+        : 1;
+
     const topSymptomsList = mergedSymptoms.map((s) => ({
         symptom: s._id,
         count: s.count,
-        percentage: totalInPeriod > 0 ? clampPercent((s.count / totalInPeriod) * 100) : 0
+        percentage: clampPercent((s.count / topSymptomTotal) * 100)
     }));
 
     const visitTypesList = visitTypes.map((v) => ({

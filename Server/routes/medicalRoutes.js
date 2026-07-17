@@ -308,6 +308,29 @@ router.get("/stats/disease-analytics/:disease", hasPermission("view:analytics"),
             diseaseLabel: raw
         });
 
+        // ── Trainer2 symptom fallback ─────────────────────────────────────
+        // When no symptom records exist yet, use the EDLIZ pre-trained baseline
+        if (!analytics.topSymptoms || analytics.topSymptoms.length === 0) {
+            try {
+                const Pretrainer = require('../ai/pretrainer');
+                const { toAIKey } = require('../utils/normalise');
+                const baseline = Pretrainer.loadBaseline();
+                const pat = baseline.get(toAIKey(norm));
+                if (pat?.symptoms instanceof Map && pat.symptoms.size > 0) {
+                    const total_syms = Array.from(pat.symptoms.values()).reduce((s, c) => s + c, 0) || 1;
+                    analytics.topSymptoms = Array.from(pat.symptoms.entries())
+                        .sort((a, b) => b[1] - a[1])
+                        .slice(0, 8)
+                        .map(([symptom, count]) => ({
+                            symptom,
+                            count,
+                            percentage: clampPercent((count / total_syms) * 100),
+                            source: 'edliz_baseline'
+                        }));
+                }
+            } catch (_) { /* keep empty array */ }
+        }
+
         const { current } = periodMatches(baseMatch, period);
         const yearlyAgg = await MedicalRecord.aggregate([
             { $match: current },

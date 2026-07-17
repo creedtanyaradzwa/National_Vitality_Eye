@@ -16,7 +16,6 @@ import { ChartBarIcon } from '@heroicons/react/24/outline';
 const COLORS = ['#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#EF4444', '#06B6D4', '#F97316', '#6366F1', '#A855F7'];
 
 const DiseaseChart = ({ data = [], totalCases, selectedDisease, onSelectDisease, diseaseTrends }) => {
-    console.log('🛡️ DiseaseChart rendering...', { data: data.length, selectedDisease });
     const [chartType, setChartType] = useState('bar');
 
     if (!data || data.length === 0) {
@@ -51,8 +50,8 @@ const DiseaseChart = ({ data = [], totalCases, selectedDisease, onSelectDisease,
                 </div>
             </div>
 
-            <div className="flex-1 min-h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="flex-1 min-h-[300px]" style={{ minHeight: 300 }}>
+                <ResponsiveContainer width="100%" height={300}>
                     {chartType === 'bar' ? (
                         <BarChart data={data}>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
