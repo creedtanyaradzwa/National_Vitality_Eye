@@ -638,27 +638,27 @@ const Analytics = () => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                                 <div className="rounded-xl bg-white/5 border border-white/10 p-4">
                                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Growth Analysis</p>
-                                    <div className={`text-2xl font-black ${diseaseInsights.summary?.growthRate > 0 ? 'text-red-400' : 'text-green-400'}`}>
-                                        {diseaseInsights.summary?.growthRate > 0 ? '+' : ''}{clampPercent(diseaseInsights.summary?.growthRate)}%
+                                    <div className={`text-2xl font-black ${(diseaseInsights?.summary?.growthRate || 0) > 0 ? 'text-red-400' : 'text-green-400'}`}>
+                                        {(diseaseInsights?.summary?.growthRate || 0) > 0 ? '+' : ''}{clampPercent(diseaseInsights?.summary?.growthRate || 0)}%
                                     </div>
                                     <p className="text-[10px] text-gray-500 mt-1">vs previous month</p>
                                 </div>
                                 <div className="rounded-xl bg-white/5 border border-white/10 p-4">
                                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">
-                                        Primary Hotspot{(diseaseInsights.summary?.primaryHotspots?.length || 0) > 1 ? 's' : ''}
+                                        Primary Hotspot{(diseaseInsights?.summary?.primaryHotspots?.length || 0) > 1 ? 's' : ''}
                                     </p>
                                     <div className="flex items-start gap-2">
                                         <MapIcon className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
                                         <div>
                                             <span className="text-lg font-black text-white uppercase leading-tight block">
-                                                {diseaseInsights.summary?.hotspot
+                                                {diseaseInsights?.summary?.hotspot
                                                     || diseaseStats?.hotspot
                                                     || resolvePrimaryHotspots(diseaseAnalytics?.provinceBreakdown).label
                                                     || 'N/A'}
                                             </span>
-                                            {(diseaseInsights.summary?.primaryHotspots?.length || 0) > 1 && (
+                                            {(diseaseInsights?.summary?.primaryHotspots?.length || 0) > 1 && (
                                                 <p className="text-[10px] text-amber-400/90 mt-1">
-                                                    Tied — {diseaseInsights.summary.primaryHotspots.length} provinces at {diseaseInsights.summary.hotspotCases} cases each
+                                                    Tied — {diseaseInsights?.summary?.primaryHotspots?.length} provinces at {diseaseInsights?.summary?.hotspotCases} cases each
                                                 </p>
                                             )}
                                         </div>
@@ -668,7 +668,9 @@ const Analytics = () => {
                                     <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Target Demographic</p>
                                     <div className="flex items-center gap-2">
                                         <UserGroupIcon className="h-5 w-5 text-pink-400" />
-                                        <span className="text-xl font-black text-white uppercase">{diseaseInsights.summary?.primaryAgeGroup}</span>
+                                        <span className="text-xl font-black text-white uppercase">
+                                            {diseaseInsights?.summary?.primaryAgeGroup || 'General'}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -679,9 +681,9 @@ const Analytics = () => {
                                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Age Distribution</h3>
                                     <div className="space-y-4">
                                         {[
-                                            { label: 'Pediatric (0-18)', value: diseaseInsights.demographics?.child, color: 'bg-cyan-500' },
-                                            { label: 'Adult (19-64)', value: diseaseInsights.demographics?.adult, color: 'bg-purple-500' },
-                                            { label: 'Geriatric (65+)', value: diseaseInsights.demographics?.elderly, color: 'bg-pink-500' }
+                                            { label: 'Pediatric (0-18)', value: diseaseInsights?.demographics?.child, color: 'bg-cyan-500' },
+                                            { label: 'Adult (19-64)', value: diseaseInsights?.demographics?.adult, color: 'bg-purple-500' },
+                                            { label: 'Geriatric (65+)', value: diseaseInsights?.demographics?.elderly, color: 'bg-pink-500' }
                                         ].map(({ label, value, color }) => (
                                             <div key={label}>
                                                 <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest mb-1">
@@ -1144,10 +1146,10 @@ const Analytics = () => {
                     </h3>
                     <ResponsiveContainer width="100%" height={260}>
                         <RadarChart data={[
-                            { metric: 'Pediatric', value: clampPercent(diseaseInsights.demographics.child) },
-                            { metric: 'Adult', value: clampPercent(diseaseInsights.demographics.adult) },
-                            { metric: 'Geriatric', value: clampPercent(diseaseInsights.demographics.elderly) },
-                            { metric: 'Growth', value: clampPercent(Math.abs(diseaseInsights.summary?.growthRate || 0)) },
+                            { metric: 'Pediatric', value: clampPercent(diseaseInsights?.demographics?.child || 0) },
+                            { metric: 'Adult', value: clampPercent(diseaseInsights?.demographics?.adult || 0) },
+                            { metric: 'Geriatric', value: clampPercent(diseaseInsights?.demographics?.elderly || 0) },
+                            { metric: 'Growth', value: clampPercent(Math.abs(diseaseInsights?.summary?.growthRate || 0)) },
                             { metric: 'Burden', value: clampPercent(diseaseStats?.prevalenceShare || 0) }
                         ]}>
                             <PolarGrid stroke="rgba(255,255,255,0.1)" />
